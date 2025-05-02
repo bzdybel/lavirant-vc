@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Granatowa i złota paleta kolorów */
+  --background: 0 0% 100%;
+  --foreground: 230 75% 15%;
+  --muted: 230 30% 95%;
+  --muted-foreground: 230 30% 45%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 230 75% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 230 75% 15%;
+  --border: 230 30% 90%;
+  --input: 230 30% 90%;
+  --primary: 230 75% 15%;  /* Ciemny granat #101538 */
+  --primary-foreground: 230 10% 95%;
+  --secondary: 45 90% 57%; /* Złoty #f7cb2c */
+  --secondary-foreground: 45 100% 20%;
+  --accent: 230 75% 60%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --ring: 230 75% 25%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 230 75% 5%;
+  --foreground: 0 0% 98%;
+  --muted: 230 30% 15%;
+  --muted-foreground: 230 30% 70%;
+  --popover: 230 75% 5%;
+  --popover-foreground: 0 0% 98%;
+  --card: 230 75% 5%;
+  --card-foreground: 0 0% 98%;
+  --border: 230 30% 15%;
+  --input: 230 30% 15%;
+  --primary: 230 75% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 45 90% 50%;
+  --secondary-foreground: 45 10% 20%;
+  --accent: 230 50% 30%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 63% 30%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 230 30% 70%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    background-color: #101538;
+    color: white;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer components {
+  /* Gradienty i efekty */
+  .gold-gradient {
+    background: linear-gradient(120deg, #f7cb2c, #e69211);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+  }
+
+  .navy-gold-gradient {
+    background: linear-gradient(135deg, #101538, #192056, #101538);
+  }
+
+  .navy-gold-gradient-text {
+    background: linear-gradient(135deg, #f7cb2c, #e69211);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+  }
+
+  .gold-shine {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gold-shine::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(30deg);
+    animation: shine 4s infinite linear;
+  }
+
+  /* Rozszerzone efekty */
+  .bg-navy-texture {
+    background-color: #101538;
+    background-image: url('https://www.transparenttextures.com/patterns/dark-leather.png');
+    position: relative;
+  }
+  
+  .bg-navy-gradient {
+    background: linear-gradient(135deg, #0c102e, #101538, #192056);
+  }
+  
+  .text-gold {
+    color: #f7cb2c;
+  }
+  
+  .border-gold {
+    border-color: #f7cb2c;
+  }
+  
+  .gold-blur {
+    filter: drop-shadow(0 0 10px rgba(247, 203, 44, 0.5));
+  }
+  
+  .btn-gold {
+    background-color: #f7cb2c;
+    color: #101538;
+    position: relative;
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+  
+  .btn-gold:hover {
+    background-color: #e69211;
+  }
+  
+  .gold-pulse {
+    animation: goldPulse 4s infinite alternate;
+  }
+  
+  @keyframes goldPulse {
+    0%, 100% {
+      filter: drop-shadow(0 0 2px rgba(247, 203, 44, 0.3));
+    }
+    50% {
+      filter: drop-shadow(0 0 10px rgba(247, 203, 44, 0.7));
+    }
+  }
+}
+
+/* Animacje */
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) rotate(30deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(30deg);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Efekty dla gradientów radiacyjnych */
+.bg-gradient-radial {
+  background: radial-gradient(ellipse at center, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%);
+}
+
+.bg-gradient-conic {
+  background: conic-gradient(from 0deg at 50% 50%, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%);
+}
