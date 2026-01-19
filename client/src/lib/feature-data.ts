@@ -1,44 +1,30 @@
 export const featureData = [
   {
-    title: "Dynamiczna Dyskusja",
-    description: "Argumentuj, przekonuj i dyskutuj na różnorodne tematy, rozwijając umiejętności komunikacyjne i negocjacyjne.",
-    image: "https://images.unsplash.com/photo-1637425086684-8dbc8b9d0316?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
-    iconName: "MessageSquare",
-    highlight: "Rozwija umiejętności argumentacji"
+    title: "🧠 Prawdziwa dedukcja, nie zgadywanie",
+    description: "Każdy gracz odpowiada na te same pytania, zapisując odpowiedzi w tajemnicy. Dopiero później zaczyna się analiza, rozmowa i głosowanie.",
+    image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
+    iconName: "Brain",
+    highlight: "Logiczne myślenie"
   },
   {
-    title: "Strategiczne Głosowanie",
-    description: "Planuj swoje ruchy i głosowania, przewidując wybory innych graczy, aby zdobyć przewagę na planszy.",
-    image: "https://images.unsplash.com/photo-1637425087238-14862006e2d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
-    iconName: "Vote",
-    highlight: "Elementy strategiczne"
-  },
-  {
-    title: "Rozgrywka Grupowa",
-    description: "Gra dla 5-8 graczy, idealna na spotkania towarzyskie, imprezy integracyjne i rodzinne wieczory.",
-    image: "https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
-    iconName: "Users",
-    highlight: "5-8 graczy"
-  },
-  {
-    title: "Zawartość Gry",
-    description: "Zestaw zawiera planszę, 30 kart nagród, 30 kart kary indywidualnej, 15 kart kary grupowej, 9 pionków, 8 tablic i inne elementy.",
+    title: "🎭 Blef, manipulacja i psychologia",
+    description: "Nie wygrywa ten, kto wie najwięcej, ale ten, kto najlepiej potrafi przekonać innych.",
     image: "https://images.unsplash.com/photo-1611996575749-79a3a250f948?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
-    iconName: "Package",
-    highlight: "Kompletny zestaw"
+    iconName: "MessageSquare",
+    highlight: "Czytanie ludzi"
   },
   {
-    title: "Szybka Rozgrywka",
-    description: "Jedna rozgrywka trwa około 45 minut, co czyni grę idealną na spotkania, gdy czas jest ograniczony.",
-    image: "https://images.unsplash.com/photo-1515294664310-cd9d170a3033?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
-    iconName: "Clock",
-    highlight: "45 minut rozgrywki"
-  },
-  {
-    title: "Dla Wszystkich Pokoleń",
-    description: "Gra przeznaczona dla osób w wieku od 13 do 122 lat, łącząca pokolenia przy wspólnej rozrywce.",
+    title: "🔄 Każda rozgrywka jest inna",
+    description: "Losowe pytania z aplikacji oraz zmieniający się Kłamca sprawiają, że nie ma dwóch takich samych partii.",
     image: "https://images.unsplash.com/photo-1606503153255-59d8b2e4739e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
-    iconName: "Heart",
-    highlight: "Dla całej rodziny"
+    iconName: "TrendingUp",
+    highlight: "Nieskończona odtwarzalność"
+  },
+  {
+    title: "🗣️ Emocjonująca faza dyskusji",
+    description: "Moment, w którym gracze dyskutują i głosują, to serce gry – napięcie, podejrzenia i nagłe zwroty akcji są gwarantowane.",
+    image: "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
+    iconName: "Vote",
+    highlight: "Emocjonujące momenty"
   }
 ];

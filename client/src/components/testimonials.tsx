@@ -8,10 +8,10 @@ export default function Testimonials() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-4">
-            Co Mówią Miłośnicy Historii
+            Co Mówią Gracze
           </h2>
           <p className="text-neutral-100 max-w-2xl mx-auto">
-            Nie wierz nam na słowo. Posłuchaj opinii naszej społeczności entuzjastów historii.
+            Nie wierz nam na słowo. Posłuchaj opinii naszej społeczności miłośników gier i dedukcji.
           </p>
         </div>
         

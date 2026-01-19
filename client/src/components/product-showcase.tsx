@@ -12,38 +12,98 @@ export default function ProductShowcase() {
 
   const features = [
     {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M3 7l6 6 2-2-6-6 2-2 8 8V3l-4 4-8-8-2 2 8 8-4 4h8L9 9l-2 2 6 6-2 2-8-8V3l4 4 8-8 2 2-8 8 4 4h-8l6-6Z"></path></svg>,
-      title: "Historical Timeline Board",
-      description: "A beautifully illustrated fold-out board featuring a grand timeline of history from ancient civilizations to modern times."
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>,
+      title: "Planszę do gry",
+      description: "Dwustronna plansza z polami ruchu i efektami gry"
     },
     {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z"></path><path d="M12 4v16"></path><path d="M4 12h16"></path></svg>,
-      title: "Game Pieces & Tokens",
-      description: "6 player tokens representing different historical figures, plus 50 knowledge tokens and 20 achievement medals."
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>,
+      title: "9 pionków (w tym zapasowy)",
+      description: "Różnokolorowe żetony do gry dla wszystkich graczy"
     },
     {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M21 8v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8"></path><path d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v4H3V4Z"></path><path d="M10 12h4"></path></svg>,
-      title: "500 Challenge Cards",
-      description: "Diverse categories of historical knowledge including Events, Figures, Inventions, Culture, and Geography across five difficulty levels."
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>,
+      title: "8 tablic do zapisywania odpowiedzi",
+      description: "Eleganckie tablice dla każdego gracza (jedna zawiera LAVIRANT)"
     },
     {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>,
-      title: "Historical Companion Guide",
-      description: "A 64-page illustrated guide with fascinating historical facts, gameplay instructions, and learning resources."
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>,
+      title: "8 markerów z gąbką",
+      description: "Wygodne markery do pisania odpowiedzi"
+    },
+    {
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>,
+      title: "Dostęp do aplikacji Lavirant",
+      description: "Losowanie pytań, zarządzanie grą i reguły w aplikacji"
+    },
+    {
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>,
+      title: "Wszystko, czego potrzebujesz",
+      description: "Kompletny zestaw do natychmiastowej rozgrywki"
     }
   ];
 
   return (
-    <section className="py-16 md:py-24 bg-neutral-100">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="font-playfair text-3xl md:text-4xl font-bold text-primary-900 mb-4">
-            What's Inside the Box
-          </h2>
-          <p className="text-neutral-600 max-w-2xl mx-auto">
-            Chrono Quest comes with everything you need for an immersive historical gaming experience.
+    <section id="zawartość" className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Gold particles */}
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 rounded-full bg-[#c9a24d]"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              opacity: Math.random() * 0.3 + 0.1
+            }}
+            animate={{
+              y: [0, -40, 0],
+              opacity: [0.1, 0.4, 0.1]
+            }}
+            transition={{
+              duration: Math.random() * 5 + 5,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: Math.random() * 5
+            }}
+          />
+        ))}
+        
+        {/* Gold accent lines */}
+        <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-[#c9a24d]/0 via-[#c9a24d]/20 to-[#c9a24d]/0"></div>
+        <div className="absolute bottom-0 left-4 right-4 h-[1px] bg-gradient-to-r from-[#c9a24d]/0 via-[#c9a24d]/20 to-[#c9a24d]/0"></div>
+        
+        {/* Background texture */}
+        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]"></div>
+      </div>
+
+      <div className="container mx-auto px-6 relative z-10">
+        <motion.div 
+          className="text-center mb-20"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          <motion.h2 
+            className="font-playfair text-4xl md:text-5xl font-bold mb-6 inline-block"
+            initial={{ opacity: 0, y: -20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            style={{
+              background: "linear-gradient(to right, #c9a24d, #a67c4a)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent"
+            }}
+          >
+            Co Znajdziesz w Pudełku
+          </motion.h2>
+          <p className="text-white/70 max-w-2xl mx-auto mt-6">
+            Lavirant zawiera wszystko, czego potrzebujesz do niesamowitego doświadczenia grania towarzyskiego.
           </p>
-        </div>
+        </motion.div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1">
@@ -51,20 +111,20 @@ export default function ProductShowcase() {
               {features.map((feature, index) => (
                 <motion.div 
                   key={index} 
-                  className="flex items-start"
+                  className="flex items-start group"
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                   viewport={{ once: true }}
                 >
-                  <div className="bg-secondary-500 p-3 rounded-full text-white mr-4">
+                  <div className="bg-[#c9a24d]/20 border border-[#c9a24d]/40 p-3 rounded-full text-[#c9a24d] mr-4 group-hover:bg-[#c9a24d]/30 transition-all">
                     {feature.icon}
                   </div>
                   <div>
-                    <h3 className="font-playfair text-xl font-bold text-primary-900 mb-2">
+                    <h3 className="font-playfair text-xl font-bold text-white mb-2">
                       {feature.title}
                     </h3>
-                    <p className="text-neutral-600">
+                    <p className="text-white/70">
                       {feature.description}
                     </p>
                   </div>

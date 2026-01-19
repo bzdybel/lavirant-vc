@@ -7,20 +7,20 @@ export default function CTASection() {
     <section className="py-16 md:py-24 bg-gradient-to-br from-secondary-500 to-secondary-700 text-white">
       <div className="container mx-auto px-4 text-center">
         <h2 className="font-playfair text-3xl md:text-4xl font-bold mb-6">
-          Gotowy na Historyczną Przygodę?
+          🎲 Gotowy, by sprawdzić, komu naprawdę możesz ufać?
         </h2>
         <p className="text-xl max-w-2xl mx-auto mb-8">
-          Dołącz do tysięcy miłośników historii, którzy podnieśli swoją wiedzę i umiejętności zapamiętywania dzięki grze Lavirant.
+          Dodaj Lavirant do koszyka i przekonaj się, jak cienka jest granica między prawdą a kłamstwem.
         </p>
         
         <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-12">
           <Link href="/checkout">
             <Button size="lg" className="bg-white text-secondary-700 hover:bg-neutral-100">
-              Zamów Swoją Kopię
+              Zamów Teraz
             </Button>
           </Link>
           <Button size="lg" variant="outline" className="bg-transparent border-2 border-white hover:bg-white/10">
-            Odkryj Rozszerzenia
+            Dowiedz Się Więcej
           </Button>
         </div>
         

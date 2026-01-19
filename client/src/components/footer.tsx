@@ -2,14 +2,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Facebook, Twitter, Instagram, Youtube, Mail, MapPin, Phone, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#0c102e] text-white pt-24 pb-10 relative">
+    <footer className="bg-[#0f2433] text-white pt-24 pb-10 relative">
       {/* Background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Gold border top */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#f7cb2c]/0 via-[#f7cb2c]/40 to-[#f7cb2c]/0"></div>
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#c9a24d]/0 via-[#c9a24d]/40 to-[#c9a24d]/0"></div>
         
         {/* Subtle texture */}
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]"></div>
@@ -18,7 +19,7 @@ export default function Footer() {
         {[...Array(8)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1 h-1 rounded-full bg-[#f7cb2c]"
+            className="absolute w-1 h-1 rounded-full bg-[#c9a24d]"
             style={{
               top: `${80 + Math.random() * 15}%`,
               left: `${Math.random() * 100}%`,
@@ -50,12 +51,12 @@ export default function Footer() {
               <img 
                 src="https://images.unsplash.com/photo-1606503153255-59d8b2e4739e?ixlib=rb-4.0.3&auto=format&fit=crop&w=50&h=50&q=80" 
                 alt="Logo Gry" 
-                className="w-12 h-12 rounded-full border-2 border-[#f7cb2c]" 
+                className="w-12 h-12 rounded-full border-2 border-[#c9a24d]" 
               />
               <span 
                 className="font-playfair text-2xl font-bold"
                 style={{
-                  background: "linear-gradient(to right, #f7cb2c, #e69211)",
+                  background: "linear-gradient(to right, #c9a24d, #a67c4a)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent"
                 }}
@@ -71,7 +72,7 @@ export default function Footer() {
                 <motion.a 
                   key={index}
                   href="#" 
-                  className="text-[#f7cb2c] hover:text-[#e69211] transition-colors"
+                  className="text-[#c9a24d] hover:text-[#a67c4a] transition-colors"
                   whileHover={{ scale: 1.2, transition: { duration: 0.2 } }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -90,7 +91,7 @@ export default function Footer() {
             <h3 
               className="font-playfair text-xl font-bold mb-8 inline-block"
               style={{
-                background: "linear-gradient(to right, #f7cb2c, #e69211)",
+                background: "linear-gradient(to right, #c9a24d, #a67c4a)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent"
               }}
@@ -99,10 +100,13 @@ export default function Footer() {
             </h3>
             <ul className="space-y-4">
               {[
-                { text: "Strona główna", href: "#" },
-                { text: "Jak grać", href: "#jak-grać" },
-                { text: "O grze", href: "#o-grze" },
-                { text: "Zawartość", href: "#zawartość" },
+                { text: "Strona główna", href: "/" },
+                { text: "Jak grać", href: "/#jak-grać" },
+                { text: "O grze", href: "/#o-grze" },
+                { text: "Zawartość", href: "/#zawartość" },
+                { text: "Ceny", href: "/#ceny" },
+                { text: "Opinie", href: "/#opinie" },
+                { text: "FAQ", href: "/#faq" },
                 { text: "Zamów teraz", href: "/checkout" }
               ].map((item, index) => (
                 <motion.li 
@@ -110,12 +114,20 @@ export default function Footer() {
                   whileHover={{ x: 5 }}
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 >
-                  <a 
-                    href={item.href} 
-                    className="text-white/70 hover:text-[#f7cb2c] transition-colors block"
-                  >
-                    {item.text}
-                  </a>
+                  {item.href.startsWith('/checkout') ? (
+                    <Link href={item.href}>
+                      <a className="text-white/70 hover:text-[#c9a24d] transition-colors block">
+                        {item.text}
+                      </a>
+                    </Link>
+                  ) : (
+                    <a 
+                      href={item.href} 
+                      className="text-white/70 hover:text-[#c9a24d] transition-colors block"
+                    >
+                      {item.text}
+                    </a>
+                  )}
                 </motion.li>
               ))}
             </ul>
@@ -130,7 +142,7 @@ export default function Footer() {
             <h3 
               className="font-playfair text-xl font-bold mb-8 inline-block"
               style={{
-                background: "linear-gradient(to right, #f7cb2c, #e69211)",
+                background: "linear-gradient(to right, #c9a24d, #a67c4a)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent"
               }}
@@ -139,8 +151,8 @@ export default function Footer() {
             </h3>
             <ul className="space-y-6">
               <li className="flex items-start group">
-                <div className="p-2 bg-[#101538] rounded-full mr-4 border border-[#f7cb2c]/30 group-hover:border-[#f7cb2c] transition-all duration-300">
-                  <MapPin className="h-5 w-5 text-[#f7cb2c]" />
+                <div className="p-2 bg-[#0f2433] rounded-full mr-4 border border-[#c9a24d]/30 group-hover:border-[#c9a24d] transition-all duration-300">
+                  <MapPin className="h-5 w-5 text-[#c9a24d]" />
                 </div>
                 <div>
                   <span className="text-white/70 group-hover:text-white/90 transition-colors">
@@ -149,16 +161,16 @@ export default function Footer() {
                 </div>
               </li>
               <li className="flex items-center group">
-                <div className="p-2 bg-[#101538] rounded-full mr-4 border border-[#f7cb2c]/30 group-hover:border-[#f7cb2c] transition-all duration-300">
-                  <Phone className="h-5 w-5 text-[#f7cb2c]" />
+                <div className="p-2 bg-[#0f2433] rounded-full mr-4 border border-[#c9a24d]/30 group-hover:border-[#c9a24d] transition-all duration-300">
+                  <Phone className="h-5 w-5 text-[#c9a24d]" />
                 </div>
                 <span className="text-white/70 group-hover:text-white/90 transition-colors">
                   +48 123 456 789
                 </span>
               </li>
               <li className="flex items-center group">
-                <div className="p-2 bg-[#101538] rounded-full mr-4 border border-[#f7cb2c]/30 group-hover:border-[#f7cb2c] transition-all duration-300">
-                  <Mail className="h-5 w-5 text-[#f7cb2c]" />
+                <div className="p-2 bg-[#0f2433] rounded-full mr-4 border border-[#c9a24d]/30 group-hover:border-[#c9a24d] transition-all duration-300">
+                  <Mail className="h-5 w-5 text-[#c9a24d]" />
                 </div>
                 <span className="text-white/70 group-hover:text-white/90 transition-colors">
                   kontakt@lavirant.pl
@@ -176,7 +188,7 @@ export default function Footer() {
             <h3 
               className="font-playfair text-xl font-bold mb-8 inline-block"
               style={{
-                background: "linear-gradient(to right, #f7cb2c, #e69211)",
+                background: "linear-gradient(to right, #c9a24d, #a67c4a)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent"
               }}
@@ -190,10 +202,10 @@ export default function Footer() {
               <Input 
                 type="email" 
                 placeholder="Twój email" 
-                className="bg-[#101538] text-white placeholder-white/40 rounded-l-md rounded-r-none border border-[#f7cb2c]/30 focus-visible:ring-1 focus-visible:ring-[#f7cb2c] focus-visible:border-[#f7cb2c]"
+                className="bg-[#0f2433] text-white placeholder-white/40 rounded-l-md rounded-r-none border border-[#c9a24d]/30 focus-visible:ring-1 focus-visible:ring-[#c9a24d] focus-visible:border-[#c9a24d]"
               />
               <Button 
-                className="bg-[#f7cb2c] hover:bg-[#e69211] text-[#101538] font-medium rounded-l-none rounded-r-md flex items-center px-4"
+                className="bg-[#c9a24d] hover:bg-[#a67c4a] text-[#0f2433] font-medium rounded-l-none rounded-r-md flex items-center px-4"
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -202,7 +214,7 @@ export default function Footer() {
         </div>
         
         <motion.div 
-          className="border-t border-[#192056] pt-8 mt-8 flex flex-col md:flex-row justify-between items-center"
+          className="border-t border-[#2d4a5e] pt-8 mt-8 flex flex-col md:flex-row justify-between items-center"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -216,7 +228,7 @@ export default function Footer() {
               <motion.a 
                 key={index}
                 href="#" 
-                className="text-white/40 hover:text-[#f7cb2c] text-sm transition-colors"
+                className="text-white/40 hover:text-[#c9a24d] text-sm transition-colors"
                 whileHover={{ y: -2 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
