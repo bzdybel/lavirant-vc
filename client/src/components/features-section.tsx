@@ -13,6 +13,9 @@ import {
   Clock, 
   Heart 
 } from "lucide-react";
+import content from "@/lib/content.json";
+
+const { aboutGame } = content;
 
 export default function FeaturesSection() {
   // Map to match iconName with the appropriate icon component
@@ -46,7 +49,7 @@ export default function FeaturesSection() {
   };
 
   return (
-    <section id="o-grze" className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden">
+    <section id="about-game" className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Gold particles */}
@@ -101,7 +104,7 @@ export default function FeaturesSection() {
               WebkitTextFillColor: "transparent"
             }}
           >
-            O Grze
+            {aboutGame.title}
           </motion.h2>
 
           <div className="max-w-3xl mx-auto space-y-6 text-left">
@@ -111,12 +114,11 @@ export default function FeaturesSection() {
               transition={{ delay: 0.1 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-2xl font-bold text-white mb-3">Lavirant to dynamiczna gra towarzyska, która łączy:</h3>
+              <h3 className="text-2xl font-bold text-white mb-3">{aboutGame.heading}</h3>
               <ul className="space-y-2 text-white/80">
-                <li>• logiczne myślenie,</li>
-                <li>• umiejętność czytania ludzi,</li>
-                <li>• kontrolę emocji,</li>
-                <li>• oraz… perfekcyjne kłamstwo.</li>
+                {aboutGame.list.map((item, idx) => (
+                  <li key={idx}>{`• ${item}`}</li>
+                ))}
               </ul>
             </motion.div>
 
@@ -127,8 +129,7 @@ export default function FeaturesSection() {
               transition={{ delay: 0.2 }}
               viewport={{ once: true }}
             >
-              W każdej rundzie jeden z graczy zostaje Kłamcą – jedyną osobą, która zna prawdziwe odpowiedzi.
-              Pozostali muszą udawać, że je znają, jednocześnie próbując odkryć, kto mówi prawdę, a kto blefuje.
+              {aboutGame.description}
             </motion.p>
 
             <motion.p 
@@ -138,7 +139,7 @@ export default function FeaturesSection() {
               transition={{ delay: 0.3 }}
               viewport={{ once: true }}
             >
-              To gra, w której:
+              {aboutGame.subtitle}
             </motion.p>
 
             <ul className="space-y-2 text-white/80">

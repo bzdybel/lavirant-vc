@@ -1,0 +1,14 @@
+node_modules
+dist
+build
+.next
+coverage
+.env
+.env.local
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+vite.config.ts
+drizzle.config.ts
+tailwind.config.ts
+postcss.config.js

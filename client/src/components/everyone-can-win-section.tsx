@@ -1,22 +1,14 @@
 import { motion } from "framer-motion";
 import { Repeat, MessageCircle } from "lucide-react";
+import content from "@/lib/content.json";
+
+const { everyoneCanWin } = content;
 
 export default function EveryoneCanWinSection() {
-  const features = [
-    {
-      icon: <Repeat className="h-12 w-12 text-[#c9a24d]" />,
-      title: "🔄 Każda rozgrywka jest inna",
-      description: "Losowe pytania z aplikacji oraz zmieniający się Kłamca sprawiają, że nie ma dwóch takich samych partii."
-    },
-    {
-      icon: <MessageCircle className="h-12 w-12 text-[#c9a24d]" />,
-      title: "🗣️ Emocjonująca faza dyskusji",
-      description: "Moment, w którym gracze dyskutują i głosują, to serce gry – napięcie, podejrzenia i nagłe zwroty akcji są gwarantowane."
-    }
-  ];
+  const features = everyoneCanWin.features;
 
   return (
-    <section className="py-16 md:py-24 bg-[#0f2433] text-white relative overflow-hidden">
+    <section className="py-16 md:py-24 bg-[#0f2433] text-white relative overflow-hidden" id="everyone-can-win">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Gold particles */}
@@ -70,15 +62,21 @@ export default function EveryoneCanWinSection() {
               WebkitTextFillColor: "transparent"
             }}
           >
-            Wszyscy Mogą Wygrać
+            {everyoneCanWin.title}
           </motion.h2>
           <p className="text-white/70 max-w-2xl mx-auto mt-6">
-            Różnorodność i emocje w każdej rozgrywce
+            {everyoneCanWin.subtitle}
           </p>
         </motion.div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {features.map((feature, index) => (
+          {features.map((feature, index) => {
+            const iconMap = {
+              "🔄": <Repeat className="h-12 w-12 text-[#c9a24d]" />,
+              "🗣️": <MessageCircle className="h-12 w-12 text-[#c9a24d]" />
+            };
+            const firstEmoji = feature.title.split(' ')[0];
+            return (
             <motion.div 
               key={index}
               className="bg-[#2d4a5e]/60 backdrop-blur-sm border border-[#c9a24d]/20 rounded-xl p-8 transition-all hover:border-[#c9a24d]/50 hover:-translate-y-2"
@@ -89,7 +87,7 @@ export default function EveryoneCanWinSection() {
             >
               <div className="flex items-start gap-6">
                 <div className="flex-shrink-0 flex items-center justify-center w-16 h-16 bg-[#0f2433] rounded-full border border-[#c9a24d]/30">
-                  {feature.icon}
+                  {iconMap[firstEmoji] || <MessageCircle className="h-12 w-12 text-[#c9a24d]" />}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-playfair text-xl font-bold text-white mb-3">
@@ -101,7 +99,8 @@ export default function EveryoneCanWinSection() {
                 </div>
               </div>
             </motion.div>
-          ))}
+          );
+          })}
         </div>
       </div>
     </section>

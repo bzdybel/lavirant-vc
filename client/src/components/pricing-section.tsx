@@ -3,10 +3,13 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { productData } from "@/lib/product-data";
+import content from "@/lib/content.json";
+
+const { pricing } = content;
 
 export default function PricingSection() {
   return (
-    <section id="ceny" className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden">
+    <section id="pricing" className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Gold particles */}
@@ -114,7 +117,7 @@ export default function PricingSection() {
           transition={{ duration: 0.6, delay: 0.3 }}
           viewport={{ once: true }}
         >
-          <p className="mb-6">Darmowa dostawa przy zamówieniach powyżej 200 zł. Dostępna wysyłka międzynarodowa.</p>
+          <p className="mb-6">{pricing.note}</p>
           <div className="flex justify-center mt-6 space-x-6 flex-wrap gap-4">
             <motion.img 
               src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" 

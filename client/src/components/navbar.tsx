@@ -96,10 +96,13 @@ export default function Navbar() {
           transition={{ delay: 0.3, duration: 0.5 }}
         >
           {[
-            { label: "Jak Grać", id: "jak-wyglada-rozgrywka" },
-            { label: "Zawartość", id: "zawartość" },
-            { label: "Dla Kogo", id: "dla-kogo" },
-            { label: "Opinie", id: "opinie" },
+            { label: "Jak Grać", id: "how-to-play" },
+            { label: "O Grze", id: "about-game" },
+            { label: "Prawdziwa Dedukcja", id: "true-deduction" },
+            { label: "Wszyscy Mogą Wygrać", id: "everyone-can-win" },
+            { label: "Zawartość", id: "contents" },
+            { label: "Dla Kogo", id: "for-whom" },
+            { label: "Opinie", id: "reviews" },
             { label: "FAQ", id: "faq" }
           ].map((item) => {
             const sectionId = item.id;
@@ -181,13 +184,13 @@ export default function Navbar() {
           >
             <div className="container mx-auto px-6 py-4 flex flex-col space-y-4">
               {[
-                { label: "Jak Grać", id: "jak-wyglada-rozgrywka" },
-                { label: "O Grze", id: "o-grze" },
-                { label: "Prawdziwa Dedukcja", id: "prawdziwa-dedukcja" },
-                { label: "Wszyscy Mogą Wygrać", id: "wszyscy-moga-wygrac" },
-                { label: "Zawartość", id: "zawartość" },
-                { label: "Dla Kogo", id: "dla-kogo" },
-                { label: "Opinie", id: "opinie" },
+                { label: "Jak Grać", id: "how-to-play" },
+                { label: "O Grze", id: "about-game" },
+                { label: "Prawdziwa Dedukcja", id: "true-deduction" },
+                { label: "Wszyscy Mogą Wygrać", id: "everyone-can-win" },
+                { label: "Zawartość", id: "contents" },
+                { label: "Dla Kogo", id: "for-whom" },
+                { label: "Opinie", id: "reviews" },
                 { label: "FAQ", id: "faq" }
               ].map((item, index) => {
                 const sectionId = item.id;

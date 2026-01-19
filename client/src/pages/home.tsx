@@ -9,8 +9,7 @@ import ForWhomSection from "@/components/for-whom-section";
 import EmotionsSection from "@/components/emotions-section";
 import PricingSection from "@/components/pricing-section";
 import TestimonialsSection from "@/components/testimonials";
-import FaqSection from "@/components/faq-section";
-import CtaSection from "@/components/cta-section";
+  import FaqSection from "@/components/faq-section";
 import Footer from "@/components/footer";
 
 export default function Home() {
@@ -20,22 +19,31 @@ export default function Home() {
       <section id="hero">
         <HeroSection />
       </section>
-      <section id="jak-wyglada-rozgrywka">
+      <section id="how-to-play">
         <HowToPlay />
       </section>
-      <section id="zawartość">
+      <section id="about-game">
+        <FeaturesSection />
+      </section>
+      <section id="true-deduction">
+        <GuessLavrantSection />
+      </section>
+      <section id="everyone-can-win">
+        <EveryoneCanWinSection />
+      </section>
+      <section id="contents">
         <ProductShowcase />
       </section>
-      <section id="dla-kogo">
+      <section id="for-whom">
         <ForWhomSection />
       </section>
-      <section id="emocje">
+      <section id="emotions">
         <EmotionsSection />
       </section>
-      <section id="ceny">
+      <section id="pricing">
         <PricingSection />
       </section>
-      <section id="opinie">
+      <section id="reviews">
         <TestimonialsSection />
       </section>
       <section id="faq">

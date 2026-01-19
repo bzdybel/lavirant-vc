@@ -1,9 +1,12 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Package, Users, MessageSquare, Vote, Clock, Award, ChevronRight } from "lucide-react";
+import content from "@/lib/content.json";
+
+const { howToPlay } = content;
 
 export default function HowToPlay() {
   return (
-    <section id="jak-wyglada-rozgrywka" className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden">
+    <section id="how-to-play" className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Gold particles */}
@@ -57,7 +60,7 @@ export default function HowToPlay() {
               WebkitTextFillColor: "transparent"
             }}
           >
-            Jak Wygląda Rozgrywka
+            {howToPlay.title}
           </motion.h2>
           <motion.p 
             className="text-xl text-white/80 max-w-3xl mx-auto"
@@ -66,51 +69,14 @@ export default function HowToPlay() {
             transition={{ duration: 0.5, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            Proste zasady, emocjonujące momenty
+            {howToPlay.subtitle}
           </motion.p>
         </motion.div>
         
         {/* Game flow steps */}
         <div className="max-w-3xl mx-auto">
           <ul className="space-y-8">
-            {[
-              {
-                number: "1",
-                title: "Każdy gracz odpowiada na pytania – w tajemnicy.",
-                description: "Prowadzący losuje pytania z aplikacji. Wszyscy zapisują odpowiedzi na swoich tablicach. Tajemnica jest kluczowa!",
-                icon: <MessageSquare className="h-6 w-6 text-[#c9a24d]" />
-              },
-              {
-                number: "2",
-                title: "Jedna osoba zna prawdziwe odpowiedzi i próbuje się nie zdradzić.",
-                description: "To jest Kłamca – gracz z tablicą LAVIRANT. Pozostali muszą udawać, że znają prawdę, jednocześnie próbując odkryć, kto kłamie.",
-                icon: <Users className="h-6 w-6 text-[#c9a24d]" />
-              },
-              {
-                number: "3",
-                title: "Po rundzie rozpoczyna się dyskusja i głosowanie.",
-                description: "Gracze debatują, analizują odpowiedzi i próbują ustalić tożsamość Kłamcy. Napięcie rośnie!",
-                icon: <Vote className="h-6 w-6 text-[#c9a24d]" />
-              },
-              {
-                number: "4",
-                title: "Jeśli gracze wskażą Kłamcę – ponosi konsekwencje.",
-                description: "Kłamca wraca na start lub losuje kartę kary. Gracze, którzy głosowali prawidłowo, mogą otrzymać nagrodę.",
-                icon: <Award className="h-6 w-6 text-[#c9a24d]" />
-              },
-              {
-                number: "5",
-                title: "Jeśli nie – Kłamca przejmuje kontrolę nad rozgrywką.",
-                description: "Kłamca cofina pozostałych graczy o wynik kostki. Niewinni gracze, którzy zostali oskarżeni, otrzymują nagrodę.",
-                icon: <ArrowRight className="h-6 w-6 text-[#c9a24d]" />
-              },
-              {
-                number: "6",
-                title: "Gra toczy się do momentu, aż ktoś pierwszy dotrze do mety.",
-                description: "Lub skończy się pytania – wtedy wygrywa osoba zajmująca najdalsze pole na planszy!",
-                icon: <ChevronRight className="h-6 w-6 text-[#c9a24d]" />
-              }
-            ].map((step, i) => (
+            {howToPlay.steps.map((step, i) => (
               <motion.li 
                 key={i}
                 initial={{ opacity: 0, x: -20 }}

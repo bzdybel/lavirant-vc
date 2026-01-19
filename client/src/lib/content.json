@@ -1,0 +1,175 @@
+{
+  "hero": {
+    "mainTitle": "Lavirant",
+    "tagline": "Lavirant – gra, w której prawda i kłamstwo mają tę samą twarz",
+    "description": "Jedna osoba kłamie. Wszyscy odpowiadają na te same pytania. Każdy wygląda na winnego.\n\nCzy potrafisz odkryć, kto gra przeciwko reszcie – zanim dotrze do mety?\n\nLavirant to wyjątkowa gra planszowa oparta na dedukcji, psychologii i blefie, w której nikt nie jest tym, kim się wydaje.",
+    "badges": {
+      "players": "5-8 graczy",
+      "time": "Około 45 minut",
+      "age": "Od 13 lat"
+    },
+    "buttons": {
+      "primary": "Zamów teraz",
+      "secondary": "Zobacz film"
+    }
+  },
+  "aboutGame": {
+    "title": "O Grze",
+    "heading": "Lavirant to dynamiczna gra towarzyska, która łączy:",
+    "list": [
+      "logiczne myślenie,",
+      "umiejętność czytania ludzi,",
+      "kontrolę emocji,",
+      "oraz… perfekcyjne kłamstwo."
+    ],
+    "description": "W każdej rundzie jeden z graczy zostaje Kłamcą – jedyną osobą, która zna prawdziwe odpowiedzi. Pozostali muszą udawać, że je znają, jednocześnie próbując odkryć, kto mówi prawdę, a kto blefuje.",
+    "subtitle": "To gra, w której:"
+  },
+  "howToPlay": {
+    "title": "Jak Wygląda Rozgrywka",
+    "subtitle": "Proste zasady, emocjonujące momenty",
+    "steps": [
+      {
+        "number": "1",
+        "title": "Każdy gracz odpowiada na pytania – w tajemnicy.",
+        "description": "Prowadzący losuje pytania z aplikacji. Wszyscy zapisują odpowiedzi na swoich tablicach. Tajemnica jest kluczowa!"
+      },
+      {
+        "number": "2",
+        "title": "Jedna osoba zna prawdziwe odpowiedzi i próbuje się nie zdradzić.",
+        "description": "To jest Kłamca – gracz z tablicą LAVIRANT. Pozostali muszą udawać, że znają prawdę, jednocześnie próbując odkryć, kto kłamie."
+      },
+      {
+        "number": "3",
+        "title": "Po rundzie rozpoczyna się dyskusja i głosowanie.",
+        "description": "Gracze debatują, analizują odpowiedzi i próbują ustalić tożsamość Kłamcy. Napięcie rośnie!"
+      },
+      {
+        "number": "4",
+        "title": "Jeśli gracze wskażą Kłamcę – ponosi konsekwencje.",
+        "description": "Kłamca wraca na start lub losuje kartę kary. Gracze, którzy głosowali prawidłowo, mogą otrzymać nagrodę."
+      },
+      {
+        "number": "5",
+        "title": "Jeśli nie – Kłamca przejmuje kontrolę nad rozgrywką.",
+        "description": "Kłamca cofina pozostałych graczy o wynik kostki. Niewinni gracze, którzy zostali oskarżeni, otrzymują nagrodę."
+      },
+      {
+        "number": "6",
+        "title": "Gra toczy się do momentu, aż ktoś pierwszy dotrze do mety.",
+        "description": "Lub skończy się pytania – wtedy wygrywa osoba zajmująca najdalsze pole na planszy!"
+      }
+    ]
+  },
+  "trueDeduction": {
+    "title": "Prawdziwa Dedukcja, Nie Zgadywanie",
+    "features": [
+      {
+        "title": "🧠 Prawdziwa dedukcja, nie zgadywanie",
+        "description": "Każdy gracz odpowiada na te same pytania, zapisując odpowiedzi w tajemnicy. Dopiero później zaczyna się analiza, rozmowa i głosowanie."
+      },
+      {
+        "title": "🎭 Blef, manipulacja i psychologia",
+        "description": "Nie wygrywa ten, kto wie najwięcej, ale ten, kto najlepiej potrafi przekonać innych."
+      }
+    ]
+  },
+  "everyoneCanWin": {
+    "title": "Wszyscy Mogą Wygrać",
+    "subtitle": "Różnorodność i emocje w każdej rozgrywce",
+    "features": [
+      {
+        "title": "🔄 Każda rozgrywka jest inna",
+        "description": "Losowe pytania z aplikacji oraz zmieniający się Kłamca sprawiają, że nie ma dwóch takich samych partii."
+      },
+      {
+        "title": "🗣️ Emocjonująca faza dyskusji",
+        "description": "Moment, w którym gracze dyskutują i głosują, to serce gry – napięcie, podejrzenia i nagłe zwroty akcji są gwarantowane."
+      }
+    ]
+  },
+  "productShowcase": {
+    "title": "Co Znajdziesz w Pudełku",
+    "subtitle": "Lavirant zawiera wszystko, czego potrzebujesz do niesamowitego doświadczenia grania towarzyskiego.",
+    "features": [
+      {
+        "title": "Planszę do gry",
+        "description": "Dwustronna plansza z polami ruchu i efektami gry"
+      },
+      {
+        "title": "9 pionków (w tym zapasowy)",
+        "description": "Różnokolorowe żetony do gry dla wszystkich graczy"
+      },
+      {
+        "title": "8 tablic do zapisywania odpowiedzi",
+        "description": "Eleganckie tablice dla każdego gracza (jedna zawiera LAVIRANT)"
+      },
+      {
+        "title": "8 markerów z gąbką",
+        "description": "Wygodne markery do pisania odpowiedzi"
+      },
+      {
+        "title": "Dostęp do aplikacji Lavirant",
+        "description": "Losowanie pytań, zarządzanie grą i reguły w aplikacji"
+      },
+      {
+        "title": "Wszystko, czego potrzebujesz",
+        "description": "Kompletny zestaw do natychmiastowej rozgrywki"
+      }
+    ]
+  },
+  "emotions": {
+    "title": "Emocje, Które Zostają na Dłużej",
+    "subtitle": "Po rozgrywce gracze wracają do domu z czymś więcej niż wspomnieniami",
+    "points": [
+      {
+        "title": "Analizują swoje zachowania",
+        "description": "Gracze zastanawiają się nad własnymi decyzjami i tym, jak ich postrzegali inni podczas gry."
+      },
+      {
+        "title": "Wracają do \"tego jednego spojrzenia\"",
+        "description": "Długo po grze dyskutują o kluczowych momentach, mikromimice i gestach, które mogły zdradzić kłamcę."
+      },
+      {
+        "title": "Zastanawiają się, kto kłamał najlepiej",
+        "description": "To gra, o której rozmawia się jeszcze długo po zakończeniu partii. Każdy chce poznać sekrety innych."
+      }
+    ],
+    "quote": "To gra, która nie kończy się po ostatniej rundzie – ona trwa w rozmowach, wspomnieniach i śmiechu."
+  },
+  "forWhom": {
+    "title": "Dla Kogo Jest Lavirant?",
+    "subtitle": "Gra dla każdego, kto szuka czegos więcej niż zwykłej planszówki",
+    "items": [
+      "Dla fanów gier typu Werewolf / Mafia / Secret Hitler, ale szukających czegoś świeżego",
+      "Dla grup znajomych, które lubią dyskusje i psychologiczne zagrywki",
+      "Na imprezy, wieczory planszówkowe, integracje",
+      "Dla graczy 13+, którzy chcą czegoś więcej niż klasycznej planszówki"
+    ]
+  },
+  "cta": {
+    "heading": "🎲 Gotowy, by sprawdzić, komu naprawdę możesz ufać?",
+    "description": "Dodaj Lavirant do koszyka i przekonaj się, jak cienka jest granica między prawdą a kłamstwem.",
+    "buttons": {
+      "primary": "Zamów Teraz",
+      "secondary": "Dowiedz Się Więcej"
+    },
+    "benefits": [
+      {
+        "icon": "Truck",
+        "text": "Darmowa dostawa 3-5 dni"
+      },
+      {
+        "icon": "ShieldCheck",
+        "text": "30-dniowa gwarancja zwrotu pieniędzy"
+      },
+      {
+        "icon": "Lock",
+        "text": "Bezpieczna płatność"
+      }
+    ]
+  },
+  "pricing": {
+    "note": "Darmowa dostawa przy zamówieniach powyżej 200 zł. Dostępna wysyłka międzynarodowa."
+  }
+}

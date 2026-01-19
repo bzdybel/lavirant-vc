@@ -1,5 +1,8 @@
 import { motion } from "framer-motion";
 import ImageGallery from "@/components/image-gallery";
+import content from "@/lib/content.json";
+
+const { productShowcase } = content;
 
 export default function ProductShowcase() {
   // Images for the gallery
@@ -10,41 +13,10 @@ export default function ProductShowcase() {
     "https://images.unsplash.com/photo-1637425087238-14862006e2d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80"
   ];
 
-  const features = [
-    {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>,
-      title: "Planszę do gry",
-      description: "Dwustronna plansza z polami ruchu i efektami gry"
-    },
-    {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>,
-      title: "9 pionków (w tym zapasowy)",
-      description: "Różnokolorowe żetony do gry dla wszystkich graczy"
-    },
-    {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>,
-      title: "8 tablic do zapisywania odpowiedzi",
-      description: "Eleganckie tablice dla każdego gracza (jedna zawiera LAVIRANT)"
-    },
-    {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>,
-      title: "8 markerów z gąbką",
-      description: "Wygodne markery do pisania odpowiedzi"
-    },
-    {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>,
-      title: "Dostęp do aplikacji Lavirant",
-      description: "Losowanie pytań, zarządzanie grą i reguły w aplikacji"
-    },
-    {
-      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>,
-      title: "Wszystko, czego potrzebujesz",
-      description: "Kompletny zestaw do natychmiastowej rozgrywki"
-    }
-  ];
+  const features = productShowcase.features;
 
   return (
-    <section id="zawartość" className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden">
+    <section id="contents" className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Gold particles */}
@@ -98,10 +70,10 @@ export default function ProductShowcase() {
               WebkitTextFillColor: "transparent"
             }}
           >
-            Co Znajdziesz w Pudełku
+            {productShowcase.title}
           </motion.h2>
           <p className="text-white/70 max-w-2xl mx-auto mt-6">
-            Lavirant zawiera wszystko, czego potrzebujesz do niesamowitego doświadczenia grania towarzyskiego.
+            {productShowcase.subtitle}
           </p>
         </motion.div>
         

@@ -2,6 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { Users, Clock, ArrowRight, Award, MessageCircle } from "lucide-react";
+import React from "react";
+import content from "@/lib/content.json";
+
+const { hero } = content;
 
 export default function HeroSection() {
   return (
@@ -60,7 +64,7 @@ export default function HeroSection() {
                   WebkitTextFillColor: "transparent"
                 }}
               >
-                Lavirant
+                {hero.mainTitle}
               </motion.span>
             </h1>
             
@@ -70,10 +74,10 @@ export default function HeroSection() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.6 }}
             >
-              Lavirant – gra, w której prawda i kłamstwo mają tę samą twarz<br /><br />
-              Jedna osoba kłamie. Wszyscy odpowiadają na te same pytania. Każdy wygląda na winnego.<br /><br />
-              Czy potrafisz odkryć, kto gra przeciwko reszcie – zanim dotrze do mety?<br /><br />
-              Lavirant to wyjątkowa gra planszowa oparta na dedukcji, psychologii i blefie, w której nikt nie jest tym, kim się wydaje.
+              {hero.tagline}<br /><br />
+              {hero.description.split('\n\n').map((paragraph, idx) => (
+                <React.Fragment key={idx}><span>{paragraph}</span><br /><br /></React.Fragment>
+              ))}
             </motion.p>
             
             <motion.div 
@@ -84,15 +88,15 @@ export default function HeroSection() {
             >
               <div className="flex items-center bg-[#2d4a5e]/60 px-5 py-3 rounded-full border border-[#c9a24d]/20">
                 <Users className="mr-2 h-5 w-5 text-[#c9a24d]" />
-                <span className="text-white">5-8 graczy</span>
+                <span className="text-white">{hero.badges.players}</span>
               </div>
               <div className="flex items-center bg-[#2d4a5e]/60 px-5 py-3 rounded-full border border-[#c9a24d]/20">
                 <Clock className="mr-2 h-5 w-5 text-[#c9a24d]" />
-                <span className="text-white">Około 45 minut</span>
+                <span className="text-white">{hero.badges.time}</span>
               </div>
               <div className="flex items-center bg-[#2d4a5e]/60 px-5 py-3 rounded-full border border-[#c9a24d]/20">
                 <Award className="mr-2 h-5 w-5 text-[#c9a24d]" />
-                <span className="text-white">Od 13 lat</span>
+                <span className="text-white">{hero.badges.age}</span>
               </div>
             </motion.div>
             
@@ -107,7 +111,7 @@ export default function HeroSection() {
                   className="bg-[#c9a24d] hover:bg-[#a67c4a] text-[#0f2433] font-bold px-8 py-6 h-auto rounded-full relative overflow-hidden group"
                 >
                   <span className="relative z-10 flex items-center">
-                    <span className="mr-2">Zamów teraz</span>
+                    <span className="mr-2">{hero.buttons.primary}</span>
                     <ArrowRight className="h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
                   </span>
                   <span className="absolute inset-0 w-full h-full bg-white/20 transform -translate-x-full skew-x-12 group-hover:translate-x-0 transition-transform duration-700 ease-out"></span>
@@ -117,7 +121,7 @@ export default function HeroSection() {
                 variant="outline" 
                 className="bg-transparent border-2 border-[#c9a24d] text-[#c9a24d] hover:bg-[#c9a24d]/10 px-8 py-6 h-auto rounded-full"
               >
-                <span className="mr-2">Zobacz film</span>
+                <span className="mr-2">{hero.buttons.secondary}</span>
                 <svg 
                   xmlns="http://www.w3.org/2000/svg"
                   width="20" 

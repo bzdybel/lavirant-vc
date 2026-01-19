@@ -1,9 +1,12 @@
 import { motion } from "framer-motion";
 import { CheckCircle } from "lucide-react";
+import content from "@/lib/content.json";
+
+const { forWhom } = content;
 
 export default function ForWhomSection() {
   return (
-    <section className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden">
+    <section className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden" id="for-whom">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Gold particles */}
@@ -57,7 +60,7 @@ export default function ForWhomSection() {
               WebkitTextFillColor: "transparent"
             }}
           >
-            Dla Kogo Jest Lavirant?
+            {forWhom.title}
           </motion.h2>
           <motion.p 
             className="text-xl text-white/80 max-w-3xl mx-auto"
@@ -66,18 +69,13 @@ export default function ForWhomSection() {
             transition={{ duration: 0.5, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            Gra dla każdego, kto szuka czegos więcej niż zwykłej planszówki
+            {forWhom.subtitle}
           </motion.p>
         </motion.div>
 
         <div className="max-w-3xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              "Dla fanów gier typu Werewolf / Mafia / Secret Hitler, ale szukających czegoś świeżego",
-              "Dla grup znajomych, które lubią dyskusje i psychologiczne zagrywki",
-              "Na imprezy, wieczory planszówkowe, integracje",
-              "Dla graczy 13+, którzy chcą czegoś więcej niż klasycznej planszówki"
-            ].map((item, index) => (
+            {forWhom.items.map((item, index) => (
               <motion.div 
                 key={index}
                 className="flex items-start p-6 bg-[#2d4a5e]/40 backdrop-blur-sm rounded-xl border border-[#c9a24d]/20 hover:border-[#c9a24d]/40 transition-all"
