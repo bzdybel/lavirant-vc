@@ -93,13 +93,9 @@ export default function Navbar() {
         >
           {[
             { label: "Jak Grać", id: "how-to-play" },
-            { label: "O Grze", id: "about-game" },
-            { label: "Prawdziwa Dedukcja", id: "true-deduction" },
-            { label: "Wszyscy Mogą Wygrać", id: "everyone-can-win" },
             { label: "Zawartość", id: "contents" },
-            { label: "Dla Kogo", id: "for-whom" },
-            { label: "Opinie", id: "reviews" },
-            { label: "FAQ", id: "faq" }
+            { label: "Cennik", id: "pricing" },
+            { label: "Opinie", id: "reviews" }
           ].map((item) => {
             const sectionId = item.id;
             return (
@@ -181,13 +177,9 @@ export default function Navbar() {
             <div className="container mx-auto px-6 py-4 flex flex-col space-y-4">
               {[
                 { label: "Jak Grać", id: "how-to-play" },
-                { label: "O Grze", id: "about-game" },
-                { label: "Prawdziwa Dedukcja", id: "true-deduction" },
-                { label: "Wszyscy Mogą Wygrać", id: "everyone-can-win" },
                 { label: "Zawartość", id: "contents" },
-                { label: "Dla Kogo", id: "for-whom" },
-                { label: "Opinie", id: "reviews" },
-                { label: "FAQ", id: "faq" }
+                { label: "Cennik", id: "pricing" },
+                { label: "Opinie", id: "reviews" }
               ].map((item, index) => {
                 const sectionId = item.id;
                 return (
