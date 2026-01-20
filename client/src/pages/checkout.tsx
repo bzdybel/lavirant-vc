@@ -11,14 +11,12 @@ import { ChevronLeft, Check, ShieldCheck, TruckIcon, CreditCard } from "lucide-r
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 
-// Make sure to call `loadStripe` outside of a component's render to avoid
-// recreating the `Stripe` object on every render.
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
   console.warn('Missing Stripe public key. Checkout will not work.');
 }
 
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY) 
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
   : null;
 
 const CheckoutForm = ({ amount, productName }: { amount: number, productName: string }) => {
@@ -57,15 +55,14 @@ const CheckoutForm = ({ amount, productName }: { amount: number, productName: st
         title: "Payment Successful",
         description: "Thank you for your purchase!",
       });
-      
-      // Create order record
+
       try {
         await apiRequest("POST", "/api/orders", {
           productId: 1, // Assuming we have product IDs
           quantity: 1,
           paymentIntentId: paymentIntent.id
         });
-        
+
         setTimeout(() => navigate('/'), 2000);
       } catch (err) {
         console.error("Failed to create order:", err);
@@ -76,7 +73,7 @@ const CheckoutForm = ({ amount, productName }: { amount: number, productName: st
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <PaymentElement />
-      
+
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Subtotal</span>
@@ -92,15 +89,15 @@ const CheckoutForm = ({ amount, productName }: { amount: number, productName: st
           <span>${amount.toFixed(2)}</span>
         </div>
       </div>
-      
-      <Button 
-        type="submit" 
-        disabled={!stripe || isProcessing} 
+
+      <Button
+        type="submit"
+        disabled={!stripe || isProcessing}
         className="w-full bg-primary-900 hover:bg-primary-700"
       >
         {isProcessing ? "Processing..." : `Pay $${amount.toFixed(2)}`}
       </Button>
-      
+
       <div className="flex flex-col space-y-2 mt-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <ShieldCheck className="h-4 w-4" />
@@ -125,7 +122,6 @@ export default function Checkout() {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    // Create PaymentIntent as soon as the page loads
     if (stripePromise) {
       apiRequest("POST", "/api/create-payment-intent", { amount: productInfo.price })
         .then((res) => res.json())
@@ -164,9 +160,9 @@ export default function Checkout() {
     <div className="min-h-screen">
       <Navbar />
       <div className="container max-w-3xl mx-auto px-4 py-12">
-        <Button 
-          variant="ghost" 
-          className="mb-6" 
+        <Button
+          variant="ghost"
+          className="mb-6"
           onClick={() => navigate('/')}
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
@@ -182,8 +178,8 @@ export default function Checkout() {
             <div className="flex flex-col lg:flex-row gap-6 mb-8">
               <div className="flex gap-4 items-center">
                 <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
-                  <img 
-                    src={productInfo.image} 
+                  <img
+                    src={productInfo.image}
                     alt={productInfo.name}
                     className="h-full w-full object-cover object-center"
                   />

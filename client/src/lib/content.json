@@ -11,19 +11,76 @@
     "buttons": {
       "primary": "Zamów teraz",
       "secondary": "Zobacz film"
-    }
+    },
+    "sections": [
+      {
+        "id": "true-deduction",
+        "title": "Prawdziwa dedukcja, nie zgadywanie",
+        "description": "Każdy gracz odpowiada na te same pytania, zapisując odpowiedzi w tajemnicy. Dopiero później zaczyna się analiza, rozmowa i głosowanie.",
+        "imageSrc": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
+        "imageAlt": "Gra planszowa Lavirant",
+        "imageBadge": "Nowość 2025!",
+        "reverse": false,
+        "badges": [
+          { "id": "dedukcja", "icon": "MessageCircle", "text": "Gra dedukcji" },
+          { "id": "zabawa", "icon": "Award", "text": "Pełna zabawy" }
+        ]
+      },
+      {
+        "id": "psychologia",
+        "title": "Blef, manipulacja i psychologia",
+        "description": "Nie wygrywa ten, kto wie najwięcej, ale ten, kto najlepiej potrafi przekonać innych.",
+        "imageSrc": "https://images.unsplash.com/photo-1582921017967-79d1cb6702ee?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
+        "imageAlt": "Gracze przy stole",
+        "reverse": true,
+        "badges": [
+          { "id": "wielostronne", "icon": "Users", "text": "Wielostronne wygrane" },
+          { "id": "szansa", "icon": "Award", "text": "Każdy ma szansę" }
+        ]
+      },
+      {
+        "id": "rozgrywka-inna",
+        "title": "Każda rozgrywka jest inna",
+        "description": "Losowe pytania z aplikacji oraz zmieniający się Kłamca sprawiają, że nie ma dwóch takich samych partii.",
+        "imageSrc": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
+        "imageAlt": "Gra planszowa Lavirant",
+        "imageBadge": "Nowość 2025!",
+        "reverse": false,
+        "badges": [
+          { "id": "dedukcja2", "icon": "MessageCircle", "text": "Gra dedukcji" },
+          { "id": "zabawa2", "icon": "Award", "text": "Pełna zabawy" }
+        ]
+      },
+      {
+        "id": "faza-dyskusji",
+        "title": "Emocjonująca faza dyskusji",
+        "description": "Moment, w którym gracze dyskutują i głosują, to serce gry – napięcie, podejrzenia i nagłe zwroty akcji są gwarantowane.",
+        "imageSrc": "https://images.unsplash.com/photo-1582921017967-79d1cb6702ee?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
+        "imageAlt": "Gracze przy stole",
+        "reverse": true,
+        "badges": [
+          { "id": "wielostronne2", "icon": "Users", "text": "Wielostronne wygrane" },
+          { "id": "szansa2", "icon": "Award", "text": "Każdy ma szansę" }
+        ]
+      }
+    ]
   },
   "aboutGame": {
     "title": "O Grze",
     "heading": "Lavirant to dynamiczna gra towarzyska, która łączy:",
     "list": [
-      "logiczne myślenie,",
-      "umiejętność czytania ludzi,",
-      "kontrolę emocji,",
-      "oraz… perfekcyjne kłamstwo."
+      { "id": "logical-thinking", "text": "logiczne myślenie," },
+      { "id": "reading-people", "text": "umiejętność czytania ludzi," },
+      { "id": "emotion-control", "text": "kontrolę emocji," },
+      { "id": "perfect-lie", "text": "oraz… perfekcyjne kłamstwo." }
     ],
     "description": "W każdej rundzie jeden z graczy zostaje Kłamcą – jedyną osobą, która zna prawdziwe odpowiedzi. Pozostali muszą udawać, że je znają, jednocześnie próbując odkryć, kto mówi prawdę, a kto blefuje.",
-    "subtitle": "To gra, w której:"
+    "subtitle": "To gra, w której:",
+    "insights": [
+      { "id": "correct-answer-risky", "text": "poprawna odpowiedź nie zawsze jest bezpieczna," },
+      { "id": "confidence-trap", "text": "pewność siebie bywa pułapką," },
+      { "id": "silence-speaks", "text": "a cisza przy stole mówi więcej niż słowa." }
+    ]
   },
   "howToPlay": {
     "title": "Jak Wygląda Rozgrywka",
@@ -63,12 +120,15 @@
   },
   "trueDeduction": {
     "title": "Prawdziwa Dedukcja, Nie Zgadywanie",
+    "description": "Każdy gracz odpowiada na te same pytania, zapisując odpowiedzi w tajemnicy. Dopiero później zaczyna się analiza, rozmowa i głosowanie.",
     "features": [
       {
+        "id": "true-deduction-feat",
         "title": "🧠 Prawdziwa dedukcja, nie zgadywanie",
         "description": "Każdy gracz odpowiada na te same pytania, zapisując odpowiedzi w tajemnicy. Dopiero później zaczyna się analiza, rozmowa i głosowanie."
       },
       {
+        "id": "bluff-psychology",
         "title": "🎭 Blef, manipulacja i psychologia",
         "description": "Nie wygrywa ten, kto wie najwięcej, ale ten, kto najlepiej potrafi przekonać innych."
       }
@@ -79,10 +139,12 @@
     "subtitle": "Różnorodność i emocje w każdej rozgrywce",
     "features": [
       {
+        "id": "unique-gameplay",
         "title": "🔄 Każda rozgrywka jest inna",
         "description": "Losowe pytania z aplikacji oraz zmieniający się Kłamca sprawiają, że nie ma dwóch takich samych partii."
       },
       {
+        "id": "exciting-discussion",
         "title": "🗣️ Emocjonująca faza dyskusji",
         "description": "Moment, w którym gracze dyskutują i głosują, to serce gry – napięcie, podejrzenia i nagłe zwroty akcji są gwarantowane."
       }
@@ -123,14 +185,17 @@
     "subtitle": "Po rozgrywce gracze wracają do domu z czymś więcej niż wspomnieniami",
     "points": [
       {
+        "id": "analyze-behavior",
         "title": "Analizują swoje zachowania",
         "description": "Gracze zastanawiają się nad własnymi decyzjami i tym, jak ich postrzegali inni podczas gry."
       },
       {
+        "id": "one-glance",
         "title": "Wracają do \"tego jednego spojrzenia\"",
         "description": "Długo po grze dyskutują o kluczowych momentach, mikromimice i gestach, które mogły zdradzić kłamcę."
       },
       {
+        "id": "best-liar",
         "title": "Zastanawiają się, kto kłamał najlepiej",
         "description": "To gra, o której rozmawia się jeszcze długo po zakończeniu partii. Każdy chce poznać sekrety innych."
       }
@@ -170,6 +235,99 @@
     ]
   },
   "pricing": {
-    "note": "Darmowa dostawa przy zamówieniach powyżej 200 zł. Dostępna wysyłka międzynarodowa."
+    "title": "Cennik",
+    "subtitle": "Pojedyncza cena za pełną przygodę",
+    "note": "Darmowa dostawa przy zamówieniach powyżej 200 zł. Dostępna wysyłka międzynarodowa.",
+    "badge": "Najpopularniejsza",
+    "button": "Dodaj do Koszyka",
+    "products": [
+      {
+        "id": "board-game",
+        "name": "Gra planszowa Lavirant",
+        "tagline": "",
+        "price": 299.99,
+        "popular": true,
+        "features": [
+          { "id": "board", "text": "Plansza gry", "included": true },
+          { "id": "tokens", "text": "8 pionków do gry", "included": true },
+          { "id": "boards", "text": "8 tablic odpowiedzi", "included": true },
+          { "id": "markers", "text": "8 markerów z gąbkami", "included": true },
+          { "id": "dice", "text": "Kostkę do gry", "included": true },
+          { "id": "mobile-app", "text": "Dostęp do aplikacji mobilnej", "included": true },
+          { "id": "manual", "text": "Instrukcja i przewodnik", "included": true }
+        ]
+      }
+    ],
+    "payments": [
+      { "id": "visa", "alt": "Visa", "src": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" },
+      { "id": "mastercard", "alt": "Mastercard", "src": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" },
+      { "id": "paypal", "alt": "PayPal", "src": "https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" },
+      { "id": "stripe", "alt": "Stripe", "src": "https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" }
+    ]
+  },
+  "testimonials": {
+    "title": "Co Mówią Gracze",
+    "subtitle": "Nie wierz nam na słowo. Posłuchaj opinii naszej społeczności miłośników gier i dedukcji.",
+    "reviewCount": 156,
+    "viewAllText": "Przeczytaj wszystkie",
+    "reviews": [
+      {
+        "id": "review-karol",
+        "name": "Karol P.",
+        "title": "Fan Gier Społecznych",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80&q=80",
+        "rating": 5,
+        "comment": "La'Virant to rewolucja w grach dedukcji! Doskonała mieszanka trivia wiedzy i czytania twarzy. Każda rozgrywka jest pełna zwrotów akcji i śmiesznych momentów. Moja grupa przyjaciół prosił, aby grać w nią co wieczór!"
+      },
+      {
+        "id": "review-anna",
+        "name": "Anna M.",
+        "title": "Organizator Spotkań Towarzyskich",
+        "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80&q=80",
+        "rating": 5,
+        "comment": "Używam La'Virant na wszystkie moje imprezy. Wszyscy są zaangażowani, debatują i śmieją się razem. Aplikacja mobilna sprawia, że zarządzanie grą jest łatwe, a gracze mogą się skoncentrować na zabawie. To największy hit!"
+      },
+      {
+        "id": "review-piotr",
+        "name": "Piotr W.",
+        "title": "Nauczyciel Gimnazjum",
+        "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80&q=80",
+        "rating": 5,
+        "comment": "Zaskoczyła mnie jakość produkcji i sposób, w jaki gra zachęca uczniów do krytycznego myślenia i komunikacji. Doskonale nadaje się do zajęć teambuildingowych. Moi uczniowie proszą mnie aby nosić grę na każdą lekcję!"
+      }
+    ]
+  },
+  "faq": {
+    "title": "Często Zadawane Pytania",
+    "subtitle": "Wszystko, co musisz wiedzieć o grze Lavirant.",
+    "contactText": "Masz więcej pytań? Jesteśmy tutaj, aby pomóc!",
+    "contactCTA": "Skontaktuj się z naszym zespołem wsparcia",
+    "faqs": [
+      {
+        "id": "faq-players",
+        "question": "Dla ilu graczy jest La'Virant?",
+        "answer": "La'Virant jest grą dla 5-8 graczy w wieku 13+. Celem gry jest połączenie wiedzy, dedukcji oraz umiejętności społecznych. Gracze odpowiadają na pytania, poruszają się po planszy oraz próbują zidentyfikować gracza, który w danej rundzie pełni rolę kłamcy."
+      },
+      {
+        "id": "faq-duration",
+        "question": "Ile czasu trwa typowa rozgrywka?",
+        "answer": "Średni czas rozgrywki wynosi około 45 minut. Gra kończy się w momencie, kiedy pierwsza osoba dojdzie na metę lub skończy się pytania. W tym drugim wypadku rozgrywkę wygrywa osoba, która zajęła najdalsze pole."
+      },
+      {
+        "id": "faq-contents",
+        "question": "Co znajduje się w pudełku gry?",
+        "answer": "Pudełko zawiera: planszę do gry, 9 pionków do gry (w tym jeden zapasowy), 8 tablic na odpowiedzi, 8 markerów z gąbką oraz dostęp do aplikacji Lavirant, którą znajdziesz w Google Play i App Store."
+      },
+      {
+        "id": "faq-organizer",
+        "question": "Jaka jest rola prowadzącego?",
+        "answer": "Prowadzący przygotowuje rozgrywkę, uruchamia aplikację, losuje pytania i odczytuje je wraz z możliwymi odpowiedziami. Prowadzący odpowiada za przebieg rozgrywki, jednak NIE pełni roli sędziego. Każdy gracz powinien mieć okazję być prowadzącym w różnych rundach."
+      },
+      {
+        "id": "faq-boards",
+        "question": "Jak działa system tablic?",
+        "answer": "Na początku każdej rundy prowadzący losowo rozdaje tablice wszystkim graczom. Wszystkie tablice wyglądają identycznie, ale jedna zawiera napis LAVIRANT oraz poprawne odpowiedzi. Pozostałe tablice zawierają losowe odpowiedzi. Gracz z tablicą LAVIRANT zostaje kłamcą w danej rundzie. Odpowiedzi zapisane na tablicach są tajne."
+      }
+    ]
   }
 }

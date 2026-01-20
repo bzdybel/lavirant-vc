@@ -1,54 +1,58 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Package, Users, MessageSquare, Vote, Clock, Award, ChevronRight } from "lucide-react";
+import React, { useMemo } from "react";
 import content from "@/lib/content.json";
 
 const { howToPlay } = content;
 
 export default function HowToPlay() {
+  const particles = useMemo(() => {
+    return Array.from({ length: 15 }, () => {
+      const top = `${Math.random() * 100}%`;
+      const left = `${Math.random() * 100}%`;
+      const delay = Math.random() * 5;
+      const id = `${top}-${left}-${delay}`;
+      return {
+        id,
+        top,
+        left,
+        opacity: Math.random() * 0.3 + 0.1,
+        duration: Math.random() * 5 + 5,
+        delay
+      };
+    });
+  }, []);
   return (
     <section id="how-to-play" className="py-24 md:py-36 bg-[#0f2433] text-white relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Gold particles */}
-        {[...Array(15)].map((_, i) => (
+        {particles.map((p) => (
           <motion.div
-            key={i}
+            key={p.id}
             className="absolute w-1 h-1 rounded-full bg-[#c9a24d]"
-            style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              opacity: Math.random() * 0.3 + 0.1
-            }}
-            animate={{
-              y: [0, -40, 0],
-              opacity: [0.1, 0.4, 0.1]
-            }}
-            transition={{
-              duration: Math.random() * 5 + 5,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: Math.random() * 5
-            }}
+            style={{ top: p.top, left: p.left, opacity: p.opacity }}
+            animate={{ y: [0, -40, 0], opacity: [0.1, 0.4, 0.1] }}
+            transition={{ duration: p.duration, repeat: Infinity, ease: "easeInOut", delay: p.delay }}
           />
         ))}
-        
+
         {/* Gold accent lines */}
         <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-[#c9a24d]/0 via-[#c9a24d]/20 to-[#c9a24d]/0"></div>
         <div className="absolute bottom-0 left-4 right-4 h-[1px] bg-gradient-to-r from-[#c9a24d]/0 via-[#c9a24d]/20 to-[#c9a24d]/0"></div>
-        
+
         {/* Background texture */}
         <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]"></div>
       </div>
-      
+
       <div className="container mx-auto px-6 relative z-10">
-        <motion.div 
+        <motion.div
           className="text-center mb-20"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <motion.h2 
+          <motion.h2
             className="font-playfair text-4xl md:text-5xl font-bold mb-6 inline-block"
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -62,7 +66,7 @@ export default function HowToPlay() {
           >
             {howToPlay.title}
           </motion.h2>
-          <motion.p 
+          <motion.p
             className="text-xl text-white/80 max-w-3xl mx-auto"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -72,16 +76,16 @@ export default function HowToPlay() {
             {howToPlay.subtitle}
           </motion.p>
         </motion.div>
-        
+
         {/* Game flow steps */}
         <div className="max-w-3xl mx-auto">
           <ul className="space-y-8">
-            {howToPlay.steps.map((step, i) => (
-              <motion.li 
-                key={i}
+            {howToPlay.steps.map((step) => (
+              <motion.li
+                key={step.number}
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: Number(step.number) * 0.05 }}
                 viewport={{ once: true }}
                 className="group"
               >
@@ -108,4 +112,3 @@ export default function HowToPlay() {
     </section>
   );
 }
-

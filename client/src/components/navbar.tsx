@@ -13,15 +13,13 @@ export default function Navbar() {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
     };
-    
+
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Handle hash-based navigation and scrolling
   useEffect(() => {
     if (location === "/") {
-      // Small delay to ensure DOM is ready
       const timer = setTimeout(() => {
         const hash = window.location.hash.slice(1); // Remove the '#'
         if (hash) {
@@ -39,12 +37,10 @@ export default function Navbar() {
 
   const handleNavClick = (sectionId: string) => {
     setIsMenuOpen(false);
-    
-    // If not on home page, navigate to home with hash
+
     if (location !== "/") {
       window.location.href = `/#${sectionId}`;
     } else {
-      // If on home page, scroll to section
       const element = document.getElementById(sectionId);
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
@@ -56,25 +52,25 @@ export default function Navbar() {
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'py-2' : 'py-6'}`}>
       {/* Background */}
       <div className="absolute inset-0 bg-[#0f2433] bg-opacity-90 backdrop-blur-sm transition-all duration-300"></div>
-      
+
       {/* Gold accent line */}
       <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#c9a24d]/0 via-[#c9a24d] to-[#c9a24d]/0"></div>
-      
+
       <nav className="container mx-auto px-6 flex justify-between items-center relative z-10">
         <Link href="/">
-          <motion.div 
+          <motion.div
             className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <img 
-              src="https://images.unsplash.com/photo-1606503153255-59d8b2e4739e?ixlib=rb-4.0.3&auto=format&fit=crop&w=50&h=50&q=80" 
-              alt="Logo Gry" 
-              className="w-12 h-12 rounded-full border-2 border-[#c9a24d]" 
+            <img
+              src="https://images.unsplash.com/photo-1606503153255-59d8b2e4739e?ixlib=rb-4.0.3&auto=format&fit=crop&w=50&h=50&q=80"
+              alt="Logo Gry"
+              className="w-12 h-12 rounded-full border-2 border-[#c9a24d]"
             />
-            <motion.span 
-              className="font-playfair text-3xl font-bold" 
+            <motion.span
+              className="font-playfair text-3xl font-bold"
               style={{
                 background: "linear-gradient(to right, #c9a24d, #a67c4a)",
                 WebkitBackgroundClip: "text",
@@ -88,8 +84,8 @@ export default function Navbar() {
             </motion.span>
           </motion.div>
         </Link>
-        
-        <motion.div 
+
+        <motion.div
           className="hidden md:flex items-center space-x-10"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -120,8 +116,8 @@ export default function Navbar() {
             );
           })}
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           className="flex items-center space-x-4"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -132,7 +128,7 @@ export default function Navbar() {
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
-              <Button 
+              <Button
                 className="hidden md:block bg-[#c9a24d] hover:bg-[#a67c4a] text-[#0f2433] font-bold px-6 py-2 rounded-full overflow-hidden relative"
               >
                 <span className="relative z-10">Zamów Teraz</span>
@@ -140,7 +136,7 @@ export default function Navbar() {
               </Button>
             </motion.div>
           </Link>
-          <button 
+          <button
             className="md:hidden text-white relative overflow-hidden"
             onClick={toggleMenu}
             aria-label="Przełącz menu"
@@ -171,11 +167,11 @@ export default function Navbar() {
           </button>
         </motion.div>
       </nav>
-      
+
       {/* Menu mobilne */}
       <AnimatePresence>
         {isMenuOpen && (
-          <motion.div 
+          <motion.div
             className="absolute top-full left-0 right-0 bg-[#0f2433] border-t border-[#c9a24d]/10"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -195,7 +191,7 @@ export default function Navbar() {
               ].map((item, index) => {
                 const sectionId = item.id;
                 return (
-                  <motion.button 
+                  <motion.button
                     key={item.id}
                     onClick={() => handleNavClick(sectionId)}
                     className="block py-3 text-white hover:text-[#c9a24d] transition-colors border-b border-[#2d4a5e] text-left bg-none border-none w-full"
@@ -213,7 +209,7 @@ export default function Navbar() {
                 transition={{ delay: 0.3, duration: 0.3 }}
               >
                 <Link href="/checkout">
-                  <Button 
+                  <Button
                     className="w-full bg-[#c9a24d] hover:bg-[#a67c4a] text-[#0f2433] font-bold py-3 rounded-full"
                     onClick={() => setIsMenuOpen(false)}
                   >

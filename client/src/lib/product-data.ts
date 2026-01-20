@@ -1,17 +1,18 @@
 export const productData = [
   {
+    id: "board-game",
     name: "Gra planszowa Lavirant",
     tagline: "",
     price: 299.99,
     popular: true,
     features: [
-      { text: "Plansza gry", included: true },
-      { text: "8 pionków do gry", included: true },
-      { text: "8 tablic odpowiedzi", included: true },
-      { text: "8 markerów z gąbkami", included: true },
-      { text: "Kostkę do gry", included: true },
-      { text: "Dostęp do aplikacji mobilnej", included: true },
-      { text: "Instrukcja i przewodnik", included: true }, 
+      { id: "board", text: "Plansza gry", included: true },
+      { id: "tokens", text: "8 pionków do gry", included: true },
+      { id: "boards", text: "8 tablic odpowiedzi", included: true },
+      { id: "markers", text: "8 markerów z gąbkami", included: true },
+      { id: "dice", text: "Kostkę do gry", included: true },
+      { id: "mobile-app", text: "Dostęp do aplikacji mobilnej", included: true },
+      { id: "manual", text: "Instrukcja i przewodnik", included: true },
     ]
   }
 ];

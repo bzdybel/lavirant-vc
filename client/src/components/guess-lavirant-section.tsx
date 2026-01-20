@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { Brain, MessageSquare } from "lucide-react";
 import content from "@/lib/content.json";
+import { FeatureCard } from "./guess-lavirant-section/FeatureCard";
 
 const { trueDeduction } = content;
 
@@ -9,12 +9,10 @@ export default function GuessLavrantSection() {
 
   return (
     <section className="py-16 md:py-24 bg-[#0f2433] text-white relative overflow-hidden" id="true-deduction">
-      {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Gold particles */}
         {[...Array(15)].map((_, i) => (
           <motion.div
-            key={i}
+            key={`particle-${i}`}
             className="absolute w-1 h-1 rounded-full bg-[#c9a24d]"
             style={{
               top: `${Math.random() * 100}%`,
@@ -33,24 +31,22 @@ export default function GuessLavrantSection() {
             }}
           />
         ))}
-        
-        {/* Gold accent lines */}
+
         <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-[#c9a24d]/0 via-[#c9a24d]/20 to-[#c9a24d]/0"></div>
         <div className="absolute bottom-0 left-4 right-4 h-[1px] bg-gradient-to-r from-[#c9a24d]/0 via-[#c9a24d]/20 to-[#c9a24d]/0"></div>
-        
-        {/* Background texture */}
+
         <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')]"></div>
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
-        <motion.div 
+        <motion.div
           className="text-center mb-20"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <motion.h2 
+          <motion.h2
             className="font-playfair text-4xl md:text-5xl font-bold mb-6 inline-block"
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -65,42 +61,20 @@ export default function GuessLavrantSection() {
             {trueDeduction.title}
           </motion.h2>
           <p className="text-white/70 max-w-2xl mx-auto mt-6">
-            {trueDeduction.features[0].description}
+            {trueDeduction.description}
           </p>
         </motion.div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {features.map((feature, index) => {
-            const iconMap = {
-              "🧠": <Brain className="h-12 w-12 text-[#c9a24d]" />,
-              "🎭": <MessageSquare className="h-12 w-12 text-[#c9a24d]" />
-            };
-            const firstEmoji = feature.title.split(' ')[0];
-            return (
-            <motion.div 
-              key={index}
-              className="bg-[#2d4a5e]/60 backdrop-blur-sm border border-[#c9a24d]/20 rounded-xl p-8 transition-all hover:border-[#c9a24d]/50 hover:-translate-y-2"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              viewport={{ once: true }}
-            >
-              <div className="flex items-start gap-6">
-                <div className="flex-shrink-0 flex items-center justify-center w-16 h-16 bg-[#0f2433] rounded-full border border-[#c9a24d]/30">
-                  {iconMap[firstEmoji] || <Brain className="h-12 w-12 text-[#c9a24d]" />}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-playfair text-xl font-bold text-white mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-white/70">
-                    {feature.description}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          );
-          })}
+          {features.map((feature, index) => (
+            <FeatureCard
+              key={feature.id}
+              id={feature.id}
+              title={feature.title}
+              description={feature.description}
+              index={index}
+            />
+          ))}
         </div>
       </div>
     </section>
