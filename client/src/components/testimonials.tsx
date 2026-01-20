@@ -39,6 +39,7 @@ export default function Testimonials() {
         <ViewAllReviews
           count={testimonials.reviewCount}
           text={testimonials.viewAllText}
+          opinionsText={testimonials.viewAllOpinions}
         />
       </div>
     </section>

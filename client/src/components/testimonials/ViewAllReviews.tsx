@@ -1,9 +1,14 @@
 interface ViewAllReviewsProps {
   count: number;
   text: string;
+  opinionsText?: string;
 }
 
-export default function ViewAllReviews({ count, text }: ViewAllReviewsProps) {
+export default function ViewAllReviews({
+  count,
+  text,
+  opinionsText = "opinii",
+}: ViewAllReviewsProps) {
   return (
     <div className="mt-12 text-center">
       <a
@@ -11,7 +16,7 @@ export default function ViewAllReviews({ count, text }: ViewAllReviewsProps) {
         className="inline-flex items-center text-neutral-100 hover:text-secondary-300 transition-colors"
       >
         <span className="mr-2 font-medium">
-          {text} {count} opinii
+          {text} {count} {opinionsText}
         </span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
