@@ -12,8 +12,7 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#0a1929] via-[#0f2433] to-[#1a3244] relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
+       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#c9a24d]/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
@@ -24,8 +23,7 @@ export default function NotFound() {
         transition={{ duration: 0.6 }}
         className="relative z-10 w-full max-w-2xl mx-4 text-center"
       >
-        {/* 404 Number */}
-        <motion.div
+         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -36,8 +34,7 @@ export default function NotFound() {
           </h1>
         </motion.div>
 
-        {/* Content */}
-        <motion.div
+         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.4 }}
@@ -51,8 +48,7 @@ export default function NotFound() {
             {notFound.description}
           </p>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
             <Button
               onClick={() => setLocation("/")}
               size="lg"
