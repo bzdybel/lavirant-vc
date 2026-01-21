@@ -1,16 +1,17 @@
 {
   "hero": {
-    "mainTitle": "Lavirant",
-    "tagline": "Lavirant – gra, w której prawda i kłamstwo mają tę samą twarz",
-    "description": "Jedna osoba kłamie. Wszyscy odpowiadają na te same pytania. Każdy wygląda na winnego.\n\nCzy potrafisz odkryć, kto gra przeciwko reszcie – zanim dotrze do mety?\n\nLavirant to wyjątkowa gra planszowa oparta na dedukcji, psychologii i blefie, w której nikt nie jest tym, kim się wydaje.",
+    "mainTitle": "Jedno kłamstwo. Wszyscy podejrzani.",
+    "tagline": "Intensywna gra blefu i dedukcji, w której każda odpowiedź może zdradzić kłamcę.",
+    "description": "Jedna osoba kłamie – reszta musi ją zdemaskować\nTe same pytania ujawniają różnice w odpowiedziach\nPsychologia i dedukcja decydują o zwycięstwie",
+    "socialProof": "⭐ 4.8/5 od graczy • Idealna na imprezy i wieczory ze znajomymi",
     "badges": {
       "players": "5-8 graczy",
       "time": "Około 45 minut",
       "age": "Od 13 lat"
     },
     "buttons": {
-      "primary": "Zamów teraz",
-      "secondary": "Zobacz film"
+      "primary": "Zamów teraz – odkryj kłamcę",
+      "secondary": "Zobacz jak wygląda rozgrywka (45 s)"
     },
     "sections": [
       {
@@ -235,22 +236,28 @@
     ]
   },
   "pricing": {
-    "title": "Cennik",
-    "subtitle": "Pojedyncza cena za pełną przygodę",
+    "title": "Kup grę planszową Lavirant",
+    "subtitle": "Kompletna gra planszowa w jednym pudełku",
     "note": "Darmowa dostawa przy zamówieniach powyżej 200 zł. Dostępna wysyłka międzynarodowa.",
-    "badge": "Najpopularniejsza",
-    "button": "Dodaj do Koszyka",
+    "badge": "",
+    "button": "Zamów grę Lavirant",
+    "contentTitle": "W pudełku znajdziesz:",
+    "priceContext": "Pełna edycja gotowa do rozgrywki od razu po otwarciu.",
+    "priceSubtext": "Wysokiej jakości komponenty zaprojektowane na lata użytkowania.",
+    "valueStatement": "Gra premium zaprojektowana do wielokrotnych rozgrywek.",
     "products": [
       {
         "id": "board-game",
-        "name": "Gra planszowa Lavirant",
-        "tagline": "",
-        "price": 299.99,
-        "popular": true,
+        "name": "Lavirant – gra blefu i dedukcji",
+        "tagline": "Pełna edycja z aplikacją mobilną",
+        "imageSrc": "../../assets/image.png",
+        "imageCaption": "Pełna zawartość pudełka Lavirant",
+        "price": 299,
+        "popular": false,
         "features": [
-          { "id": "board", "text": "Plansza gry", "included": true },
-          { "id": "tokens", "text": "8 pionków do gry", "included": true },
-          { "id": "boards", "text": "8 tablic odpowiedzi", "included": true },
+          { "id": "board", "text": "Plansza gry", "included": true, "bold": true },
+          { "id": "tokens", "text": "8 pionków do gry", "included": true, "bold": true },
+          { "id": "boards", "text": "8 tablic odpowiedzi", "included": true, "bold": true },
           { "id": "markers", "text": "8 markerów z gąbkami", "included": true },
           { "id": "dice", "text": "Kostkę do gry", "included": true },
           { "id": "mobile-app", "text": "Dostęp do aplikacji mobilnej", "included": true },
@@ -330,5 +337,48 @@
         "answer": "Na początku każdej rundy prowadzący losowo rozdaje tablice wszystkim graczom. Wszystkie tablice wyglądają identycznie, ale jedna zawiera napis LAVIRANT oraz poprawne odpowiedzi. Pozostałe tablice zawierają losowe odpowiedzi. Gracz z tablicą LAVIRANT zostaje kłamcą w danej rundzie. Odpowiedzi zapisane na tablicach są tajne."
       }
     ]
+  },
+  "checkout": {
+    "title": "Kasa",
+    "subtitle": "Dokończ zakup",
+    "backButton": "Wróć do zakupów",
+    "loading": "Ładowanie produktu...",
+    "preparing": "Przygotowywanie kasy...",
+    "errors": {
+      "configTitle": "Błąd konfiguracji płatności",
+      "configDescription": "Płatności Stripe nie są poprawnie skonfigurowane. Skontaktuj się z pomocą techniczną.",
+      "backToHome": "Powrót do strony głównej"
+    },
+    "mockMode": {
+      "title": "Tryb testowy płatności",
+      "description": "Działasz w trybie deweloperskim. Kliknij \"Zapłać\" aby zasymulować udaną płatność. Żadne prawdziwe transakcje nie zostaną przeprowadzone."
+    },
+    "pricing": {
+      "productPrice": "Cena produktu",
+      "shipping": "Dostawa",
+      "shippingCost": 4.99,
+      "total": "Razem"
+    },
+    "buttons": {
+      "processing": "Przetwarzanie...",
+      "pay": "Zapłać"
+    },
+    "security": {
+      "securePayment": "Bezpieczne przetwarzanie płatności",
+      "freeShipping": "Darmowa dostawa od 200 zł"
+    },
+    "toast": {
+      "mockSuccess": {
+        "title": "Płatność testowa zakończona sukcesem",
+        "description": "To jest płatność testowa. Nie przeprowadzono prawdziwej transakcji."
+      },
+      "paymentFailed": {
+        "title": "Płatność nie powiodła się"
+      },
+      "paymentSuccess": {
+        "title": "Płatność zakończona sukcesem",
+        "description": "Dziękujemy za zakup!"
+      }
+    }
   }
 }

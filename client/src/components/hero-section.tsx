@@ -14,7 +14,8 @@ export default memo(function HeroSection() {
       <div className="absolute inset-0 overflow-hidden">
         <ParticleGenerator count={20} />
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-30" />
-        <div className="absolute inset-0 bg-gradient-radial from-[#2d4a5e]/0 to-[#0f2433] opacity-70" />
+        <div className="absolute inset-0 bg-gradient-radial from-[#2d4a5e]/0 to-[#0f2433] opacity-85" />
+        <div className="absolute inset-0 bg-black/25" />
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
@@ -23,6 +24,7 @@ export default memo(function HeroSection() {
             mainTitle={hero.mainTitle}
             tagline={hero.tagline}
             description={hero.description}
+            socialProof={hero.socialProof}
           />
 
           <HeroBadges

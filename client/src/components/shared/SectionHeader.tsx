@@ -15,7 +15,7 @@ export default function SectionHeader({ title, subtitle }: SectionHeaderProps) {
       viewport={{ once: true }}
     >
       <motion.h2
-        className="font-playfair text-4xl md:text-5xl font-bold mb-6 inline-block"
+        className="font-playfair text-4xl md:text-5xl font-bold mb-6 inline-block !leading-[1.2]"
         initial={{ opacity: 0, y: -20 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}

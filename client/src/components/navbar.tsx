@@ -94,7 +94,7 @@ export default function Navbar() {
           {[
             { label: "Jak Grać", id: "how-to-play" },
             { label: "Zawartość", id: "contents" },
-            { label: "Cennik", id: "pricing" },
+            { label: "Kup grę", id: "pricing" },
             { label: "Opinie", id: "reviews" }
           ].map((item) => {
             const sectionId = item.id;
@@ -178,7 +178,7 @@ export default function Navbar() {
               {[
                 { label: "Jak Grać", id: "how-to-play" },
                 { label: "Zawartość", id: "contents" },
-                { label: "Cennik", id: "pricing" },
+                { label: "Kup grę", id: "pricing" },
                 { label: "Opinie", id: "reviews" }
               ].map((item, index) => {
                 const sectionId = item.id;

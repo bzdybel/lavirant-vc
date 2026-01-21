@@ -3,9 +3,6 @@ import Footer from "@/components/footer";
 
 import HeroSection from "@/components/hero-section";
 import HowToPlay from "@/components/how-to-play";
-import FeaturesSection from "@/components/features-section";
-import GuessLavrantSection from "@/components/guess-lavirant-section";
-import EveryoneCanWinSection from "@/components/everyone-can-win-section";
 import ProductShowcase from "@/components/product-showcase";
 import ForWhomSection from "@/components/for-whom-section";
 import EmotionsSection from "@/components/emotions-section";
@@ -16,9 +13,6 @@ import FaqSection from "@/components/faq-section";
 const SECTIONS = [
   { id: "hero", Component: HeroSection },
   { id: "how-to-play", Component: HowToPlay },
-  { id: "about-game", Component: FeaturesSection },
-  { id: "true-deduction", Component: GuessLavrantSection },
-  { id: "everyone-can-win", Component: EveryoneCanWinSection },
   { id: "contents", Component: ProductShowcase },
   { id: "for-whom", Component: ForWhomSection },
   { id: "emotions", Component: EmotionsSection },

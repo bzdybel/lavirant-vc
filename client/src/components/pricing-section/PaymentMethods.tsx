@@ -17,7 +17,6 @@ export default function PaymentMethods({
       transition={{ duration: 0.6, delay: 0.3 }}
       viewport={{ once: true }}
     >
-      <p className="mb-6">{note}</p>
       <div className="flex justify-center mt-6 space-x-6 flex-wrap gap-4">
         {payments.map((payment) => (
           <motion.img

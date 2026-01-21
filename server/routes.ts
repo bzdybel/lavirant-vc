@@ -3,13 +3,19 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import Stripe from "stripe";
 
-if (!process.env.STRIPE_SECRET_KEY) {
+const USE_MOCK_STRIPE = process.env.USE_MOCK_STRIPE === 'true';
+
+if (!process.env.STRIPE_SECRET_KEY && !USE_MOCK_STRIPE) {
   console.warn('Missing STRIPE_SECRET_KEY environment variable. Payment functionality will be disabled.');
 }
 
-const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" }) 
+const stripe = (process.env.STRIPE_SECRET_KEY && !USE_MOCK_STRIPE)
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" })
   : null;
+
+if (USE_MOCK_STRIPE) {
+  console.log('🔧 Running in MOCK STRIPE mode for development');
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
@@ -26,11 +32,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const productId = parseInt(req.params.id);
       const product = await storage.getProduct(productId);
-      
+
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
-      
+
       res.json(product);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -39,26 +45,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Stripe payment intent route
   app.post("/api/create-payment-intent", async (req, res) => {
-    if (!stripe) {
-      return res.status(500).json({ message: "Stripe is not configured" });
-    }
-
     try {
       const { amount } = req.body;
-      
+
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: "Invalid amount" });
+      }
+
+      // Mock mode for development
+      if (USE_MOCK_STRIPE) {
+        const mockClientSecret = `pi_mock_${Date.now()}_secret_${Math.random().toString(36).substring(7)}`;
+        return res.json({ clientSecret: mockClientSecret });
+      }
+
+      if (!stripe) {
+        return res.status(500).json({ message: "Stripe is not configured" });
       }
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: "usd",
-        // Additional options if needed
         automatic_payment_methods: {
           enabled: true,
         },
       });
-      
+
       res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error: any) {
       res.status(500).json({ message: `Error creating payment intent: ${error.message}` });
@@ -69,19 +80,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/orders", async (req, res) => {
     try {
       const { productId, quantity, paymentIntentId } = req.body;
-      
+
       if (!productId || !quantity || quantity <= 0) {
         return res.status(400).json({ message: "Invalid order data" });
       }
-      
+
       const product = await storage.getProduct(productId);
-      
+
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
-      
-      const total = product.price * quantity;
-      
+
+      const total = product.price * quantity; // Already in cents
+
       const order = await storage.createOrder({
         userId: null, // Anonymous order (no login required)
         productId,
@@ -91,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentIntentId: paymentIntentId || null,
         createdAt: new Date().toISOString(),
       });
-      
+
       res.status(201).json(order);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

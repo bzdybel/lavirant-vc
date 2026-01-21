@@ -1,6 +1,6 @@
 import { SectionBackground, SectionHeader } from "@/components/shared";
-import ProductCard from "./pricing-section/ProductCard";
 import PaymentMethods from "./pricing-section/PaymentMethods";
+import ProductShowcase from "./pricing-section/ProductShowcase";
 import content from "@/lib/content.json";
 
 const { pricing } = content;
@@ -9,6 +9,8 @@ export default function PricingSection() {
   if (!pricing.products || pricing.products.length === 0) {
     return null;
   }
+
+  const product = pricing.products[0];
 
   return (
     <section
@@ -19,19 +21,17 @@ export default function PricingSection() {
         <div className="container mx-auto px-6 relative z-10">
           <SectionHeader title={pricing.title} subtitle={pricing.subtitle} />
 
-          <div className="flex justify-center">
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-8 max-w-lg">
-              {pricing.products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  badge={pricing.badge}
-                  button={pricing.button}
-                />
-              ))}
-            </div>
-          </div>
+          {/* Product Showcase */}
+          <ProductShowcase
+            product={product}
+            contentTitle={pricing.contentTitle}
+            button={pricing.button}
+            priceContext={pricing.priceContext}
+            priceSubtext={pricing.priceSubtext}
+            valueStatement={pricing.valueStatement}
+          />
 
+          {/* Payment Methods & Trust Section */}
           <PaymentMethods note={pricing.note} payments={pricing.payments} />
         </div>
       </SectionBackground>
