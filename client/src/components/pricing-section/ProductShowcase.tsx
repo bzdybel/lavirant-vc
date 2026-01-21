@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 import productBoxImage from "../../../../attached_assets/image.png";
 
 interface Product {
@@ -106,17 +107,19 @@ export default function ProductShowcase({
               )}
             </motion.div>
 
-            <motion.button
-              className="w-full md:w-auto px-8 py-4 bg-[#c9a24d] hover:bg-[#a67c4a] text-[#0f2433] font-bold rounded-lg transition-all duration-300 text-lg mt-auto"
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.25 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              viewport={{ once: true }}
-            >
-              {button}
-            </motion.button>
+            <Link href="/checkout?productId=1">
+              <motion.button
+                className="w-full md:w-auto px-8 py-4 bg-[#c9a24d] hover:bg-[#a67c4a] text-[#0f2433] font-bold rounded-lg transition-all duration-300 text-lg mt-auto"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.25 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                viewport={{ once: true }}
+              >
+                {button}
+              </motion.button>
+            </Link>
           </div>
         </div>
       </div>

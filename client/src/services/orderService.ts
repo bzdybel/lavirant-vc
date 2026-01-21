@@ -1,9 +1,17 @@
 import { API_ENDPOINTS } from "@/config/checkout.config";
 
-interface CreateOrderRequest {
+export interface CreateOrderRequest {
   productId: number;
   quantity: number;
   paymentIntentId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  country: string;
 }
 
 export const createOrder = async (data: CreateOrderRequest) => {

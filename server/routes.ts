@@ -79,10 +79,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create order endpoint
   app.post("/api/orders", async (req, res) => {
     try {
-      const { productId, quantity, paymentIntentId } = req.body;
+      const {
+        productId,
+        quantity,
+        paymentIntentId,
+        firstName,
+        lastName,
+        email,
+        phone,
+        address,
+        city,
+        postalCode,
+        country
+      } = req.body;
 
       if (!productId || !quantity || quantity <= 0) {
         return res.status(400).json({ message: "Invalid order data" });
+      }
+
+      if (!firstName || !lastName || !email || !phone || !address || !city || !postalCode || !country) {
+        return res.status(400).json({ message: "Missing customer information" });
       }
 
       const product = await storage.getProduct(productId);
@@ -100,6 +116,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         total,
         status: paymentIntentId ? "completed" : "pending",
         paymentIntentId: paymentIntentId || null,
+        firstName,
+        lastName,
+        email,
+        phone,
+        address,
+        city,
+        postalCode,
+        country,
         createdAt: new Date().toISOString(),
       });
 

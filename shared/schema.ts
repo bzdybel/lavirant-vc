@@ -25,6 +25,15 @@ export const orders = pgTable("orders", {
   total: integer("total").notNull(), // Total in cents
   status: text("status").notNull(), // 'pending', 'completed', 'failed'
   paymentIntentId: text("payment_intent_id"),
+  // Customer information
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  address: text("address").notNull(),
+  city: text("city").notNull(),
+  postalCode: text("postal_code").notNull(),
+  country: text("country").notNull(),
   createdAt: text("created_at").notNull(),
 });
 
@@ -43,6 +52,14 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   total: true,
   status: true,
   paymentIntentId: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+  phone: true,
+  address: true,
+  city: true,
+  postalCode: true,
+  country: true,
   createdAt: true,
 });
 

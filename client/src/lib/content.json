@@ -344,10 +344,26 @@
     "backButton": "Wróć do zakupów",
     "loading": "Ładowanie produktu...",
     "preparing": "Przygotowywanie kasy...",
+    "customerInfo": {
+      "title": "Dane kontaktowe i adres dostawy",
+      "firstName": "Imię",
+      "lastName": "Nazwisko",
+      "email": "Adres e-mail",
+      "phone": "Numer telefonu",
+      "address": "Ulica i numer",
+      "city": "Miasto",
+      "postalCode": "Kod pocztowy",
+      "country": "Kraj"
+    },
     "errors": {
       "configTitle": "Błąd konfiguracji płatności",
       "configDescription": "Płatności Stripe nie są poprawnie skonfigurowane. Skontaktuj się z pomocą techniczną.",
-      "backToHome": "Powrót do strony głównej"
+      "backToHome": "Powrót do strony głównej",
+      "required": "To pole jest wymagane",
+      "invalidEmail": "Nieprawidłowy adres e-mail",
+      "invalidPhone": "Numer telefonu powinien zawierać tylko cyfry",
+      "invalidName": "Imię i nazwisko nie mogą zawierać cyfr",
+      "invalidPostalCode": "Kod pocztowy powinien być w formacie XX-XXX (np. 00-123)"
     },
     "mockMode": {
       "title": "Tryb testowy płatności",
@@ -356,7 +372,12 @@
     "pricing": {
       "productPrice": "Cena produktu",
       "shipping": "Dostawa",
-      "shippingCost": 4.99,
+      "shippingCost": 15,
+      "total": "Razem"
+    },
+    "summary": {
+      "title": "Podsumowanie zamówienia",
+      "shipping": "Dostawa",
       "total": "Razem"
     },
     "buttons": {
