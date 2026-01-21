@@ -1,18 +1,22 @@
 import { motion } from "framer-motion";
 import ImageGallery from "@/components/image-gallery";
 import { SectionBackground, SectionHeader } from "@/components/shared";
+import { Map, CircleDot, ClipboardList, Pen, Smartphone, Package } from "lucide-react";
 import content from "@/lib/content.json";
 
 const { productShowcase } = content;
 
-export default function ProductShowcase() {
-  const images = [
-    "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
-    "https://images.unsplash.com/photo-1611996575749-79a3a250f948?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
-    "https://images.unsplash.com/photo-1606503153255-59d8b2e4739e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
-    "https://images.unsplash.com/photo-1637425087238-14862006e2d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80"
-  ];
+const ICON_MAP = {
+  Map: Map,
+  CircleDot: CircleDot,
+  ClipboardList: ClipboardList,
+  Pen: Pen,
+  Smartphone: Smartphone,
+  Package: Package,
+} as const;
 
+export default function ProductShowcase() {
+  const images = productShowcase.images;
   const features = productShowcase.features;
 
   return (
@@ -34,7 +38,10 @@ export default function ProductShowcase() {
                     viewport={{ once: true }}
                   >
                     <div className="bg-[#c9a24d]/20 border border-[#c9a24d]/40 p-3 rounded-full text-[#c9a24d] mr-4 group-hover:bg-[#c9a24d]/30 transition-all flex-shrink-0">
-                      <div className="w-6 h-6 bg-[#c9a24d]/40 rounded" />
+                      {(() => {
+                        const IconComponent = ICON_MAP[feature.icon as keyof typeof ICON_MAP];
+                        return <IconComponent className="w-6 h-6" />;
+                      })()}
                     </div>
                     <div>
                       <h3 className="font-playfair text-xl font-bold text-white mb-2">
