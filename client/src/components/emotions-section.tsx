@@ -48,7 +48,7 @@ export default function EmotionsSection() {
                 transition={{ delay: 0.5 }}
                 viewport={{ once: true }}
               >
-                "{emotions.quote}" 🎭
+                "{emotions.quote}"
               </motion.p>
             </motion.div>
           </div>

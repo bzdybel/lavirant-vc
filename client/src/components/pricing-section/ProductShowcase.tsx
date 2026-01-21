@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import productBoxImage from "../../../../attached_assets/image.png";
+
+const productBoxImage = "/image.png";
 
 interface Product {
   id: string;

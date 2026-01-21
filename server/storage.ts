@@ -1,5 +1,4 @@
 import {
-  users,
   type User,
   type InsertUser,
   type Product,
@@ -98,7 +97,13 @@ export class MemStorage implements IStorage {
   // Orders
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
     const id = this.currentOrderId++;
-    const order: Order = { ...insertOrder, id };
+    const order: Order = {
+      ...insertOrder,
+      id,
+      userId: insertOrder.userId ?? null,
+      productId: insertOrder.productId ?? null,
+      paymentIntentId: insertOrder.paymentIntentId ?? null
+    };
     this.orders.set(id, order);
     return order;
   }

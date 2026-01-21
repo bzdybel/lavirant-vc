@@ -10,6 +10,8 @@ import { createOrder, type CreateOrderRequest } from "@/services/orderService";
 import { CustomerInfoFields } from "@/components/checkout/CustomerInfoFields";
 import { PaymentSection } from "@/components/checkout/PaymentSection";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
+import { DeliveryMethodSelector } from "@/components/checkout/DeliveryMethodSelector";
+import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
 import { extractFormData } from "@/components/checkout/formUtils";
 import { validateCustomerData } from "@/components/checkout/validation";
 import content from "@/lib/content.json";
@@ -25,11 +27,16 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [deliveryMethod, setDeliveryMethod] = useState("inpost");
+  const [paymentMethod, setPaymentMethod] = useState("card");
   const [, navigate] = useLocation();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const { pricing, buttons, security, toast: toastContent } = content.checkout;
-  const shippingCost = pricing.shippingCost;
+  const { pricing, buttons, security, toast: toastContent, delivery } = content.checkout;
+
+  // Calculate delivery cost based on selected method
+  const deliveryCost = delivery.options.find(opt => opt.id === deliveryMethod)?.price || 0;
+  const shippingCost = pricing.shippingCost + deliveryCost;
   const productPrice = amount * quantity;
   const totalAmount = productPrice + shippingCost;
 
@@ -164,7 +171,19 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
       <CustomerInfoFields />
 
-      <PaymentSection />
+      <DeliveryMethodSelector
+        selectedMethod={deliveryMethod}
+        onMethodChange={setDeliveryMethod}
+      />
+
+      {STRIPE_CONFIG.isMockMode ? (
+        <PaymentMethodSelector
+          selectedMethod={paymentMethod}
+          onMethodChange={setPaymentMethod}
+        />
+      ) : (
+        <PaymentSection />
+      )}
 
       <OrderSummary
         productName={pricing.productPrice}

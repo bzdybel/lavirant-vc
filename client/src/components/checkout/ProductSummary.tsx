@@ -8,7 +8,7 @@ export default function ProductSummary({ name, price, image }: ProductSummaryPro
   return (
     <div className="flex flex-col lg:flex-row gap-6 mb-8">
       <div className="flex gap-6 items-center">
-        <div className="h-48 w-48 flex-shrink-0 overflow-hidden rounded-lg border border-white/20">
+        <div className="h-64 w-64 flex-shrink-0 overflow-hidden rounded-lg border border-white/20">
           <img src={image} alt={name} className="h-full w-full object-cover object-center" />
         </div>
         <div>

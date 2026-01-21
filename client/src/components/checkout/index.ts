@@ -6,6 +6,8 @@ export { default as ProductSummary } from './ProductSummary';
 export { CustomerInfoFields } from './CustomerInfoFields';
 export { PaymentSection } from './PaymentSection';
 export { OrderSummary } from './OrderSummary';
+export { DeliveryMethodSelector } from './DeliveryMethodSelector';
+export { PaymentMethodSelector } from './PaymentMethodSelector';
 export { FormField } from './FormField';
 export { extractFormData } from './formUtils';
 export { validateCustomerData, sanitizeName, sanitizePhone, formatPostalCode } from './validation';

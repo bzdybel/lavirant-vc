@@ -380,6 +380,78 @@
       "shipping": "Dostawa",
       "total": "Razem"
     },
+    "delivery": {
+      "title": "Metoda dostawy",
+      "labels": {
+        "free": "Gratis",
+        "pricePrefix": "+",
+        "currency": "zł",
+        "estimatedDelivery": "Przewidywany czas dostawy"
+      },
+      "options": [
+        {
+          "id": "inpost",
+          "name": "InPost Paczkomaty",
+          "price": 0,
+          "estimatedDays": "1-2 dni robocze",
+          "description": "Dostawa do wybranego paczkomatu"
+        },
+        {
+          "id": "dpd",
+          "name": "DPD Kurier",
+          "price": 5,
+          "estimatedDays": "1-2 dni robocze",
+          "description": "Dostawa kurierem pod wskazany adres"
+        },
+        {
+          "id": "inpost-courier",
+          "name": "InPost Kurier",
+          "price": 7,
+          "estimatedDays": "1 dzień roboczy",
+          "description": "Ekspresowa dostawa kurierem"
+        }
+      ]
+    },
+    "paymentMethods": {
+      "title": "Metoda płatności",
+      "labels": {
+        "blikCode": "Kod BLIK",
+        "blikPlaceholder": "000 000",
+        "blikHelper": "Wpisz 6-cyfrowy kod BLIK z aplikacji bankowej",
+        "cardNumber": "Numer karty",
+        "cardNumberPlaceholder": "1234 5678 9012 3456",
+        "cardExpiry": "Data ważności",
+        "cardExpiryPlaceholder": "MM/RR",
+        "cardCvv": "CVV",
+        "cardCvvPlaceholder": "123"
+      },
+      "options": [
+        {
+          "id": "card",
+          "name": "Karta płatnicza",
+          "description": "Visa, Mastercard, Maestro",
+          "icon": "CreditCard"
+        },
+        {
+          "id": "blik",
+          "name": "BLIK",
+          "description": "Płatność kodem BLIK",
+          "icon": "Smartphone"
+        },
+        {
+          "id": "transfer",
+          "name": "Przelew bankowy",
+          "description": "Tradycyjny przelew",
+          "icon": "Building"
+        },
+        {
+          "id": "cod",
+          "name": "Płatność przy odbiorze",
+          "description": "Zapłać przy odbiorze paczki",
+          "icon": "Wallet"
+        }
+      ]
+    },
     "buttons": {
       "processing": "Przetwarzanie...",
       "pay": "Zapłać"

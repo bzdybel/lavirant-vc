@@ -11,7 +11,7 @@ interface FormFieldProps {
   disabled?: boolean;
   readOnly?: boolean;
   defaultValue?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: (_event: React.ChangeEvent<HTMLInputElement>) => void;
   className?: string;
 }
 

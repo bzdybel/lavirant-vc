@@ -29,7 +29,14 @@ export default [
       'react/no-multi-comp': ['error', { ignoreStateless: false }],
       'react/react-in-jsx-scope': 'off',
       // `no-undef` doesn't understand TS types and DOM lib identifiers
-      'no-undef': 'off'
+      'no-undef': 'off',
+      // Use TypeScript version which understands type-only parameters
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
+      }]
     }
   }
 ];

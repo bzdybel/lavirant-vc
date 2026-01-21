@@ -11,7 +11,7 @@ interface OrderSummaryProps {
   totalAmount: number;
   unitPrice: number;
   quantity: number;
-  onQuantityChange: (quantity: number) => void;
+  onQuantityChange: (_value: number) => void;
 }
 
 export const OrderSummary = ({

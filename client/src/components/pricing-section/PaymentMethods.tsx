@@ -6,7 +6,6 @@ interface PaymentMethodsProps {
 }
 
 export default function PaymentMethods({
-  note,
   payments,
 }: PaymentMethodsProps) {
   return (

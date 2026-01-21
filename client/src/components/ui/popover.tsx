@@ -1,4 +1,3 @@
-/* eslint-disable react/no-multi-comp */
 import * as React from "react"
 import * as PopoverPrimitive from "@radix-ui/react-popover"
 
