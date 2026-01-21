@@ -3,6 +3,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Button } from "@/components/ui/button";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 import { ChevronLeft } from "lucide-react";
 import CheckoutForm from "@/components/CheckoutForm";
 import { useProduct, usePaymentIntent } from "@/hooks/useCheckout";
@@ -24,6 +25,10 @@ export default function Checkout() {
   const productId = getProductId();
   const { data: product, isLoading } = useProduct(productId);
   const { data: clientSecret } = usePaymentIntent(product?.price ?? null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   if (!stripePromise && !STRIPE_CONFIG.isMockMode) {
     return <ErrorState onNavigateHome={() => navigate('/')} />;

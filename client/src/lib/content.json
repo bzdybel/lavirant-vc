@@ -16,52 +16,52 @@
     "sections": [
       {
         "id": "true-deduction",
-        "title": "Prawdziwa dedukcja, nie zgadywanie",
-        "description": "Każdy gracz odpowiada na te same pytania, zapisując odpowiedzi w tajemnicy. Dopiero później zaczyna się analiza, rozmowa i głosowanie.",
+        "title": "Prawdziwa dedukcja, nie przypadek",
+        "description": "Każdy gracz odpowiada na te same pytania, zapisując odpowiedzi w tajemnicy. Pozornie identyczne odpowiedzi zaczynają się różnić — i właśnie tam rodzą się podejrzenia.",
         "imageSrc": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
         "imageAlt": "Gra planszowa Lavirant",
         "imageBadge": "Nowość 2025!",
         "reverse": false,
         "badges": [
-          { "id": "dedukcja", "icon": "MessageCircle", "text": "Gra dedukcji" },
-          { "id": "zabawa", "icon": "Award", "text": "Pełna zabawy" }
+          { "id": "dedukcja", "icon": "MessageCircle", "text": "Analiza odpowiedzi" },
+          { "id": "zabawa", "icon": "Award", "text": "Uważna obserwacja" }
         ]
       },
       {
         "id": "psychologia",
         "title": "Blef, manipulacja i psychologia",
-        "description": "Nie wygrywa ten, kto wie najwięcej, ale ten, kto najlepiej potrafi przekonać innych.",
+        "description": "Nie wygrywa ten, kto mówi prawdę. Wygrywa ten, kto potrafi sprawić, że inni w nią uwierzą — nawet wtedy, gdy kłamie.",
         "imageSrc": "https://images.unsplash.com/photo-1582921017967-79d1cb6702ee?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
         "imageAlt": "Gracze przy stole",
         "reverse": true,
         "badges": [
-          { "id": "wielostronne", "icon": "Users", "text": "Wielostronne wygrane" },
-          { "id": "szansa", "icon": "Award", "text": "Każdy ma szansę" }
+          { "id": "wielostronne", "icon": "Users", "text": "Gra umysłów" },
+          { "id": "szansa", "icon": "Award", "text": "Wpływ na decyzje" }
         ]
       },
       {
         "id": "rozgrywka-inna",
-        "title": "Każda rozgrywka jest inna",
-        "description": "Losowe pytania z aplikacji oraz zmieniający się Kłamca sprawiają, że nie ma dwóch takich samych partii.",
+        "title": "Żadna rozgrywka nie przebiega tak samo",
+        "description": "Losowe pytania, zmieniający się kłamca i reakcje graczy sprawiają, że każda partia prowadzi do zupełnie innych podejrzeń i decyzji.",
         "imageSrc": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
         "imageAlt": "Gra planszowa Lavirant",
         "imageBadge": "Nowość 2025!",
         "reverse": false,
         "badges": [
-          { "id": "dedukcja2", "icon": "MessageCircle", "text": "Gra dedukcji" },
-          { "id": "zabawa2", "icon": "Award", "text": "Pełna zabawy" }
+          { "id": "dedukcja2", "icon": "MessageCircle", "text": "Losowe pytania" },
+          { "id": "zabawa2", "icon": "Award", "text": "Zmienna dynamika" }
         ]
       },
       {
         "id": "faza-dyskusji",
-        "title": "Emocjonująca faza dyskusji",
-        "description": "Moment, w którym gracze dyskutują i głosują, to serce gry – napięcie, podejrzenia i nagłe zwroty akcji są gwarantowane.",
+        "title": "Moment, w którym wszystko wychodzi na jaw",
+        "description": "Padają oskarżenia, ktoś się broni, ktoś milczy zbyt długo. Jedna rozmowa potrafi całkowicie zmienić to, kogo uznawaliście za niewinnego.",
         "imageSrc": "https://images.unsplash.com/photo-1582921017967-79d1cb6702ee?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
         "imageAlt": "Gracze przy stole",
         "reverse": true,
         "badges": [
-          { "id": "wielostronne2", "icon": "Users", "text": "Wielostronne wygrane" },
-          { "id": "szansa2", "icon": "Award", "text": "Każdy ma szansę" }
+          { "id": "wielostronne2", "icon": "Users", "text": "Otwarte oskarżenia" },
+          { "id": "szansa2", "icon": "Award", "text": "Napięcie przy stole" }
         ]
       }
     ]
@@ -473,5 +473,26 @@
         "description": "Dziękujemy za zakup!"
       }
     }
+  },
+  "notFound": {
+    "title": "Błąd 404",
+    "subtitle": "Strona nie została odnaleziona",
+    "description": "Wygląda na to, że ta strona zgubiła się w grze. Może ktoś kłamie o jej istnieniu?",
+    "homeButton": "Wróć do strony głównej",
+    "shopButton": "Przejdź do sklepu",
+    "features": [
+      {
+        "icon": "Search",
+        "text": "Sprawdź adres URL"
+      },
+      {
+        "icon": "Home",
+        "text": "Wróć na stronę główną"
+      },
+      {
+        "icon": "ShoppingBag",
+        "text": "Zobacz nasze produkty"
+      }
+    ]
   }
 }
