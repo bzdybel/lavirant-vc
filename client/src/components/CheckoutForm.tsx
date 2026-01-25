@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { ShieldCheck, TruckIcon } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { STRIPE_CONFIG, PAYMENT_CONFIG } from "@/config/checkout.config";
 import { createOrder, type CreateOrderRequest } from "@/services/orderService";
 import { CustomerInfoFields } from "@/components/checkout/CustomerInfoFields";
@@ -220,10 +220,6 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
         <div className="flex items-center gap-2 text-sm text-neutral-300">
           <ShieldCheck className="h-4 w-4" />
           <span>{security.securePayment}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-neutral-300">
-          <TruckIcon className="h-4 w-4" />
-          <span>{security.freeShipping}</span>
         </div>
       </div>
     </form>
