@@ -1,5 +1,5 @@
 import { useStripe, useElements } from '@stripe/react-stripe-js';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import { DeliveryMethodSelector } from "@/components/checkout/DeliveryMethodSele
 import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
 import { extractFormData } from "@/components/checkout/formUtils";
 import { validateCustomerData } from "@/components/checkout/validation";
+import { saveFormDataForRedirect, clearSavedFormData } from "@/components/checkout/paymentRedirectUtils";
+import { usePaymentRedirect } from "@/hooks/usePaymentRedirect";
 import content from "@/lib/content.json";
 
 interface CheckoutFormProps {
@@ -32,68 +34,12 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
   const [, navigate] = useLocation();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const { pricing, buttons, security, toast: toastContent, delivery } = content.checkout;
+  const { pricing, buttons, security, toast: toastContent, delivery, errors } = content.checkout;
 
-  // Calculate delivery cost based on selected method
   const deliveryCost = delivery.options.find(opt => opt.id === deliveryMethod)?.price || 0;
   const shippingCost = pricing.shippingCost + deliveryCost;
   const productPrice = amount * quantity;
   const totalAmount = productPrice + shippingCost;
-
-  // Check for payment status after redirect (Przelewy24, etc.)
-  useEffect(() => {
-    if (!stripe) return;
-
-    const clientSecret = new URLSearchParams(window.location.search).get('payment_intent_client_secret');
-
-    if (!clientSecret) return;
-
-    stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
-      if (paymentIntent?.status === 'succeeded') {
-        // Payment succeeded after redirect - get customer data from sessionStorage
-        const savedFormData = sessionStorage.getItem('checkout_form_data');
-        if (savedFormData) {
-          try {
-            const formData = JSON.parse(savedFormData);
-            const orderRequest: CreateOrderRequest = {
-              productId: formData.productId,
-              quantity: formData.quantity,
-              paymentIntentId: paymentIntent.id,
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              email: formData.email,
-              phone: formData.phone,
-              address: formData.address,
-              city: formData.city,
-              postalCode: formData.postalCode,
-              country: formData.country,
-            };
-
-            orderMutation.mutate(orderRequest);
-            sessionStorage.removeItem('checkout_form_data');
-
-            toast({
-              title: toastContent.paymentSuccess.title,
-              description: toastContent.paymentSuccess.description,
-            });
-          } catch (error) {
-            console.error('Failed to parse saved form data:', error);
-          }
-        }
-      } else if (paymentIntent?.status === 'processing') {
-        toast({
-          title: "Płatność w trakcie realizacji",
-          description: "Twoja płatność jest przetwarzana. Otrzymasz wiadomość email z potwierdzeniem.",
-        });
-      } else if (paymentIntent?.status === 'requires_payment_method') {
-        toast({
-          title: "Płatność anulowana",
-          description: "Płatność nie została zrealizowana. Spróbuj ponownie.",
-          variant: "destructive",
-        });
-      }
-    });
-  }, [stripe]);
 
   const orderMutation = useMutation({
     mutationFn: createOrder,
@@ -106,24 +52,33 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
     },
   });
 
+  usePaymentRedirect({
+    orderMutation,
+    showToast: toast,
+    paymentStatus: {
+      succeeded: toastContent.paymentSuccess,
+      processing: toastContent.paymentProcessing,
+      cancelled: toastContent.paymentCancelled,
+    },
+  });
+
   const validateForm = (): boolean => {
     if (!formRef.current) return false;
 
     const customerData = extractFormData(formRef.current);
     if (!customerData) {
       toast({
-        title: "Błąd formularza",
-        description: "Nie można odczytać danych formularza",
+        title: errors.configTitle,
+        description: errors.configDescription,
         variant: "destructive",
       });
       return false;
     }
 
     const validationResult = validateCustomerData(customerData);
-
     if (!validationResult.isValid) {
       toast({
-        title: validationResult.error || "Błąd walidacji",
+        title: validationResult.error || errors.configTitle,
         description: validationResult.description,
         variant: "destructive",
       });
@@ -147,14 +102,7 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
       productId,
       quantity,
       paymentIntentId,
-      firstName: customerData.firstName,
-      lastName: customerData.lastName,
-      email: customerData.email,
-      phone: customerData.phone,
-      address: customerData.address,
-      city: customerData.city,
-      postalCode: customerData.postalCode,
-      country: customerData.country,
+      ...customerData,
     };
   };
 
@@ -184,14 +132,9 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
       return;
     }
 
-    // Save form data to sessionStorage before potential redirect
     const customerData = extractFormData(formRef.current!);
     if (customerData) {
-      sessionStorage.setItem('checkout_form_data', JSON.stringify({
-        ...customerData,
-        productId,
-        quantity,
-      }));
+      saveFormDataForRedirect({ ...customerData, productId, quantity });
     }
 
     const { error, paymentIntent } = await stripe.confirmPayment({
@@ -201,7 +144,7 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
     });
 
     if (error) {
-      sessionStorage.removeItem('checkout_form_data');
+      clearSavedFormData();
       toast({
         title: toastContent.paymentFailed.title,
         description: error.message,
@@ -212,7 +155,7 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
     }
 
     if (paymentIntent?.status === 'succeeded') {
-      sessionStorage.removeItem('checkout_form_data');
+      clearSavedFormData();
       toast({
         title: toastContent.paymentSuccess.title,
         description: toastContent.paymentSuccess.description,
