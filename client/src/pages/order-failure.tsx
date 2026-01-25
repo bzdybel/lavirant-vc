@@ -103,8 +103,7 @@ export default function OrderFailure() {
           <Button
             onClick={() => navigate("/")}
             size="lg"
-            variant="outline"
-            className="border-white/40 text-white hover:bg-white/10 hover:border-white/60 font-semibold px-8 py-6 text-lg"
+            className="bg-white/10 border border-white/30 text-white hover:bg-white/20 hover:border-white/50 font-semibold px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all"
           >
             <Home className="mr-2 h-5 w-5" />
             {orderFailure.buttons.home}
