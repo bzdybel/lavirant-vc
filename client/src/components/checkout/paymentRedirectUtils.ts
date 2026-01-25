@@ -25,11 +25,11 @@ export function clearSavedFormData(): void {
 
 export function retrieveSavedFormData(): SavedFormData | null {
   const savedData = sessionStorage.getItem(STORAGE_KEY);
-  
+
   if (!savedData) {
     return null;
   }
-  
+
   try {
     return JSON.parse(savedData);
   } catch (error) {

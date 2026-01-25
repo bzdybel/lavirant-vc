@@ -44,7 +44,7 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
   const orderMutation = useMutation({
     mutationFn: createOrder,
     onSuccess: () => {
-      setTimeout(() => navigate('/'), PAYMENT_CONFIG.redirectDelay);
+      setTimeout(() => navigate('/order-success'), PAYMENT_CONFIG.redirectDelay);
     },
     onError: (error) => {
       console.error("Failed to create order:", error);

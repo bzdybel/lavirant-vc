@@ -494,6 +494,38 @@
       }
     }
   },
+  "orderSuccess": {
+    "title": "Zamówienie Złożone!",
+    "subtitle": "Twoje zamówienie zostało pomyślnie zrealizowane",
+    "description": "Dziękujemy za zakup Lavirant! Sprawdź swoją skrzynkę pocztową – wysłaliśmy potwierdzenie zamówienia.",
+    "steps": [
+      {
+        "id": "email-confirmation",
+        "icon": "Mail",
+        "title": "Potwierdzenie e-mail",
+        "description": "Otrzymasz wiadomość z potwierdzeniem zamówienia i szczegółami"
+      },
+      {
+        "id": "shipping",
+        "icon": "Package",
+        "title": "Przygotowanie wysyłki",
+        "description": "Twoje zamówienie zostanie wysłane w ciągu 1-2 dni roboczych"
+      },
+      {
+        "id": "delivery",
+        "icon": "CheckCircle2",
+        "title": "Dostawa",
+        "description": "Paczka dotrze do Ciebie zgodnie z wybraną metodą dostawy"
+      }
+    ],
+    "support": {
+      "title": "Potrzebujesz pomocy?",
+      "description": "Skontaktuj się z nami pod adresem kontakt@lavirant.pl – chętnie odpowiemy na wszystkie pytania."
+    },
+    "buttons": {
+      "home": "Wróć do strony głównej"
+    }
+  },
   "notFound": {
     "title": "Błąd 404",
     "subtitle": "Strona nie została odnaleziona",

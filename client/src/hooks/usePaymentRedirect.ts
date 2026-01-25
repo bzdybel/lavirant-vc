@@ -30,10 +30,10 @@ interface UsePaymentRedirectParams {
   paymentStatus: PaymentStatus;
 }
 
-export function usePaymentRedirect({ 
-  orderMutation, 
+export function usePaymentRedirect({
+  orderMutation,
   showToast,
-  paymentStatus 
+  paymentStatus
 }: UsePaymentRedirectParams) {
   const stripe = useStripe();
 
@@ -50,7 +50,7 @@ export function usePaymentRedirect({
     if (!stripe) return;
 
     const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
-    
+
     if (!paymentIntent) return;
 
     switch (paymentIntent.status) {
@@ -68,7 +68,7 @@ export function usePaymentRedirect({
 
   function handleSuccessfulPayment(paymentIntentId: string) {
     const savedData = retrieveSavedFormData();
-    
+
     if (!savedData) return;
 
     const orderRequest = createOrderFromSavedData(paymentIntentId, savedData);
