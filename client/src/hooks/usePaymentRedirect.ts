@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useStripe } from '@stripe/react-stripe-js';
+import { useLocation } from 'wouter';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { CreateOrderRequest } from '@/services/orderService';
 import {
@@ -36,6 +37,7 @@ export function usePaymentRedirect({
   paymentStatus
 }: UsePaymentRedirectParams) {
   const stripe = useStripe();
+  const [, navigate] = useLocation();
 
   useEffect(() => {
     if (!stripe) return;
@@ -61,7 +63,8 @@ export function usePaymentRedirect({
         showPaymentProcessing();
         break;
       case 'requires_payment_method':
-        showPaymentCancelled();
+      case 'canceled':
+        handleFailedPayment();
         break;
     }
   }
@@ -88,11 +91,8 @@ export function usePaymentRedirect({
     });
   }
 
-  function showPaymentCancelled() {
-    showToast({
-      title: paymentStatus.cancelled.title,
-      description: paymentStatus.cancelled.description,
-      variant: 'destructive',
-    });
+  function handleFailedPayment() {
+    clearSavedFormData();
+    navigate('/order-failure');
   }
 }

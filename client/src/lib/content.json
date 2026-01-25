@@ -526,6 +526,37 @@
       "home": "Wróć do strony głównej"
     }
   },
+  "orderFailure": {
+    "title": "Płatność Nieudana",
+    "subtitle": "Nie udało się przetworzyć Twojej płatności",
+    "description": "Nie martw się – żadne środki nie zostały pobrane z Twojego konta. Możesz spróbować ponownie.",
+    "reasons": [
+      {
+        "id": "insufficient-funds",
+        "text": "Niewystarczające środki na koncie lub limit karty"
+      },
+      {
+        "id": "incorrect-data",
+        "text": "Niepoprawne dane karty lub kod BLIK"
+      },
+      {
+        "id": "bank-rejection",
+        "text": "Transakcja odrzucona przez bank lub operatora płatności"
+      },
+      {
+        "id": "technical-issue",
+        "text": "Tymczasowy problem techniczny"
+      }
+    ],
+    "support": {
+      "title": "Potrzebujesz pomocy?",
+      "description": "Jeśli problem się powtarza, skontaktuj się z nami: kontakt@lavirant.pl"
+    },
+    "buttons": {
+      "retry": "Spróbuj ponownie",
+      "home": "Wróć do strony głównej"
+    }
+  },
   "notFound": {
     "title": "Błąd 404",
     "subtitle": "Strona nie została odnaleziona",
