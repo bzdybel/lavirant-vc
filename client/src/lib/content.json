@@ -321,7 +321,7 @@
     "title": "Często Zadawane Pytania",
     "subtitle": "Wszystko, co musisz wiedzieć o grze Lavirant.",
     "contactText": "Masz więcej pytań? Jesteśmy tutaj, aby pomóc!",
-    "contactCTA": "Skontaktuj się z naszym zespołem wsparcia",
+    "contactCTA": "Skontaktuj się z naszym zespołem wsparcia pod adresem kontakt@lavirant.pl",
     "faqs": [
       {
         "id": "faq-players",
@@ -517,11 +517,9 @@
       "links": [
         { "text": "Strona główna", "href": "/" },
         { "text": "Jak wygląda rozgrywka", "href": "/#how-to-play" },
-        { "text": "O grze", "href": "/#aboutGame" },
         { "text": "Co znajdziesz w pudełku", "href": "/#contents" },
         { "text": "Dla kogo jest Lavirant", "href": "/#for-whom" },
-        { "text": "Cennik", "href": "/#pricing" },
-        { "text": "Opinie", "href": "/#testimonials" },
+        { "text": "Opinie", "href": "/#reviews" },
         { "text": "FAQ", "href": "/#faq" }
       ]
     },
@@ -544,7 +542,7 @@
       ]
     },
     "legal": {
-      "copyright": "© 2025 Lavirant Games. Wszelkie prawa zastrzeżone.",
+      "copyright": "© 2025 Lavirant. Wszelkie prawa zastrzeżone.",
       "links": [
         { "text": "Regulamin", "href": "#" },
         { "text": "Polityka Prywatności", "href": "#" },

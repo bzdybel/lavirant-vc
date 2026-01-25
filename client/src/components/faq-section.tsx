@@ -48,7 +48,7 @@ export default function FAQSection() {
           >
             <p className="text-white/70 mb-6">{faqSection.contactText}</p>
             <motion.a
-              href="#"
+              href="mailto:kontakt@lavirant.pl"
               className="inline-flex items-center text-[#c9a24d] hover:text-[#a67c4a] font-medium transition-colors"
               whileHover={{ x: 5 }}
             >

@@ -9,7 +9,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0f2433] via-[#132b3d] to-[#0f2433] text-white">
       <Navbar />
-      <div className="container max-w-3xl mx-auto px-4 pt-32 pb-12 relative z-10">
+      <div className="container max-w-3xl mx-auto px-4 pt-36 pb-12 relative z-10">
         {children}
       </div>
       <Footer />
