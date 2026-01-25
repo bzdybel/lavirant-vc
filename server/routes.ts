@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import Stripe from "stripe";
+import { emailService } from "./emailService";
 
 const USE_MOCK_STRIPE = process.env.USE_MOCK_STRIPE === 'true';
 
@@ -125,6 +126,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         postalCode,
         country,
         createdAt: new Date().toISOString(),
+      });
+
+      // Send order confirmation email
+      emailService.sendOrderConfirmation({
+        orderId: order.id,
+        firstName,
+        lastName,
+        email,
+        productName: product.name,
+        quantity,
+        total,
+        address,
+        city,
+        postalCode,
+        country,
+        orderDate: order.createdAt,
+      }).catch(error => {
+        console.error('Failed to send order confirmation email:', error);
+        // Don't fail the order if email fails
       });
 
       res.status(201).json(order);

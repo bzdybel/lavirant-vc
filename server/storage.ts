@@ -50,7 +50,7 @@ export class MemStorage implements IStorage {
         name: "Lavirant",
         description: "Pełna edycja z aplikacją mobilną. Intensywna gra towarzyska łącząca logiczne myślenie, umiejętność czytania ludzi i perfekcyjne kłamstwo. Idealna na imprezy i wieczory ze znajomymi.",
         price: 29900, // 299.00 zł in cents
-        image: "/attached_assets/image.png",
+        image: "/image.png",
         category: "Gry planszowe"
       }
     ];

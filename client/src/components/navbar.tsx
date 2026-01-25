@@ -59,29 +59,16 @@ export default function Navbar() {
       <nav className="container mx-auto px-6 flex justify-between items-center relative z-10">
         <Link href="/">
           <motion.div
-            className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity"
+            className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
             <img
-              src="https://images.unsplash.com/photo-1606503153255-59d8b2e4739e?ixlib=rb-4.0.3&auto=format&fit=crop&w=50&h=50&q=80"
-              alt="Logo Gry"
-              className="w-12 h-12 rounded-full border-2 border-[#c9a24d]"
+              src="/logo3.svg"
+              alt="Lavirant Logo"
+              className="h-20 w-auto"
             />
-            <motion.span
-              className="font-playfair text-3xl font-bold"
-              style={{
-                background: "linear-gradient(to right, #c9a24d, #a67c4a)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent"
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              Lavirant
-            </motion.span>
           </motion.div>
         </Link>
 
