@@ -20,7 +20,7 @@ const itemVariants = {
 
 export function OrderStep({ icon, title, description }: OrderStepProps) {
   const IconComponent = ICON_MAP[icon];
-  
+
   if (!IconComponent) return null;
 
   return (
