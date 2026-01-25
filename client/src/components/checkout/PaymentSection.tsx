@@ -21,9 +21,16 @@ export const PaymentSection = () => {
   }
 
   return (
-    <div className="bg-[#1a3244]/60 rounded-lg border border-white/10 p-6">
-      <h3 className="text-xl font-semibold text-white mb-4">Metoda płatności</h3>
-      <PaymentElement />
+    <div className="space-y-3">
+      <h3 className="text-xl font-semibold text-white">Metoda płatności</h3>
+      <PaymentElement
+        options={{
+          layout: {
+            type: 'tabs',
+            defaultCollapsed: false,
+          },
+        }}
+      />
     </div>
   );
 };

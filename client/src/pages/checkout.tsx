@@ -66,7 +66,86 @@ export default function Checkout() {
               <CheckoutForm amount={product.price} productId={product.id} />
             </Elements>
           ) : clientSecret ? (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
+            <Elements
+              stripe={stripePromise}
+              options={{
+                clientSecret,
+                locale: 'pl',
+                appearance: {
+                  theme: 'night',
+                  variables: {
+                    colorPrimary: '#c9a24d',
+                    colorBackground: '#1a3244',
+                    colorText: '#ffffff',
+                    colorDanger: '#ef4444',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    spacingUnit: '4px',
+                    borderRadius: '8px',
+                    colorTextSecondary: '#e5e7eb',
+                    colorTextPlaceholder: '#9ca3af',
+                  },
+                  rules: {
+                    '.Tab': {
+                      backgroundColor: '#0f2433',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      boxShadow: 'none',
+                      color: '#ffffff',
+                    },
+                    '.Tab:hover': {
+                      backgroundColor: '#132b3d',
+                      border: '1px solid rgba(201, 162, 77, 0.3)',
+                      color: '#ffffff',
+                    },
+                    '.Tab--selected': {
+                      backgroundColor: '#1a3244',
+                      border: '1px solid #c9a24d',
+                      boxShadow: '0 0 0 1px #c9a24d',
+                      color: '#ffffff',
+                    },
+                    '.Tab--selected:hover': {
+                      backgroundColor: '#1a3244',
+                      color: '#ffffff',
+                    },
+                    '.TabLabel': {
+                      color: '#ffffff',
+                    },
+                    '.TabLabel--selected': {
+                      color: '#ffffff',
+                    },
+                    '.TabIcon': {
+                      fill: '#ffffff',
+                    },
+                    '.TabIcon--selected': {
+                      fill: '#ffffff',
+                    },
+                    '.Input': {
+                      backgroundColor: '#0f2433',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: '#ffffff',
+                    },
+                    '.Input:focus': {
+                      border: '1px solid #c9a24d',
+                      boxShadow: '0 0 0 1px #c9a24d',
+                      backgroundColor: '#132b3d',
+                    },
+                    '.Label': {
+                      color: '#ffffff',
+                      fontWeight: '500',
+                    },
+                    '.Block': {
+                      backgroundColor: '#0f2433',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                    },
+                    '.Text': {
+                      color: '#ffffff',
+                    },
+                    '.Text--redirect': {
+                      color: '#e5e7eb',
+                    },
+                  },
+                },
+              }}
+            >
               <CheckoutForm amount={product.price} productId={product.id} />
             </Elements>
           ) : (

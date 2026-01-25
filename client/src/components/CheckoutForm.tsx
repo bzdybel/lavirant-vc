@@ -1,5 +1,5 @@
 import { useStripe, useElements } from '@stripe/react-stripe-js';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,61 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
   const shippingCost = pricing.shippingCost + deliveryCost;
   const productPrice = amount * quantity;
   const totalAmount = productPrice + shippingCost;
+
+  // Check for payment status after redirect (Przelewy24, etc.)
+  useEffect(() => {
+    if (!stripe) return;
+
+    const clientSecret = new URLSearchParams(window.location.search).get('payment_intent_client_secret');
+
+    if (!clientSecret) return;
+
+    stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) => {
+      if (paymentIntent?.status === 'succeeded') {
+        // Payment succeeded after redirect - get customer data from sessionStorage
+        const savedFormData = sessionStorage.getItem('checkout_form_data');
+        if (savedFormData) {
+          try {
+            const formData = JSON.parse(savedFormData);
+            const orderRequest: CreateOrderRequest = {
+              productId: formData.productId,
+              quantity: formData.quantity,
+              paymentIntentId: paymentIntent.id,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              email: formData.email,
+              phone: formData.phone,
+              address: formData.address,
+              city: formData.city,
+              postalCode: formData.postalCode,
+              country: formData.country,
+            };
+
+            orderMutation.mutate(orderRequest);
+            sessionStorage.removeItem('checkout_form_data');
+
+            toast({
+              title: toastContent.paymentSuccess.title,
+              description: toastContent.paymentSuccess.description,
+            });
+          } catch (error) {
+            console.error('Failed to parse saved form data:', error);
+          }
+        }
+      } else if (paymentIntent?.status === 'processing') {
+        toast({
+          title: "Płatność w trakcie realizacji",
+          description: "Twoja płatność jest przetwarzana. Otrzymasz wiadomość email z potwierdzeniem.",
+        });
+      } else if (paymentIntent?.status === 'requires_payment_method') {
+        toast({
+          title: "Płatność anulowana",
+          description: "Płatność nie została zrealizowana. Spróbuj ponownie.",
+          variant: "destructive",
+        });
+      }
+    });
+  }, [stripe]);
 
   const orderMutation = useMutation({
     mutationFn: createOrder,
@@ -129,13 +184,24 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
       return;
     }
 
+    // Save form data to sessionStorage before potential redirect
+    const customerData = extractFormData(formRef.current!);
+    if (customerData) {
+      sessionStorage.setItem('checkout_form_data', JSON.stringify({
+        ...customerData,
+        productId,
+        quantity,
+      }));
+    }
+
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
-      confirmParams: { return_url: window.location.origin },
+      confirmParams: { return_url: `${window.location.origin}/checkout?productId=${productId}` },
       redirect: 'if_required',
     });
 
     if (error) {
+      sessionStorage.removeItem('checkout_form_data');
       toast({
         title: toastContent.paymentFailed.title,
         description: error.message,
@@ -146,6 +212,7 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
     }
 
     if (paymentIntent?.status === 'succeeded') {
+      sessionStorage.removeItem('checkout_form_data');
       toast({
         title: toastContent.paymentSuccess.title,
         description: toastContent.paymentSuccess.description,
