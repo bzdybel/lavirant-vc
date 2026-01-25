@@ -261,7 +261,7 @@ Dziękujemy za wybranie Lavirant!
 
     try {
       const mailOptions = {
-        from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+        from: `Lavirant <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
         to: data.email,
         subject: `Potwierdzenie zamówienia - Zamówienie #${data.orderId}`,
         text: this.generateOrderConfirmationText(data),

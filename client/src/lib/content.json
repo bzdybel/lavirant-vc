@@ -615,9 +615,9 @@
     "legal": {
       "copyright": "© 2025 Lavirant. Wszelkie prawa zastrzeżone.",
       "links": [
-        { "text": "Regulamin", "href": "#" },
-        { "text": "Polityka Prywatności", "href": "#" },
-        { "text": "Polityka Cookies", "href": "#" }
+        { "text": "Regulamin", "href": "/Regulamin.pdf" },
+        { "text": "Polityka Prywatności", "href": "/Polityka_Prywatnosci.pdf" },
+        { "text": "Polityka Cookies", "href": "/Polityka_Cookies.pdf" }
       ]
     }
   }
