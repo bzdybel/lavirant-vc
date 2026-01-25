@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Home, ShoppingBag } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { SEOHead } from "@/components/SEOHead";
 import content from "@/lib/content.json";
 
 const { notFound } = content;
@@ -11,7 +12,13 @@ export default function NotFound() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#0a1929] via-[#0f2433] to-[#1a3244] relative overflow-hidden">
+    <>
+      <SEOHead
+        title="404 - Strona nie znaleziona | Lavirant"
+        description="Strona, której szukasz, nie istnieje. Wróć do strony głównej Lavirant i odkryj naszą strategiczną grę planszową."
+        canonical="/404"
+      />
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#0a1929] via-[#0f2433] to-[#1a3244] relative overflow-hidden">
        <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#c9a24d]/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -70,5 +77,6 @@ export default function NotFound() {
         </motion.div>
       </motion.div>
     </div>
+    </>
   );
 }

@@ -3,6 +3,7 @@ import { Home } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
+import { SEOHead } from "@/components/SEOHead";
 import {
   BackgroundGradient,
   SuccessHeader,
@@ -19,10 +20,21 @@ export default function OrderSuccess() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Update meta tags to prevent indexing of success page
+    const metaRobots = document.querySelector('meta[name="robots"]');
+    if (metaRobots) {
+      metaRobots.setAttribute('content', 'noindex, nofollow');
+    }
   }, []);
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#0a1929] via-[#0f2433] to-[#1a3244] relative overflow-hidden">
+    <>
+      <SEOHead
+        title="Zamówienie Złożone | Lavirant"
+        description="Dziękujemy za zakup gry planszowej Lavirant. Potwierdzenie zamówienia zostało wysłane na Twój adres email."
+        canonical="/order-success"
+      />
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#0a1929] via-[#0f2433] to-[#1a3244] relative overflow-hidden">
       <BackgroundGradient />
 
       <motion.div
@@ -74,5 +86,6 @@ export default function OrderSuccess() {
         </motion.div>
       </motion.div>
     </div>
+    </>
   );
 }

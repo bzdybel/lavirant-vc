@@ -49,14 +49,14 @@ export default function Navbar() {
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'py-2' : 'py-6'}`}>
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'py-2' : 'py-6'}`} role="banner">
       {/* Background */}
       <div className="absolute inset-0 bg-[#0f2433] bg-opacity-90 backdrop-blur-sm transition-all duration-300"></div>
 
       {/* Gold accent line */}
       <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#c9a24d]/0 via-[#c9a24d] to-[#c9a24d]/0"></div>
 
-      <nav className="container mx-auto px-6 flex justify-between items-center relative z-10">
+      <nav className="container mx-auto px-6 flex justify-between items-center relative z-10" role="navigation" aria-label="Główna nawigacja">
         <Link href="/">
           <motion.div
             className="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
@@ -66,7 +66,9 @@ export default function Navbar() {
           >
             <img
               src="/logo3.svg"
-              alt="Lavirant Logo"
+              alt="Lavirant - Strategiczna gra planszowa towarzyska"
+              width="80"
+              height="80"
               className="h-20 w-auto"
             />
           </motion.div>

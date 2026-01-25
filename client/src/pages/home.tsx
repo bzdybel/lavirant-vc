@@ -1,5 +1,7 @@
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
+import { SEOHead } from "@/components/SEOHead";
+import { organizationSchema } from "@/lib/seo-schemas";
 
 import HeroSection from "@/components/hero-section";
 import HowToPlay from "@/components/how-to-play";
@@ -23,16 +25,26 @@ const SECTIONS = [
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-background">
-      <Navbar />
+    <>
+      <SEOHead
+        title="Lavirant – Strategiczna Gra Planszowa | Gra Towarzyska dla Dorosłych"
+        description="Lavirant to innowacyjna gra planszowa strategiczna łącząca blef, dedukcję i psychologię. Idealna gra towarzyska dla 5-8 graczy od 13 lat. Kup grę planszową Lavirant i odkryj kto kłamie!"
+        canonical="/"
+        structuredData={organizationSchema}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-background">
+        <Navbar />
 
-      {SECTIONS.map(({ id, Component }) => (
-        <section key={id} id={id}>
-          <Component />
-        </section>
-      ))}
+        <main>
+          {SECTIONS.map(({ id, Component }) => (
+            <section key={id} id={id}>
+              <Component />
+            </section>
+          ))}
+        </main>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   );
 }

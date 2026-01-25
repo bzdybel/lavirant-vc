@@ -9,6 +9,8 @@ import CheckoutForm from "@/components/CheckoutForm";
 import { useProduct, usePaymentIntent } from "@/hooks/useCheckout";
 import { STRIPE_CONFIG, PAYMENT_CONFIG } from "@/config/checkout.config";
 import { PageLayout, CheckoutCard, LoadingState, ErrorState, ProductSummary } from "@/components/checkout";
+import { SEOHead } from "@/components/SEOHead";
+import { createProductSchema, createBreadcrumbSchema } from "@/lib/seo-schemas";
 import content from "@/lib/content.json";
 
 const stripePromise = STRIPE_CONFIG.isMockMode
@@ -38,8 +40,34 @@ export default function Checkout() {
     return <LoadingState />;
   }
 
+  const productSchema = createProductSchema({
+    name: product.name,
+    description: product.description || `${product.name} - Strategiczna gra planszowa towarzyska`,
+    image: `${window.location.origin}${product.image}`,
+    price: product.price / 100,
+    availability: 'InStock',
+  });
+
+  const breadcrumbSchema = createBreadcrumbSchema([
+    { name: 'Strona główna', url: `${window.location.origin}/` },
+    { name: 'Kasa', url: `${window.location.origin}/checkout` },
+  ]);
+
+  const combinedSchema = {
+    "@context": "https://schema.org",
+    "@graph": [productSchema, breadcrumbSchema]
+  };
+
   return (
-    <PageLayout>
+    <>
+      <SEOHead
+        title={`Kup ${product.name} | Lavirant – Gra Planszowa Strategiczna`}
+        description={`Zamów ${product.name} - Strategiczną grę planszową towarzyską. Bezpieczna płatność, darmowa dostawa od 200 zł. Gra dla 5-8 graczy.`}
+        canonical="/checkout"
+        ogType="product"
+        structuredData={combinedSchema}
+      />
+      <PageLayout>
       <Button
         variant="ghost"
         className="mb-6 hover:bg-white/10 text-white"
@@ -157,5 +185,6 @@ export default function Checkout() {
         </CardContent>
       </CheckoutCard>
     </PageLayout>
+    </>
   );
 }

@@ -9,7 +9,14 @@ export type ImageCardProps = {
 const ImageCard = memo(function ImageCard({ src, alt }: ImageCardProps) {
   return (
     <div className="relative">
-      <img src={src} alt={alt} className="w-full h-auto rounded-xl shadow-2xl z-10 relative border-2 border-[#c9a24d]/30" />
+      <img
+        src={src}
+        alt={alt}
+        width="600"
+        height="400"
+        loading="lazy"
+        className="w-full h-auto rounded-xl shadow-2xl z-10 relative border-2 border-[#c9a24d]/30"
+      />
 
       <div className="absolute -inset-0.5 bg-[#c9a24d] opacity-20 blur-lg rounded-xl" />
       <div className="absolute -inset-1 bg-gradient-to-r from-[#2d4a5e] via-[#c9a24d] to-[#2d4a5e] opacity-30 blur-xl rounded-xl" />

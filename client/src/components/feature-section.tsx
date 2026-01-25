@@ -26,7 +26,7 @@ const FeatureSection = memo(function FeatureSection({
   imageBadge
 }: FeatureSectionProps) {
   return (
-    <div className={`flex flex-col lg:flex-row gap-16 mb-32 ${reverse ? "" : ""}`}>
+    <article className={`flex flex-col lg:flex-row gap-16 mb-32 ${reverse ? "" : ""}`}>
       <motion.div
         className={`lg:w-1/2 ${reverse ? "order-2 lg:order-1" : "order-1 lg:order-2"} text-center lg:text-left`}
         initial={{ opacity: 0, x: reverse ? -50 : 50 }}
@@ -57,7 +57,7 @@ const FeatureSection = memo(function FeatureSection({
       >
         <ImageCard src={imageSrc} alt={imageAlt} badge={imageBadge} />
       </motion.div>
-    </div>
+    </article>
   );
 });
 

@@ -1,9 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tantml:react-query';
 import { apiRequest } from "@/lib/queryClient";
 
 interface Product {
   id: number;
   name: string;
+  description?: string;
   price: number;
   image: string;
 }
@@ -11,6 +12,7 @@ interface Product {
 interface ProductResponse {
   id: number;
   name: string;
+  description?: string;
   price: number;
   image: string;
 }

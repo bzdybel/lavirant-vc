@@ -10,7 +10,7 @@ const { footer } = content;
 
 function Footer() {
   return (
-    <footer className="bg-[#0f2433] text-white pt-24 pb-10 relative">
+    <footer className="bg-[#0f2433] text-white pt-24 pb-10 relative" role="contentinfo">
       <FooterBackground />
 
       <div className="container mx-auto px-6 relative z-10">

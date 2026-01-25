@@ -3,6 +3,7 @@ import { Home, RotateCcw } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
+import { SEOHead } from "@/components/SEOHead";
 import {
   FailureBackgroundGradient,
   FailureHeader,
@@ -19,10 +20,21 @@ export default function OrderFailure() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Update meta tags to prevent indexing of failure page
+    const metaRobots = document.querySelector('meta[name="robots"]');
+    if (metaRobots) {
+      metaRobots.setAttribute('content', 'noindex, nofollow');
+    }
   }, []);
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#0a1929] via-[#0f2433] to-[#1a3244] relative overflow-hidden">
+    <>
+      <SEOHead
+        title="Płatność Nieudana | Lavirant"
+        description="Płatność nie powiodła się. Spróbuj ponownie lub skontaktuj się z naszym zespołem wsparcia."
+        canonical="/order-failure"
+      />
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#0a1929] via-[#0f2433] to-[#1a3244] relative overflow-hidden">
       <FailureBackgroundGradient />
 
       <motion.div
@@ -77,5 +89,6 @@ export default function OrderFailure() {
         </motion.div>
       </motion.div>
     </div>
+    </>
   );
 }
