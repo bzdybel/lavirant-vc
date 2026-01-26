@@ -141,7 +141,7 @@ export default function ProductShowcase({
           {product.features.map((feature) => (
             <li key={feature.id} className="flex items-start gap-4">
               <span className="mt-2 h-2 w-2 rounded-full bg-[#c9a24d]" />
-              <span className={`text-white/85 text-lg ${feature.bold ? "font-bold" : ""}`}>
+              <span className={`text-white/85 text-lg `}>
                 {feature.text}
               </span>
             </li>

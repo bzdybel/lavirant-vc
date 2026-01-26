@@ -84,7 +84,7 @@
     ]
   },
   "howToPlay": {
-    "title": "Jak Wygląda Rozgrywka",
+    "title": "Jak wygląda rozgrywka?",
     "subtitle": "Proste zasady, emocjonujące momenty",
     "steps": [
       {
@@ -152,7 +152,7 @@
     ]
   },
   "productShowcase": {
-    "title": "Co Znajdziesz w Pudełku",
+    "title": "Co znajdziesz w pudełku?",
     "subtitle": "Lavirant zawiera wszystko, czego potrzebujesz do niesamowitego doświadczenia grania towarzyskiego.",
     "images": [
       "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
@@ -194,7 +194,7 @@
     ]
   },
   "emotions": {
-    "title": "Emocje, Które Zostają na Dłużej",
+    "title": "Emocje, które zostają na dłużej",
     "subtitle": "Po rozgrywce gracze wracają do domu z czymś więcej niż wspomnieniami",
     "points": [
       {
@@ -216,7 +216,7 @@
     "quote": "To gra, która nie kończy się po ostatniej rundzie – ona trwa w rozmowach, wspomnieniach i śmiechu."
   },
   "forWhom": {
-    "title": "Dla Kogo Jest Lavirant?",
+    "title": "Dla kogo jest Lavirant?",
     "subtitle": "Gra dla każdego, kto szuka czegos więcej niż zwykłej planszówki",
     "items": [
       "Dla fanów gier typu Werewolf / Mafia / Secret Hitler, ale szukających czegoś świeżego",
@@ -285,7 +285,7 @@
     ]
   },
   "testimonials": {
-    "title": "Co Mówią Gracze",
+    "title": "Co mówią gracze?",
     "subtitle": "Krótkie wrażenia po pierwszych rozgrywkach",
     "reviewCount": null,
     "viewAllText": "Zobacz więcej opinii graczy",
@@ -318,15 +318,15 @@
     ]
   },
   "faq": {
-    "title": "Często Zadawane Pytania",
+    "title": "Często zadawane pytania",
     "subtitle": "Wszystko, co musisz wiedzieć o grze Lavirant.",
     "contactText": "Masz więcej pytań? Jesteśmy tutaj, aby pomóc!",
     "contactCTA": "Skontaktuj się z naszym zespołem wsparcia pod adresem kontakt@lavirant.pl",
     "faqs": [
       {
         "id": "faq-players",
-        "question": "Dla ilu graczy jest La'Virant?",
-        "answer": "La'Virant jest grą dla 5-8 graczy w wieku 13+. Celem gry jest połączenie wiedzy, dedukcji oraz umiejętności społecznych. Gracze odpowiadają na pytania, poruszają się po planszy oraz próbują zidentyfikować gracza, który w danej rundzie pełni rolę kłamcy."
+        "question": "Dla ilu graczy jest Lavirant?",
+        "answer": "Lavirant jest grą dla 5-8 graczy w wieku 13+. Celem gry jest połączenie wiedzy, dedukcji oraz umiejętności społecznych. Gracze odpowiadają na pytania, poruszają się po planszy oraz próbują zidentyfikować gracza, który w danej rundzie pełni rolę kłamcy."
       },
       {
         "id": "faq-duration",
@@ -587,9 +587,9 @@
       "title": "Na skróty",
       "links": [
         { "text": "Strona główna", "href": "/" },
-        { "text": "Jak wygląda rozgrywka", "href": "/#how-to-play" },
-        { "text": "Co znajdziesz w pudełku", "href": "/#contents" },
-        { "text": "Dla kogo jest Lavirant", "href": "/#for-whom" },
+        { "text": "Jak wygląda rozgrywka?", "href": "/#how-to-play" },
+        { "text": "Co znajdziesz w pudełku?", "href": "/#contents" },
+        { "text": "Dla kogo jest Lavirant?", "href": "/#for-whom" },
         { "text": "Opinie", "href": "/#reviews" },
         { "text": "FAQ", "href": "/#faq" }
       ]

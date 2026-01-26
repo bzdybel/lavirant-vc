@@ -40,7 +40,15 @@ function renderInvoiceHtml(order: Order, product: Product | undefined, invoiceNu
   const buyerAddress = `${order.address}, ${order.postalCode} ${order.city}, ${order.country}`;
 
   const itemName = product?.name || "Lavirant";
-  const unitPrice = order.quantity > 0 ? Math.round(order.total / order.quantity) : order.total;
+  const deliveryCost = order.deliveryCost ?? 0;
+  const productSubtotal = product
+    ? product.price * order.quantity
+    : Math.max(order.total - deliveryCost, 0);
+  const unitPrice = order.quantity > 0
+    ? Math.round(productSubtotal / order.quantity)
+    : productSubtotal;
+  const productTotal = productSubtotal;
+  const totalWithDelivery = productTotal + deliveryCost;
 
   return `
 <!DOCTYPE html>
@@ -100,13 +108,19 @@ function renderInvoiceHtml(order: Order, product: Product | undefined, invoiceNu
           <td>${itemName}</td>
           <td>${order.quantity}</td>
           <td>${formatPrice(unitPrice)}</td>
-          <td>${formatPrice(order.total)}</td>
+          <td>${formatPrice(productTotal)}</td>
+        </tr>
+        <tr>
+          <td>Dostawa</td>
+          <td>1</td>
+          <td>${formatPrice(deliveryCost)}</td>
+          <td>${formatPrice(deliveryCost)}</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <div class="section total">Suma do zapłaty: ${formatPrice(order.total)}</div>
+  <div class="section total">Suma do zapłaty: ${formatPrice(totalWithDelivery)}</div>
 </body>
 </html>
   `;
@@ -141,9 +155,19 @@ function getInvoiceStorageDir(): string {
     : DEFAULT_STORAGE_DIR;
 }
 
-function buildInvoiceFilePaths(invoiceNumber: string) {
-  const sanitized = invoiceNumber.replace(/\//g, "-");
-  const fileName = `invoice-${sanitized}.pdf`;
+function formatDateForFilename(date: Date): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function buildInvoiceFilePaths(invoiceNumber: string, issuedAt: Date) {
+  const parts = invoiceNumber.split("/");
+  const prefix = parts[0] || "FV";
+  const number = parts[parts.length - 1] || invoiceNumber.replace(/\//g, "-");
+  const dateStamp = formatDateForFilename(issuedAt);
+  const fileName = `Faktura-${prefix}-${dateStamp}-${number}.pdf`;
   const storageDir = getInvoiceStorageDir();
   const absolutePath = path.join(storageDir, fileName);
   const relativePath = path.relative(process.cwd(), absolutePath).replace(/\\/g, "/");
@@ -167,7 +191,7 @@ export async function generateInvoiceForOrder(order: Order, product?: Product): 
 
   const issuedAt = new Date();
   const invoiceNumber = order.invoiceNumber || await storage.getNextInvoiceNumber(issuedAt);
-  const { storageDir, absolutePath, relativePath } = buildInvoiceFilePaths(invoiceNumber);
+  const { storageDir, absolutePath, relativePath } = buildInvoiceFilePaths(invoiceNumber, issuedAt);
 
   ensureDirectoryExists(storageDir);
 

@@ -81,7 +81,7 @@ export default function Navbar() {
           transition={{ delay: 0.3, duration: 0.5 }}
         >
           {[
-            { label: "Jak Grać", id: "how-to-play" },
+            { label: "Jak grać", id: "how-to-play" },
             { label: "Zawartość", id: "contents" },
             { label: "Kup grę", id: "pricing" },
             { label: "Opinie", id: "reviews" }
@@ -165,7 +165,7 @@ export default function Navbar() {
           >
             <div className="container mx-auto px-6 py-4 flex flex-col space-y-4">
               {[
-                { label: "Jak Grać", id: "how-to-play" },
+                { label: "Jak grać", id: "how-to-play" },
                 { label: "Zawartość", id: "contents" },
                 { label: "Kup grę", id: "pricing" },
                 { label: "Opinie", id: "reviews" }

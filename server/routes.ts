@@ -165,16 +165,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const eventId = parsed.eventId || crypto.createHash("sha256").update(rawBody).digest("hex");
 
     const alreadyProcessed = await storage.hasProcessedWebhookEvent(eventId);
-    await storage.recordWebhookEvent({
-      id: eventId,
-      receivedAt: new Date().toISOString(),
-      provider: parsed.provider,
-      status: parsed.status,
-      paymentReference: parsed.paymentReference,
-      orderId: parsed.orderId,
-      signatureValid: true,
-      rawPayload: rawBody.toString("utf8"),
-    });
 
     console.log("📥 Webhook event received", {
       eventId,
@@ -226,13 +216,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const product = order.productId ? await storage.getProduct(order.productId) : undefined;
 
-    await applyPaymentStatusUpdate({
+    const stripeAmount = payload?.type === "payment_intent.succeeded"
+      ? payload?.data?.object?.amount
+      : null;
+
+    if (Number.isFinite(stripeAmount)) {
+      const productTotal = product ? product.price * order.quantity : order.total;
+      const deliveryCost = Math.max(0, Number(stripeAmount) - productTotal);
+
+      if (deliveryCost !== order.deliveryCost || Number(stripeAmount) !== order.total) {
+        const updated = await storage.updateOrder(order.id, {
+          deliveryCost,
+          total: Number(stripeAmount),
+        });
+        order = updated ?? order;
+      }
+    }
+
+    const updatedOrder = await applyPaymentStatusUpdate({
       order,
       status: "COMPLETED",
       paymentReference: parsed.paymentReference,
       paymentProvider: parsed.provider,
       product,
     });
+
+    if (updatedOrder.status === "PAID") {
+      await storage.recordWebhookEvent({
+        id: eventId,
+        receivedAt: new Date().toISOString(),
+        provider: parsed.provider,
+        status: parsed.status,
+        paymentReference: parsed.paymentReference,
+        orderId: parsed.orderId,
+        signatureValid: true,
+        rawPayload: rawBody.toString("utf8"),
+      });
+    }
 
     return res.status(200).json({ received: true });
   });
@@ -345,6 +365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentIntentId,
         paymentReference,
         paymentProvider,
+        deliveryCost,
         firstName,
         lastName,
         email,
@@ -369,7 +390,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Product not found" });
       }
 
-      const total = product.price * quantity; // Already in cents
+      const deliveryCostCents = Number.isFinite(Number(deliveryCost))
+        ? Math.max(0, Math.round(Number(deliveryCost)))
+        : 0;
+
+      const total = product.price * quantity + deliveryCostCents; // Already in cents
 
       const resolvedPaymentReference = paymentReference || paymentIntentId || null;
 
@@ -378,6 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         productId,
         quantity,
         total,
+        deliveryCost: deliveryCostCents,
         status: "CREATED",
         paymentIntentId: paymentIntentId || null,
         paymentReference: resolvedPaymentReference,
@@ -414,6 +440,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }).catch(error => {
         console.error("Failed to send order confirmation email:", error);
       });
+
+      if (order.paymentIntentId && stripe) {
+        try {
+          await stripe.paymentIntents.update(order.paymentIntentId, {
+            metadata: { orderId: String(order.id) },
+          });
+
+          const paymentIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
+          if (paymentIntent.status === "succeeded" && order.status !== "PAID") {
+            const updatedOrder = await applyPaymentStatusUpdate({
+              order,
+              status: "COMPLETED",
+              paymentReference: paymentIntent.id,
+              paymentProvider: "stripe",
+              product,
+            });
+
+            if (updatedOrder.status === "PAID") {
+              console.log("✅ Order paid via reconciliation", {
+                orderId: updatedOrder.id,
+                paymentIntentId: paymentIntent.id,
+              });
+            }
+          }
+        } catch (error) {
+          console.warn("⚠️ Failed to reconcile payment intent for order", {
+            orderId: order.id,
+            error,
+          });
+        }
+      }
 
       res.status(201).json(order);
     } catch (error: any) {

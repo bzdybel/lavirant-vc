@@ -23,6 +23,7 @@ export const orders = pgTable("orders", {
   productId: integer("product_id").references(() => products.id),
   quantity: integer("quantity").notNull(),
   total: integer("total").notNull(), // Total in cents
+  deliveryCost: integer("delivery_cost").notNull().default(0),
   status: text("status").notNull(), // 'CREATED', 'PAYMENT_PENDING', 'PAID', 'FAILED'
   paymentIntentId: text("payment_intent_id"),
   paymentProvider: text("payment_provider"),
@@ -58,6 +59,7 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   productId: true,
   quantity: true,
   total: true,
+  deliveryCost: true,
   status: true,
   paymentIntentId: true,
   paymentProvider: true,
