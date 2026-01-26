@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -23,8 +23,16 @@ export const orders = pgTable("orders", {
   productId: integer("product_id").references(() => products.id),
   quantity: integer("quantity").notNull(),
   total: integer("total").notNull(), // Total in cents
-  status: text("status").notNull(), // 'pending', 'completed', 'failed'
+  status: text("status").notNull(), // 'CREATED', 'PAYMENT_PENDING', 'PAID', 'FAILED'
   paymentIntentId: text("payment_intent_id"),
+  paymentProvider: text("payment_provider"),
+  paymentReference: text("payment_reference"),
+  paymentPendingAt: text("payment_pending_at"),
+  paymentConfirmedAt: text("payment_confirmed_at"),
+  invoiceNumber: text("invoice_number"),
+  invoicePdfPath: text("invoice_pdf_path"),
+  invoiceIssuedAt: text("invoice_issued_at"),
+  emailSentAt: text("email_sent_at"),
   // Customer information
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
@@ -52,6 +60,14 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   total: true,
   status: true,
   paymentIntentId: true,
+  paymentProvider: true,
+  paymentReference: true,
+  paymentPendingAt: true,
+  paymentConfirmedAt: true,
+  invoiceNumber: true,
+  invoicePdfPath: true,
+  invoiceIssuedAt: true,
+  emailSentAt: true,
   firstName: true,
   lastName: true,
   email: true,

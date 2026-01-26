@@ -6,8 +6,19 @@ import {
   type Order,
   type InsertOrder
 } from "@shared/schema";
- // modify the interface with any CRUD methods
-// you might need
+
+export type OrderStatus = "CREATED" | "PAYMENT_PENDING" | "PAID" | "FAILED";
+
+export interface WebhookEventRecord {
+  id: string;
+  receivedAt: string;
+  provider: string;
+  status: string;
+  paymentReference?: string | null;
+  orderId?: number | null;
+  signatureValid: boolean;
+  rawPayload: string;
+}
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -22,12 +33,20 @@ export interface IStorage {
   // Orders
   createOrder(order: InsertOrder): Promise<Order>;
   getOrder(id: number): Promise<Order | undefined>;
+  updateOrder(id: number, update: Partial<Order>): Promise<Order | undefined>;
+  getOrderByPaymentReference(paymentReference: string): Promise<Order | undefined>;
+  listOrdersByStatus(status: OrderStatus): Promise<Order[]>;
+  getNextInvoiceNumber(issuedAt: Date): Promise<string>;
+  hasProcessedWebhookEvent(eventId: string): Promise<boolean>;
+  recordWebhookEvent(event: WebhookEventRecord): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private products: Map<number, Product>;
   private orders: Map<number, Order>;
+  private webhookEvents: Map<string, WebhookEventRecord>;
+  private invoiceCounters: Map<string, number>;
   currentId: number;
   currentProductId: number;
   currentOrderId: number;
@@ -36,6 +55,8 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.products = new Map();
     this.orders = new Map();
+    this.webhookEvents = new Map();
+    this.invoiceCounters = new Map();
     this.currentId = 1;
     this.currentProductId = 1;
     this.currentOrderId = 1;
@@ -102,7 +123,15 @@ export class MemStorage implements IStorage {
       id,
       userId: insertOrder.userId ?? null,
       productId: insertOrder.productId ?? null,
-      paymentIntentId: insertOrder.paymentIntentId ?? null
+      paymentIntentId: insertOrder.paymentIntentId ?? null,
+      paymentProvider: insertOrder.paymentProvider ?? null,
+      paymentReference: insertOrder.paymentReference ?? null,
+      paymentPendingAt: insertOrder.paymentPendingAt ?? null,
+      paymentConfirmedAt: insertOrder.paymentConfirmedAt ?? null,
+      invoiceNumber: insertOrder.invoiceNumber ?? null,
+      invoicePdfPath: insertOrder.invoicePdfPath ?? null,
+      invoiceIssuedAt: insertOrder.invoiceIssuedAt ?? null,
+      emailSentAt: insertOrder.emailSentAt ?? null
     };
     this.orders.set(id, order);
     return order;
@@ -110,6 +139,43 @@ export class MemStorage implements IStorage {
 
   async getOrder(id: number): Promise<Order | undefined> {
     return this.orders.get(id);
+  }
+
+  async updateOrder(id: number, update: Partial<Order>): Promise<Order | undefined> {
+    const existing = this.orders.get(id);
+    if (!existing) return undefined;
+    const updated: Order = { ...existing, ...update };
+    this.orders.set(id, updated);
+    return updated;
+  }
+
+  async getOrderByPaymentReference(paymentReference: string): Promise<Order | undefined> {
+    return Array.from(this.orders.values()).find(
+      (order) => order.paymentReference === paymentReference || order.paymentIntentId === paymentReference,
+    );
+  }
+
+  async listOrdersByStatus(status: OrderStatus): Promise<Order[]> {
+    return Array.from(this.orders.values()).filter((order) => order.status === status);
+  }
+
+  async getNextInvoiceNumber(issuedAt: Date): Promise<string> {
+    const year = issuedAt.getFullYear();
+    const month = `${issuedAt.getMonth() + 1}`.padStart(2, "0");
+    const key = `${year}-${month}`;
+    const current = this.invoiceCounters.get(key) ?? 0;
+    const next = current + 1;
+    this.invoiceCounters.set(key, next);
+    const sequence = `${next}`.padStart(4, "0");
+    return `FV/${year}/${month}/${sequence}`;
+  }
+
+  async hasProcessedWebhookEvent(eventId: string): Promise<boolean> {
+    return this.webhookEvents.has(eventId);
+  }
+
+  async recordWebhookEvent(event: WebhookEventRecord): Promise<void> {
+    this.webhookEvents.set(event.id, event);
   }
 }
 

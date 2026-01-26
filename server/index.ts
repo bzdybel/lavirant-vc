@@ -1,13 +1,27 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
-import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupSitemapRoute } from "./sitemap";
+import { startPaymentStatusJob } from "./paymentStatusJob";
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+const skipWebhookParsing = (req: Request) => req.path === "/api/payments/webhook";
+
+app.use((req, res, next) => {
+  if (req.path === "/api/payments/webhook") {
+    return next();
+  }
+  return express.json()(req, res, next);
+});
+
+app.use((req, res, next) => {
+  if (skipWebhookParsing(req)) {
+    return next();
+  }
+  return express.urlencoded({ extended: false })(req, res, next);
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -41,6 +55,8 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+
+  startPaymentStatusJob();
 
   // Setup SEO sitemap route
   setupSitemapRoute(app);

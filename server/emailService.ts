@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
-import fs from 'fs';
 import path from 'path';
+import type { Order, Product } from "@shared/schema";
 
 interface OrderConfirmationData {
   orderId: number;
@@ -34,8 +34,7 @@ class EmailService {
       EMAIL_PASS,
       EMAIL_PASSWORD,
       EMAIL_FROM,
-      EMAIL_SECURE,
-      NODE_ENV
+      EMAIL_SECURE
     } = process.env;
 
     // Support both EMAIL_PASS and EMAIL_PASSWORD
@@ -250,6 +249,131 @@ ${data.country}
 W razie pytań dotyczących zamówienia, skontaktuj się z nami.
 Dziękujemy za wybranie Lavirant!
     `;
+  }
+
+  private generateInvoiceEmailHtml(order: Order, product: Product | undefined, invoiceNumber: string): string {
+    const productName = product?.name || "Lavirant";
+    return `
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faktura za zakup gry</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background-color: #ffffff; max-width: 600px;">
+          <tr>
+            <td style="padding: 40px 40px 24px 40px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+              <div style="font-size: 28px; font-weight: 700; color: #0f2433; letter-spacing: 1px; font-family: Georgia, serif;">LAVIRANT</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 40px 16px 40px;">
+              <h1 style="margin: 0 0 12px 0; font-size: 22px; font-weight: 600; color: #1a1a1a; line-height: 1.3;">Faktura za zakup gry</h1>
+              <p style="margin: 0; font-size: 15px; color: #525252; line-height: 1.5;">
+                Twoja płatność została potwierdzona. W załączniku znajdziesz fakturę VAT ${invoiceNumber}.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 32px 40px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border: 1px solid #e5e5e5; border-radius: 4px;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <div style="font-size: 13px; color: #737373; padding-bottom: 6px;">Numer zamówienia</div>
+                    <div style="font-size: 15px; color: #1a1a1a; font-weight: 600;">#${order.id}</div>
+                    <div style="font-size: 13px; color: #737373; padding: 16px 0 6px 0;">Produkt</div>
+                    <div style="font-size: 15px; color: #1a1a1a;">${productName} × ${order.quantity}</div>
+                    <div style="font-size: 13px; color: #737373; padding: 16px 0 6px 0;">Łącznie</div>
+                    <div style="font-size: 15px; color: #1a1a1a; font-weight: 600;">${this.formatPrice(order.total)}</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 40px 40px;">
+              <p style="margin: 0; font-size: 13px; color: #737373; line-height: 1.5;">W razie pytań dotyczących zamówienia prosimy o kontakt: zamowienia@lavirant.pl</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 40px 40px;">
+              <p style="margin: 0; font-size: 12px; color: #a3a3a3; line-height: 1.5;">
+                © 2026 Lavirant. Wszystkie prawa zastrzeżone.<br>
+                Wiadomość wygenerowana automatycznie, prosimy nie odpowiadać.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
+  }
+
+  private generateInvoiceEmailText(order: Order, product: Product | undefined, invoiceNumber: string): string {
+    const productName = product?.name || "Lavirant";
+    return `
+  FAKTURA ZA ZAKUP GRY
+  ====================
+
+  Płatność została potwierdzona. Faktura VAT ${invoiceNumber} jest w załączniku.
+
+Zamówienie #${order.id}
+Produkt: ${productName}
+Ilość: ${order.quantity}
+Kwota: ${this.formatPrice(order.total)}
+
+W razie pytań napisz do nas: zamowienia@lavirant.pl
+    `;
+  }
+
+  async sendPaidInvoiceEmail(params: {
+    order: Order;
+    product?: Product | undefined;
+    invoiceNumber: string;
+    invoicePdfPath: string;
+  }): Promise<boolean> {
+    const { order, product, invoiceNumber, invoicePdfPath } = params;
+
+    if (!this.isConfigured || !this.transporter) {
+      console.log(`📧 [Mock] Wysłano email z fakturą do ${order.email}`);
+      console.log(`   Zamówienie #${order.id} - Faktura ${invoiceNumber}`);
+      return true;
+    }
+
+    const attachmentPath = path.isAbsolute(invoicePdfPath)
+      ? invoicePdfPath
+      : path.join(process.cwd(), invoicePdfPath);
+
+    try {
+      const mailOptions = {
+        from: `Lavirant <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+        to: order.email,
+        subject: "Faktura za zakup gry – Lavirant",
+        text: this.generateInvoiceEmailText(order, product, invoiceNumber),
+        html: this.generateInvoiceEmailHtml(order, product, invoiceNumber),
+        attachments: [
+          {
+            filename: path.basename(attachmentPath),
+            path: attachmentPath,
+          },
+        ],
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Email z fakturą wysłany do ${order.email} (ID: ${info.messageId})`);
+      return true;
+    } catch (error) {
+      console.error('❌ Błąd podczas wysyłania emaila z fakturą:', error);
+      return false;
+    }
   }
 
   async sendOrderConfirmation(data: OrderConfirmationData): Promise<boolean> {
