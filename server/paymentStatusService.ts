@@ -2,6 +2,7 @@ import type { Order, Product } from "@shared/schema";
 import { storage, type OrderStatus } from "./storage";
 import { generateInvoiceForOrder } from "./invoiceService";
 import { emailService } from "./emailService";
+import { shippingService } from "./shipping/ShippingService";
 
 export type PaymentWebhookStatus = "COMPLETED" | "PENDING" | "FAILED" | "CANCELED" | "UNKNOWN";
 
@@ -60,6 +61,8 @@ export async function applyPaymentStatusUpdate({
         paymentReference: paymentReferenceValue,
         paymentProvider: paymentProviderValue,
       });
+
+      await shippingService.createShipment(paidOrder);
 
       const invoiceResult = await generateInvoiceForOrder(paidOrder, product);
       const invoicedOrder = (await storage.updateOrder(paidOrder.id, {

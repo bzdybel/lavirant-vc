@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { applyPaymentStatusUpdate, type PaymentWebhookStatus } from "./paymentStatusService";
 import { emailService } from "./emailService";
 import { stripe, USE_MOCK_STRIPE } from "./stripeClient";
+import { shippingService } from "./shipping/ShippingService";
 
 const WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET || "";
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
@@ -475,6 +476,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(order);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/admin/shipments/:orderId/ship", async (req, res) => {
+    try {
+      const orderId = Number(req.params.orderId);
+      if (!Number.isFinite(orderId)) {
+        return res.status(400).json({ message: "Invalid order ID" });
+      }
+
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      const shipment = await shippingService.markShipped(orderId);
+      if (!shipment) {
+        return res.status(404).json({ message: "Shipment not found" });
+      }
+
+      await emailService.sendShipmentEmail({
+        order,
+        trackingNumber: shipment.trackingNumber,
+        trackingUrl: shipment.trackingUrl,
+      });
+
+      return res.json({
+        orderId,
+        status: "SHIPPED",
+        trackingNumber: shipment.trackingNumber,
+        trackingUrl: shipment.trackingUrl,
+      });
+    } catch (error: any) {
+      return res.status(500).json({ message: error.message });
     }
   });
 

@@ -30,6 +30,7 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [deliveryMethod, setDeliveryMethod] = useState("inpost");
+  const [deliveryPointId, setDeliveryPointId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [, navigate] = useLocation();
   const formRef = useRef<HTMLFormElement>(null);
@@ -85,6 +86,15 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
       return false;
     }
 
+    if (deliveryMethod === "inpost" && !deliveryPointId.trim()) {
+      toast({
+        title: "Wybierz paczkomat InPost",
+        description: "Wymagamy wyboru paczkomatu dla dostawy do paczkomatu.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -102,6 +112,8 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
       productId,
       quantity,
       paymentIntentId,
+      deliveryMethod: deliveryMethod === "inpost" ? "INPOST_PACZKOMAT" : "INPOST_KURIER",
+      deliveryPoint: deliveryMethod === "inpost" ? { id: deliveryPointId.trim() } : undefined,
       ...customerData,
     };
   };
@@ -134,7 +146,13 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
 
     const customerData = extractFormData(formRef.current!);
     if (customerData) {
-      saveFormDataForRedirect({ ...customerData, productId, quantity });
+      saveFormDataForRedirect({
+        ...customerData,
+        productId,
+        quantity,
+        deliveryMethod: deliveryMethod === "inpost" ? "INPOST_PACZKOMAT" : "INPOST_KURIER",
+        deliveryPoint: deliveryMethod === "inpost" ? { id: deliveryPointId.trim() } : undefined,
+      });
     }
 
     const { error, paymentIntent } = await stripe.confirmPayment({
@@ -177,13 +195,22 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
     }
   };
 
+  const handleDeliveryMethodChange = (method: string) => {
+    setDeliveryMethod(method);
+    if (method !== "inpost") {
+      setDeliveryPointId("");
+    }
+  };
+
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
       <CustomerInfoFields />
 
       <DeliveryMethodSelector
         selectedMethod={deliveryMethod}
-        onMethodChange={setDeliveryMethod}
+        onMethodChange={handleDeliveryMethodChange}
+        deliveryPointId={deliveryPointId}
+        onDeliveryPointChange={setDeliveryPointId}
       />
 
       {STRIPE_CONFIG.isMockMode ? (

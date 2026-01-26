@@ -400,6 +400,41 @@ W razie pytań napisz do nas: zamowienia@lavirant.pl
       return false;
     }
   }
+
+  async sendShipmentEmail(params: {
+    order: Order;
+    trackingNumber: string;
+    trackingUrl: string;
+  }): Promise<boolean> {
+    const { order, trackingNumber, trackingUrl } = params;
+
+    if (!this.isConfigured || !this.transporter) {
+      console.log(`📦 [Mock] Wysłano email o wysyłce do ${order.email}`);
+      console.log(`   Zamówienie #${order.id} - ${trackingNumber} - ${trackingUrl}`);
+      return true;
+    }
+
+    try {
+      const mailOptions = {
+        from: `Lavirant <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+        to: order.email,
+        subject: "Twoje zamówienie zostało wysłane – Lavirant",
+        text: `Twoje zamówienie #${order.id} zostało wysłane. Numer przesyłki: ${trackingNumber}. Śledź przesyłkę: ${trackingUrl}`,
+        html: `
+<p>Twoje zamówienie <strong>#${order.id}</strong> zostało wysłane.</p>
+<p>Numer przesyłki: <strong>${trackingNumber}</strong></p>
+<p>Śledź przesyłkę: <a href="${trackingUrl}">${trackingUrl}</a></p>
+        `,
+      };
+
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Email o wysyłce wysłany do ${order.email} (ID: ${info.messageId})`);
+      return true;
+    } catch (error) {
+      console.error("❌ Błąd podczas wysyłania emaila o wysyłce:", error);
+      return false;
+    }
+  }
 }
 
 // Export a singleton instance

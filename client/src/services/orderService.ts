@@ -4,6 +4,10 @@ export interface CreateOrderRequest {
   productId: number;
   quantity: number;
   paymentIntentId: string;
+  deliveryMethod?: "INPOST_PACZKOMAT" | "INPOST_KURIER";
+  deliveryPoint?: {
+    id: string;
+  };
   firstName: string;
   lastName: string;
   email: string;

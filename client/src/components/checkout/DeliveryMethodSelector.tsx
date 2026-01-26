@@ -2,12 +2,15 @@ import { Truck, Package, Zap } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import content from "@/lib/content.json";
+import { DeliveryPointPicker } from "@/components/checkout/DeliveryPointPicker";
 
 const { labels } = content.checkout.delivery;
 
 interface DeliveryMethodSelectorProps {
   selectedMethod: string;
   onMethodChange: (_value: string) => void;
+  deliveryPointId?: string;
+  onDeliveryPointChange?: (_value: string) => void;
 }
 
 const ICON_MAP = {
@@ -38,6 +41,8 @@ const formatPrice = (price: number): string => {
 export const DeliveryMethodSelector = ({
   selectedMethod,
   onMethodChange,
+  deliveryPointId = "",
+  onDeliveryPointChange,
 }: DeliveryMethodSelectorProps) => {
   return (
     <div className="bg-[#1a3244]/60 rounded-lg border border-white/10 p-6">
@@ -74,6 +79,14 @@ export const DeliveryMethodSelector = ({
                       {labels.estimatedDelivery}: {option.estimatedDays}
                     </p>
                   </div>
+                  {isSelected && option.id === "inpost" && onDeliveryPointChange ? (
+                    <div className="mt-4">
+                      <DeliveryPointPicker
+                        value={deliveryPointId}
+                        onChange={onDeliveryPointChange}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </Label>
             );

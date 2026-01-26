@@ -4,7 +4,9 @@ import {
   type Product,
   type InsertProduct,
   type Order,
-  type InsertOrder
+  type InsertOrder,
+  type Shipment,
+  type InsertShipment
 } from "@shared/schema";
 
 export type OrderStatus = "CREATED" | "PAYMENT_PENDING" | "PAID" | "FAILED";
@@ -39,27 +41,38 @@ export interface IStorage {
   getNextInvoiceNumber(issuedAt: Date): Promise<string>;
   hasProcessedWebhookEvent(eventId: string): Promise<boolean>;
   recordWebhookEvent(event: WebhookEventRecord): Promise<void>;
+
+  // Shipments
+  createShipment(shipment: InsertShipment): Promise<Shipment>;
+  updateShipment(id: number, update: Partial<Shipment>): Promise<Shipment | undefined>;
+  getShipmentByOrderId(orderId: number): Promise<Shipment | undefined>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private products: Map<number, Product>;
   private orders: Map<number, Order>;
+  private shipments: Map<number, Shipment>;
+  private shipmentsByOrderId: Map<number, number>;
   private webhookEvents: Map<string, WebhookEventRecord>;
   private invoiceCounters: Map<string, number>;
   currentId: number;
   currentProductId: number;
   currentOrderId: number;
+  currentShipmentId: number;
 
   constructor() {
     this.users = new Map();
     this.products = new Map();
     this.orders = new Map();
+    this.shipments = new Map();
+    this.shipmentsByOrderId = new Map();
     this.webhookEvents = new Map();
     this.invoiceCounters = new Map();
     this.currentId = 1;
     this.currentProductId = 1;
     this.currentOrderId = 1;
+    this.currentShipmentId = 1;
 
     // Add sample products for testing
     this.initSampleProducts();
@@ -177,6 +190,32 @@ export class MemStorage implements IStorage {
 
   async recordWebhookEvent(event: WebhookEventRecord): Promise<void> {
     this.webhookEvents.set(event.id, event);
+  }
+
+  async createShipment(insertShipment: InsertShipment): Promise<Shipment> {
+    const id = this.currentShipmentId++;
+    const shipment: Shipment = {
+      ...insertShipment,
+      id,
+      shippedAt: insertShipment.shippedAt ?? null,
+    };
+    this.shipments.set(id, shipment);
+    this.shipmentsByOrderId.set(insertShipment.orderId, id);
+    return shipment;
+  }
+
+  async updateShipment(id: number, update: Partial<Shipment>): Promise<Shipment | undefined> {
+    const existing = this.shipments.get(id);
+    if (!existing) return undefined;
+    const updated: Shipment = { ...existing, ...update };
+    this.shipments.set(id, updated);
+    return updated;
+  }
+
+  async getShipmentByOrderId(orderId: number): Promise<Shipment | undefined> {
+    const shipmentId = this.shipmentsByOrderId.get(orderId);
+    if (!shipmentId) return undefined;
+    return this.shipments.get(shipmentId);
   }
 }
 

@@ -46,6 +46,17 @@ export const orders = pgTable("orders", {
   createdAt: text("created_at").notNull(),
 });
 
+export const shipments = pgTable("shipments", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").notNull().references(() => orders.id),
+  provider: text("provider").notNull(),
+  trackingNumber: text("tracking_number").notNull(),
+  trackingUrl: text("tracking_url").notNull(),
+  status: text("status").notNull(), // 'CREATED', 'SHIPPED'
+  createdAt: text("created_at").notNull(),
+  shippedAt: text("shipped_at"),
+});
+
 // Schemas and types
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -81,6 +92,16 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   createdAt: true,
 });
 
+export const insertShipmentSchema = createInsertSchema(shipments).pick({
+  orderId: true,
+  provider: true,
+  trackingNumber: true,
+  trackingUrl: true,
+  status: true,
+  createdAt: true,
+  shippedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -89,3 +110,6 @@ export type Product = typeof products.$inferSelect;
 
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
+
+export type InsertShipment = z.infer<typeof insertShipmentSchema>;
+export type Shipment = typeof shipments.$inferSelect;
