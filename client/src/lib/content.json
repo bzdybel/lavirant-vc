@@ -569,6 +569,11 @@
       }
     ]
   },
+  "maintenance": {
+    "badge": "Prace w toku",
+    "title": "Aktualnie pracujemy nad stroną",
+    "message": "Dziękujemy za cierpliwość. Trwają prace serwisowe i chwilowo wyłączyliśmy pozostałe funkcje. Wróć do nas później, a znajdziesz tutaj pełną wersję."
+  },
   "footer": {
     "brandName": "Lavirant",
     "logoUrl": "/logo3.svg",
