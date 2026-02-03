@@ -94,6 +94,14 @@ function parseWebhookPayload(payload: any): {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.get("/api/shipping/inpost-config", (_req, res) => {
+    const geowidgetToken = process.env.INPOST_GEOWIDGET || "";
+    res.json({
+      enabled: Boolean(geowidgetToken),
+      geowidgetToken: geowidgetToken || null,
+    });
+  });
+
   app.post("/api/payments/webhook", express.raw({ type: "*/*" }), async (req, res) => {
     const rawBody = Buffer.isBuffer(req.body)
       ? req.body
@@ -367,6 +375,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentReference,
         paymentProvider,
         deliveryCost,
+        deliveryMethod,
+        deliveryPoint,
         firstName,
         lastName,
         email,
@@ -383,6 +393,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!firstName || !lastName || !email || !phone || !address || !city || !postalCode || !country) {
         return res.status(400).json({ message: "Missing customer information" });
+      }
+
+      if (deliveryMethod === "INPOST_PACZKOMAT" && !deliveryPoint?.id) {
+        return res.status(400).json({ message: "Missing InPost delivery point" });
       }
 
       const product = await storage.getProduct(productId);
@@ -405,6 +419,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         quantity,
         total,
         deliveryCost: deliveryCostCents,
+        deliveryMethod: deliveryMethod ?? null,
+        deliveryPointId: deliveryPoint?.id ?? null,
         status: "CREATED",
         paymentIntentId: paymentIntentId || null,
         paymentReference: resolvedPaymentReference,

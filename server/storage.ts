@@ -137,6 +137,8 @@ export class MemStorage implements IStorage {
       userId: insertOrder.userId ?? null,
       productId: insertOrder.productId ?? null,
       deliveryCost: insertOrder.deliveryCost ?? 0,
+      deliveryMethod: insertOrder.deliveryMethod ?? null,
+      deliveryPointId: insertOrder.deliveryPointId ?? null,
       paymentIntentId: insertOrder.paymentIntentId ?? null,
       paymentProvider: insertOrder.paymentProvider ?? null,
       paymentReference: insertOrder.paymentReference ?? null,

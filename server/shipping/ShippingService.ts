@@ -1,17 +1,26 @@
 import type { Order } from "@shared/schema";
 import { storage } from "../storage";
 import type { ShipmentOutput } from "./ShippingProvider";
+import { InPostProvider } from "./InPostProvider";
 import { MockInPostProvider } from "./MockInPostProvider";
 
 const PROVIDER = process.env.SHIPPING_PROVIDER || "MOCK_INPOST";
 
 const providers = {
+  INPOST: (() => {
+    try {
+      return new InPostProvider();
+    } catch (error) {
+      console.warn("⚠️ InPost provider not configured, falling back to mock.", error);
+      return null;
+    }
+  })(),
   MOCK_INPOST: new MockInPostProvider(),
 };
 
 function resolveProvider() {
   if (PROVIDER === "INPOST") {
-    return providers.MOCK_INPOST;
+    return providers.INPOST ?? providers.MOCK_INPOST;
   }
   return providers.MOCK_INPOST;
 }

@@ -392,6 +392,16 @@
     },
     "delivery": {
       "title": "Metoda dostawy",
+      "pointPicker": {
+        "title": "Wybierz paczkomat InPost",
+        "selectedLabel": "Wybrany paczkomat",
+        "manualLabel": "Numer paczkomatu",
+        "manualPlaceholder": "np. WAW123",
+        "mapPlaceholder": "Wybierz paczkomat na mapie",
+        "loading": "Ładowanie mapy InPost…",
+        "manualFallback": "Podaj kod paczkomatu ręcznie, jeśli mapa jest niedostępna.",
+        "manualFailure": "Mapa InPost nie załadowała się. Sprawdź token lub dozwolone domeny i podaj kod ręcznie."
+      },
       "labels": {
         "free": "Gratis",
         "pricePrefix": "+",
