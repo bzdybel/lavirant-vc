@@ -5,11 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import ScrollToTop from "@/components/scroll-to-top";
 import Router from "./router";
 import MaintenanceScreen from "@/components/maintenance-screen";
+const maintenanceEnabled = true;
 
 function App() {
-  const maintenanceEnabled =
-    import.meta.env.VITE_MAINTENANCE_MODE === "true";
-
   if (maintenanceEnabled) {
     return <MaintenanceScreen />;
   }
