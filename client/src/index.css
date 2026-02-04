@@ -117,23 +117,23 @@
     background-image: url('https://www.transparenttextures.com/patterns/dark-leather.png');
     position: relative;
   }
-  
+
   .bg-navy-gradient {
     background: linear-gradient(135deg, #0a1829, #0f2433, #2d4a5e);
   }
-  
+
   .text-gold {
     color: #c9a24d;
   }
-  
+
   .border-gold {
     border-color: #c9a24d;
   }
-  
+
   .gold-blur {
     filter: drop-shadow(0 0 10px rgba(201, 162, 77, 0.5));
   }
-  
+
   .btn-gold {
     background-color: #c9a24d;
     color: #0f2433;
@@ -141,15 +141,15 @@
     transition: all 0.3s ease;
     overflow: hidden;
   }
-  
+
   .btn-gold:hover {
     background-color: #a67c4a;
   }
-  
+
   .gold-pulse {
     animation: goldPulse 4s infinite alternate;
   }
-  
+
   @keyframes goldPulse {
     0%, 100% {
       filter: drop-shadow(0 0 2px rgba(247, 203, 44, 0.3));
@@ -195,4 +195,8 @@
 
 .bg-gradient-conic {
   background: conic-gradient(from 0deg at 50% 50%, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%);
+}
+
+.language-wrapper {
+  display: none !important;
 }

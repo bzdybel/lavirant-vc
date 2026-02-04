@@ -95,7 +95,10 @@ function parseWebhookPayload(payload: any): {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/shipping/inpost-config", (_req, res) => {
-    const geowidgetToken = process.env.INPOST_GEOWIDGET || "";
+    const isProduction = process.env.NODE_ENV === "production";
+    const geowidgetToken = isProduction
+      ? (process.env.INPOST_GEOWIDGET || "")
+      : (process.env.INPOST_GEOWIDGET_NGROK || process.env.INPOST_GEOWIDGET || "");
     res.json({
       enabled: Boolean(geowidgetToken),
       geowidgetToken: geowidgetToken || null,
