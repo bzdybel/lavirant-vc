@@ -50,6 +50,13 @@ export class ShippingService {
       shippedAt: null,
     });
 
+    await storage.updateOrder(order.id, {
+      shipmentId: shipment.shipmentId ?? null,
+      shipmentStatus: shipment.status ?? null,
+      trackingNumber: shipment.trackingNumber,
+      labelGenerated: false,
+    });
+
     return shipment;
   }
 

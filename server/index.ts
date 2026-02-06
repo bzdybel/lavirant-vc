@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupSitemapRoute } from "./sitemap";
 import { startPaymentStatusJob } from "./paymentStatusJob";
+import { startShipXPollingJob } from "./inpost/shipxPollingJob";
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
 
   startPaymentStatusJob();
+  startShipXPollingJob();
 
   // Setup SEO sitemap route
   setupSitemapRoute(app);

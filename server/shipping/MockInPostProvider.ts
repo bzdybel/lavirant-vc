@@ -8,11 +8,13 @@ function generateTrackingNumber(): string {
 export class MockInPostProvider implements ShippingProvider {
   createShipment(_input: ShipmentInput): Promise<ShipmentOutput> {
     const trackingNumber = generateTrackingNumber();
+    const shipmentId = `MOCK-${trackingNumber}`;
     return Promise.resolve({
       provider: "MOCK_INPOST",
       trackingNumber,
       trackingUrl: this.getTrackingUrl(trackingNumber),
       status: "CREATED",
+      shipmentId,
     });
   }
 

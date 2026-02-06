@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -27,6 +27,10 @@ export const orders = pgTable("orders", {
   deliveryMethod: text("delivery_method"),
   deliveryPointId: text("delivery_point_id"),
   status: text("status").notNull(), // 'CREATED', 'PAYMENT_PENDING', 'PAID', 'FAILED'
+  shipmentId: text("shipment_id"),
+  shipmentStatus: text("shipment_status"),
+  trackingNumber: text("tracking_number"),
+  labelGenerated: boolean("label_generated"),
   paymentIntentId: text("payment_intent_id"),
   paymentProvider: text("payment_provider"),
   paymentReference: text("payment_reference"),
@@ -76,6 +80,10 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
   deliveryMethod: true,
   deliveryPointId: true,
   status: true,
+  shipmentId: true,
+  shipmentStatus: true,
+  trackingNumber: true,
+  labelGenerated: true,
   paymentIntentId: true,
   paymentProvider: true,
   paymentReference: true,

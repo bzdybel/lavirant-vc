@@ -11,6 +11,7 @@ export interface ShipmentOutput {
   trackingNumber: string;
   trackingUrl: string;
   status: ShipmentStatus;
+  shipmentId?: string;
 }
 
 export interface ShippingProvider {

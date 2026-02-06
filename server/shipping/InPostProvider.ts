@@ -1,10 +1,11 @@
 import type { ShippingProvider, ShipmentInput, ShipmentOutput } from "./ShippingProvider";
 
 interface ShipXShipmentResponse {
+  id?: string;
+  status?: string;
   tracking_number?: string;
   trackingNumber?: string;
   tracking_id?: string;
-  id?: string;
 }
 
 interface InPostConfig {
@@ -157,6 +158,11 @@ export class InPostProvider implements ShippingProvider {
       );
     }
 
+    const shipmentId = responseJson.id;
+    if (!shipmentId) {
+      throw new Error("InPost ShipX response missing shipment id");
+    }
+
     const trackingNumber = normalizeTrackingNumber(responseJson);
     if (!trackingNumber) {
       throw new Error("InPost ShipX response missing tracking number");
@@ -166,7 +172,8 @@ export class InPostProvider implements ShippingProvider {
       provider: "INPOST",
       trackingNumber,
       trackingUrl: buildTrackingUrl(trackingNumber),
-      status: "CREATED",
+      status: responseJson.status || "CREATED",
+      shipmentId,
     };
   }
 

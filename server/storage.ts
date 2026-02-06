@@ -38,6 +38,7 @@ export interface IStorage {
   updateOrder(id: number, update: Partial<Order>): Promise<Order | undefined>;
   getOrderByPaymentReference(paymentReference: string): Promise<Order | undefined>;
   listOrdersByStatus(status: OrderStatus): Promise<Order[]>;
+  listOrdersForShipmentPolling(): Promise<Order[]>;
   getNextInvoiceNumber(issuedAt: Date): Promise<string>;
   hasProcessedWebhookEvent(eventId: string): Promise<boolean>;
   recordWebhookEvent(event: WebhookEventRecord): Promise<void>;
@@ -139,6 +140,10 @@ export class MemStorage implements IStorage {
       deliveryCost: insertOrder.deliveryCost ?? 0,
       deliveryMethod: insertOrder.deliveryMethod ?? null,
       deliveryPointId: insertOrder.deliveryPointId ?? null,
+      shipmentId: insertOrder.shipmentId ?? null,
+      shipmentStatus: insertOrder.shipmentStatus ?? null,
+      trackingNumber: insertOrder.trackingNumber ?? null,
+      labelGenerated: insertOrder.labelGenerated ?? false,
       paymentIntentId: insertOrder.paymentIntentId ?? null,
       paymentProvider: insertOrder.paymentProvider ?? null,
       paymentReference: insertOrder.paymentReference ?? null,
@@ -173,6 +178,15 @@ export class MemStorage implements IStorage {
 
   async listOrdersByStatus(status: OrderStatus): Promise<Order[]> {
     return Array.from(this.orders.values()).filter((order) => order.status === status);
+  }
+
+  async listOrdersForShipmentPolling(): Promise<Order[]> {
+    const terminalStatuses = new Set(["delivered", "returned"]);
+    return Array.from(this.orders.values()).filter((order) => {
+      if (!order.shipmentId) return false;
+      const status = (order.shipmentStatus || "").toLowerCase();
+      return !terminalStatuses.has(status);
+    });
   }
 
   async getNextInvoiceNumber(issuedAt: Date): Promise<string> {

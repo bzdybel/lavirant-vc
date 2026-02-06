@@ -71,19 +71,26 @@ export function useInpostGeowidget(
 
     const SCRIPT_ID = "inpost-geowidget-js";
     const STYLE_ID = "inpost-geowidget-css";
+    const isProduction = import.meta.env.MODE === "production";
+    const scriptUrl = isProduction
+      ? "https://geowidget.inpost.pl/inpost-geowidget.js"
+      : "https://sandbox-easy-geowidget-sdk.easypack24.net/inpost-geowidget.js";
+    const styleUrl = isProduction
+      ? "https://geowidget.inpost.pl/inpost-geowidget.css"
+      : "https://sandbox-easy-geowidget-sdk.easypack24.net/inpost-geowidget.css";
 
     if (!document.getElementById(STYLE_ID)) {
       const link = document.createElement("link");
       link.id = STYLE_ID;
       link.rel = "stylesheet";
-      link.href = "https://geowidget.inpost.pl/inpost-geowidget.css";
+      link.href = styleUrl;
       document.head.appendChild(link);
     }
 
     if (!document.getElementById(SCRIPT_ID)) {
       const script = document.createElement("script");
       script.id = SCRIPT_ID;
-      script.src = "https://geowidget.inpost.pl/inpost-geowidget.js";
+      script.src = scriptUrl;
       script.defer = true;
       script.onerror = () => {
         if (!cancelled) setWidgetFailed(true);

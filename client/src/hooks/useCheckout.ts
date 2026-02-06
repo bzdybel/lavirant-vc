@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { STRIPE_CONFIG } from "@/config/checkout.config";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Product {
@@ -49,6 +50,6 @@ export const usePaymentIntent = (price: number | null) => {
   return useQuery({
     queryKey: ['paymentIntent', price],
     queryFn: () => createPaymentIntent(price!),
-    enabled: price !== null,
+    enabled: price !== null && !STRIPE_CONFIG.isMockMode,
   });
 };
