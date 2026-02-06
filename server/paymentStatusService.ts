@@ -25,7 +25,36 @@ function resolvePaymentProvider(order: Order, paymentProvider?: string | null) {
 async function ensureOrderStatus(order: Order, status: OrderStatus, update: Partial<Order>): Promise<Order> {
   if (order.status === status) return order;
   const updated = await storage.updateOrder(order.id, { ...update, status });
+  if (updated) {
+    console.log("[DB] Payment updated", { orderId: updated.id, status });
+  }
   return updated ?? order;
+}
+
+async function onOrderPaid(order: Order, product?: Product) {
+  await shippingService.onOrderPaid(order);
+
+  const invoiceResult = await generateInvoiceForOrder(order, product);
+  const invoicedOrder = (await storage.updateOrder(order.id, {
+    invoiceNumber: invoiceResult.invoiceNumber,
+    invoicePdfPath: invoiceResult.invoicePdfPath,
+    invoiceIssuedAt: invoiceResult.invoiceIssuedAt,
+  })) ?? order;
+
+  if (invoicedOrder.emailSentAt) return invoicedOrder;
+
+  const emailSent = await emailService.sendPaidInvoiceEmail({
+    order: invoicedOrder,
+    product,
+    invoiceNumber: invoiceResult.invoiceNumber,
+    invoicePdfPath: invoiceResult.invoicePdfAbsolutePath,
+  });
+
+  if (!emailSent) return invoicedOrder;
+
+  return (await storage.updateOrder(invoicedOrder.id, {
+    emailSentAt: new Date().toISOString(),
+  })) ?? invoicedOrder;
 }
 
 export async function applyPaymentStatusUpdate({
@@ -62,29 +91,7 @@ export async function applyPaymentStatusUpdate({
         paymentProvider: paymentProviderValue,
       });
 
-      await shippingService.createShipment(paidOrder);
-
-      const invoiceResult = await generateInvoiceForOrder(paidOrder, product);
-      const invoicedOrder = (await storage.updateOrder(paidOrder.id, {
-        invoiceNumber: invoiceResult.invoiceNumber,
-        invoicePdfPath: invoiceResult.invoicePdfPath,
-        invoiceIssuedAt: invoiceResult.invoiceIssuedAt,
-      })) ?? paidOrder;
-
-      if (invoicedOrder.emailSentAt) return invoicedOrder;
-
-      const emailSent = await emailService.sendPaidInvoiceEmail({
-        order: invoicedOrder,
-        product,
-        invoiceNumber: invoiceResult.invoiceNumber,
-        invoicePdfPath: invoiceResult.invoicePdfAbsolutePath,
-      });
-
-      if (!emailSent) return invoicedOrder;
-
-      return (await storage.updateOrder(invoicedOrder.id, {
-        emailSentAt: new Date().toISOString(),
-      })) ?? invoicedOrder;
+      return onOrderPaid(paidOrder, product);
     }
     default:
       return order;

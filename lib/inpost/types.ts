@@ -33,6 +33,7 @@ export interface ShipXErrorPayload {
     code?: string | number;
   };
   message?: string;
+  details?: Record<string, unknown> | Array<unknown>;
   errors?: Array<{ field?: string; message?: string } | string>;
 }
 
@@ -41,4 +42,7 @@ export interface ShipXShipmentDetails {
   status?: string | null;
   tracking_number?: string | null;
   trackingNumber?: string | null;
+  selected_offer?: {
+    id?: string | null;
+  };
 }

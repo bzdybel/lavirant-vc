@@ -5,6 +5,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { setupSitemapRoute } from "./sitemap";
 import { startPaymentStatusJob } from "./paymentStatusJob";
 import { startShipXPollingJob } from "./inpost/shipxPollingJob";
+import { initializeDatabase } from "./db";
 
 const app = express();
 
@@ -55,6 +56,19 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  if (process.env.MOCK_INPOST === "true") {
+    throw new Error("[CONFIG ERROR] MOCK_INPOST cannot be used in runtime or E2E mode");
+  }
+
+  if (!process.env.INPOST_API_SHIPX) {
+    throw new Error("[CONFIG ERROR] INPOST_API_SHIPX is required for runtime ShipX integration");
+  }
+
+  if (!process.env.INPOST_SHIPX_ORG_ID) {
+    throw new Error("[CONFIG ERROR] INPOST_SHIPX_ORG_ID is required for runtime ShipX integration");
+  }
+
+  await initializeDatabase();
   const server = await registerRoutes(app);
 
   startPaymentStatusJob();

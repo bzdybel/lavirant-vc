@@ -56,11 +56,26 @@ export const shipments = pgTable("shipments", {
   id: serial("id").primaryKey(),
   orderId: integer("order_id").notNull().references(() => orders.id),
   provider: text("provider").notNull(),
+  providerShipmentId: text("provider_shipment_id"),
+  selectedOfferId: text("selected_offer_id"),
   trackingNumber: text("tracking_number").notNull(),
   trackingUrl: text("tracking_url").notNull(),
   status: text("status").notNull(), // 'CREATED', 'SHIPPED'
+  boughtAt: text("bought_at"),
+  buyError: text("buy_error"),
   createdAt: text("created_at").notNull(),
   shippedAt: text("shipped_at"),
+});
+
+export const webhookEvents = pgTable("webhook_events", {
+  id: text("id").primaryKey(),
+  receivedAt: text("received_at").notNull(),
+  provider: text("provider").notNull(),
+  status: text("status").notNull(),
+  paymentReference: text("payment_reference"),
+  orderId: integer("order_id"),
+  signatureValid: boolean("signature_valid").notNull().default(false),
+  rawPayload: text("raw_payload").notNull(),
 });
 
 // Schemas and types
@@ -107,9 +122,13 @@ export const insertOrderSchema = createInsertSchema(orders).pick({
 export const insertShipmentSchema = createInsertSchema(shipments).pick({
   orderId: true,
   provider: true,
+  providerShipmentId: true,
+  selectedOfferId: true,
   trackingNumber: true,
   trackingUrl: true,
   status: true,
+  boughtAt: true,
+  buyError: true,
   createdAt: true,
   shippedAt: true,
 });

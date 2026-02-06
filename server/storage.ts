@@ -6,8 +6,15 @@ import {
   type Order,
   type InsertOrder,
   type Shipment,
-  type InsertShipment
+  type InsertShipment,
+  users,
+  products,
+  orders,
+  shipments,
+  webhookEvents,
 } from "@shared/schema";
+import { db } from "./db";
+import { and, eq, or, sql, isNull, isNotNull, notInArray } from "drizzle-orm";
 
 export type OrderStatus = "CREATED" | "PAYMENT_PENDING" | "PAID" | "FAILED";
 
@@ -49,92 +56,39 @@ export interface IStorage {
   getShipmentByOrderId(orderId: number): Promise<Shipment | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private products: Map<number, Product>;
-  private orders: Map<number, Order>;
-  private shipments: Map<number, Shipment>;
-  private shipmentsByOrderId: Map<number, number>;
-  private webhookEvents: Map<string, WebhookEventRecord>;
-  private invoiceCounters: Map<string, number>;
-  currentId: number;
-  currentProductId: number;
-  currentOrderId: number;
-  currentShipmentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.products = new Map();
-    this.orders = new Map();
-    this.shipments = new Map();
-    this.shipmentsByOrderId = new Map();
-    this.webhookEvents = new Map();
-    this.invoiceCounters = new Map();
-    this.currentId = 1;
-    this.currentProductId = 1;
-    this.currentOrderId = 1;
-    this.currentShipmentId = 1;
-
-    // Add sample products for testing
-    this.initSampleProducts();
-  }
-
-  private initSampleProducts() {
-    const sampleProducts = [
-      {
-        name: "Lavirant",
-        description: "Pełna edycja z aplikacją mobilną. Intensywna gra towarzyska łącząca logiczne myślenie, umiejętność czytania ludzi i perfekcyjne kłamstwo. Idealna na imprezy i wieczory ze znajomymi.",
-        price: 29900, // 299.00 zł in cents
-        image: "/image.png",
-        category: "Gry planszowe"
-      }
-    ];
-
-    sampleProducts.forEach(product => {
-      const id = this.currentProductId++;
-      this.products.set(id, { ...product, id });
-    });
-  }
-
+export class DbStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
   }
 
-  // Products
   async getAllProducts(): Promise<Product[]> {
-    return Array.from(this.products.values());
+    return db.select().from(products);
   }
 
   async getProduct(id: number): Promise<Product | undefined> {
-    return this.products.get(id);
+    const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
+    return result[0];
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const id = this.currentProductId++;
-    const product: Product = { ...insertProduct, id };
-    this.products.set(id, product);
-    return product;
+    const result = await db.insert(products).values(insertProduct).returning();
+    return result[0];
   }
 
-  // Orders
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    const id = this.currentOrderId++;
-    const order: Order = {
+    const values: InsertOrder = {
       ...insertOrder,
-      id,
       userId: insertOrder.userId ?? null,
       productId: insertOrder.productId ?? null,
       deliveryCost: insertOrder.deliveryCost ?? 0,
@@ -152,87 +106,118 @@ export class MemStorage implements IStorage {
       invoiceNumber: insertOrder.invoiceNumber ?? null,
       invoicePdfPath: insertOrder.invoicePdfPath ?? null,
       invoiceIssuedAt: insertOrder.invoiceIssuedAt ?? null,
-      emailSentAt: insertOrder.emailSentAt ?? null
+      emailSentAt: insertOrder.emailSentAt ?? null,
     };
-    this.orders.set(id, order);
-    return order;
+
+    const result = await db.insert(orders).values(values).returning();
+    console.log("[DB] Order persisted", { id: result[0].id });
+    return result[0];
   }
 
   async getOrder(id: number): Promise<Order | undefined> {
-    return this.orders.get(id);
+    const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    return result[0];
   }
 
   async updateOrder(id: number, update: Partial<Order>): Promise<Order | undefined> {
-    const existing = this.orders.get(id);
-    if (!existing) return undefined;
-    const updated: Order = { ...existing, ...update };
-    this.orders.set(id, updated);
-    return updated;
+    const result = await db.update(orders).set(update).where(eq(orders.id, id)).returning();
+    return result[0];
   }
 
   async getOrderByPaymentReference(paymentReference: string): Promise<Order | undefined> {
-    return Array.from(this.orders.values()).find(
-      (order) => order.paymentReference === paymentReference || order.paymentIntentId === paymentReference,
-    );
+    const result = await db
+      .select()
+      .from(orders)
+      .where(or(eq(orders.paymentReference, paymentReference), eq(orders.paymentIntentId, paymentReference)))
+      .limit(1);
+    return result[0];
   }
 
   async listOrdersByStatus(status: OrderStatus): Promise<Order[]> {
-    return Array.from(this.orders.values()).filter((order) => order.status === status);
+    return db.select().from(orders).where(eq(orders.status, status));
   }
 
   async listOrdersForShipmentPolling(): Promise<Order[]> {
-    const terminalStatuses = new Set(["delivered", "returned"]);
-    return Array.from(this.orders.values()).filter((order) => {
-      if (!order.shipmentId) return false;
-      const status = (order.shipmentStatus || "").toLowerCase();
-      return !terminalStatuses.has(status);
-    });
+    const terminalStatuses = ["delivered", "returned"];
+    return db
+      .select()
+      .from(orders)
+      .where(
+        and(
+          isNotNull(orders.shipmentId),
+          or(
+            isNull(orders.shipmentStatus),
+            notInArray(sql`lower(${orders.shipmentStatus})`, terminalStatuses),
+          ),
+        ),
+      );
   }
 
   async getNextInvoiceNumber(issuedAt: Date): Promise<string> {
     const year = issuedAt.getFullYear();
     const month = `${issuedAt.getMonth() + 1}`.padStart(2, "0");
-    const key = `${year}-${month}`;
-    const current = this.invoiceCounters.get(key) ?? 0;
+    const prefix = `FV/${year}/${month}/`;
+
+    const result = await db.execute<{ max: number | null }>(sql`
+      select max(cast(substring(${orders.invoiceNumber} from '.*/(\\d+)$') as int)) as max
+      from ${orders}
+      where ${orders.invoiceNumber} like ${prefix + "%"}
+    `);
+
+    const current = result.rows?.[0]?.max ?? 0;
     const next = current + 1;
-    this.invoiceCounters.set(key, next);
     const sequence = `${next}`.padStart(4, "0");
     return `FV/${year}/${month}/${sequence}`;
   }
 
   async hasProcessedWebhookEvent(eventId: string): Promise<boolean> {
-    return this.webhookEvents.has(eventId);
+    const result = await db.select({ id: webhookEvents.id }).from(webhookEvents).where(eq(webhookEvents.id, eventId)).limit(1);
+    return Boolean(result[0]);
   }
 
   async recordWebhookEvent(event: WebhookEventRecord): Promise<void> {
-    this.webhookEvents.set(event.id, event);
+    await db.insert(webhookEvents).values({
+      id: event.id,
+      receivedAt: event.receivedAt,
+      provider: event.provider,
+      status: event.status,
+      paymentReference: event.paymentReference ?? null,
+      orderId: event.orderId ?? null,
+      signatureValid: event.signatureValid,
+      rawPayload: event.rawPayload,
+    });
   }
 
   async createShipment(insertShipment: InsertShipment): Promise<Shipment> {
-    const id = this.currentShipmentId++;
-    const shipment: Shipment = {
-      ...insertShipment,
-      id,
-      shippedAt: insertShipment.shippedAt ?? null,
-    };
-    this.shipments.set(id, shipment);
-    this.shipmentsByOrderId.set(insertShipment.orderId, id);
-    return shipment;
+    const result = await db
+      .insert(shipments)
+      .values({
+        ...insertShipment,
+        selectedOfferId: insertShipment.selectedOfferId ?? null,
+        boughtAt: insertShipment.boughtAt ?? null,
+        buyError: insertShipment.buyError ?? null,
+        shippedAt: insertShipment.shippedAt ?? null,
+      })
+      .returning();
+
+    console.log("[DB] Shipment persisted", {
+      id: result[0].id,
+      orderId: result[0].orderId,
+      providerShipmentId: result[0].providerShipmentId,
+    });
+
+    return result[0];
   }
 
   async updateShipment(id: number, update: Partial<Shipment>): Promise<Shipment | undefined> {
-    const existing = this.shipments.get(id);
-    if (!existing) return undefined;
-    const updated: Shipment = { ...existing, ...update };
-    this.shipments.set(id, updated);
-    return updated;
+    const result = await db.update(shipments).set(update).where(eq(shipments.id, id)).returning();
+    return result[0];
   }
 
   async getShipmentByOrderId(orderId: number): Promise<Shipment | undefined> {
-    const shipmentId = this.shipmentsByOrderId.get(orderId);
-    if (!shipmentId) return undefined;
-    return this.shipments.get(shipmentId);
+    const result = await db.select().from(shipments).where(eq(shipments.orderId, orderId)).limit(1);
+    return result[0];
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DbStorage();

@@ -54,9 +54,23 @@ export async function pollShipXShipments(): Promise<void> {
   if (orders.length === 0) return;
 
   const client = getShipXClient();
+  const environment = (process.env.INPOST_SHIPX_ENV as string) || (process.env.NODE_ENV === "production" ? "production" : "sandbox");
 
   for (const order of orders) {
     if (!order.shipmentId) continue;
+    if (order.shipmentId.startsWith("MOCK-")) {
+      console.warn("[ShipX Polling] Skipping mock shipment id", {
+        orderId: order.id,
+        shipmentId: order.shipmentId,
+      });
+      continue;
+    }
+
+    console.log("[ShipX Polling] Fetching shipment from sandbox", {
+      orderId: order.id,
+      providerShipmentId: order.shipmentId,
+      environment,
+    });
 
     try {
       const shipment = await withRetry(() =>
@@ -73,6 +87,14 @@ export async function pollShipXShipments(): Promise<void> {
         trackingNumber: trackingNumber ?? undefined,
       });
 
+      const existingShipment = await storage.getShipmentByOrderId(order.id);
+      if (existingShipment) {
+        await storage.updateShipment(existingShipment.id, {
+          status: shipmentStatus === "confirmed" ? "SHIPPED" : existingShipment.status,
+          trackingNumber: trackingNumber ?? existingShipment.trackingNumber,
+        });
+      }
+
       if (
         shipmentStatus === "confirmed" &&
         updatedOrder.labelGenerated !== true
@@ -87,6 +109,12 @@ export async function pollShipXShipments(): Promise<void> {
         updatedOrder = await updateOrderShipmentState(updatedOrder, {
           labelGenerated: true,
         });
+
+        if (existingShipment) {
+          await storage.updateShipment(existingShipment.id, {
+            status: "SHIPPED",
+          });
+        }
       }
     } catch (error) {
       console.error("❌ ShipX polling failed for shipment", {

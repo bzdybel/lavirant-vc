@@ -48,6 +48,9 @@ export class ShipXClient {
         path,
         payload,
       });
+      if (payload?.details) {
+        console.error("ShipX API error details", JSON.stringify(payload.details));
+      }
       const message =
         payload?.error?.message ||
         payload?.message ||
@@ -78,6 +81,9 @@ export class ShipXClient {
         path,
         payload,
       });
+      if (payload?.details) {
+        console.error("ShipX API error details", JSON.stringify(payload.details));
+      }
       const message =
         payload?.error?.message ||
         payload?.message ||

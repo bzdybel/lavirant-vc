@@ -12,6 +12,8 @@ export interface ShipmentOutput {
   trackingUrl: string;
   status: ShipmentStatus;
   shipmentId?: string;
+  shipxStatus?: string | null;
+  selectedOfferId?: string | null;
 }
 
 export interface ShippingProvider {
