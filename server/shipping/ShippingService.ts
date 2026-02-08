@@ -1,4 +1,4 @@
-import type { Order } from "@shared/schema";
+import type { Order } from "@shared/types/order";
 import { storage } from "../storage";
 import { getShipXClient, ShipXError } from "../../lib/inpost/shipxClient";
 import type { ShipXShipmentDetails } from "../../lib/inpost/types";

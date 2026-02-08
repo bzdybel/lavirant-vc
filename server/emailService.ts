@@ -1,7 +1,8 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import path from 'path';
-import type { Order, Product } from "@shared/schema";
+import type { Order } from "@shared/types/order";
+import type { Product } from "@shared/types/product";
 
 interface OrderConfirmationData {
   orderId: number;

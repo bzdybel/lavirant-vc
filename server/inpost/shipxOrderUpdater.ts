@@ -1,4 +1,4 @@
-import type { Order } from "@shared/schema";
+import type { Order } from "@shared/types/order";
 import { storage } from "../storage";
 
 export interface ShipmentUpdateInput {

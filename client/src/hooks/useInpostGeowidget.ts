@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 export interface InPostConfigResponse {
   enabled: boolean;
   geowidgetToken: string | null;
+  environment: "production" | "sandbox";
 }
 
 export interface InpostPointPayload {
@@ -23,6 +24,7 @@ export interface InpostPointPayload {
 const DEFAULT_CONFIG: InPostConfigResponse = {
   enabled: false,
   geowidgetToken: null,
+  environment: "production",
 };
 
 /* =========================
@@ -71,7 +73,7 @@ export function useInpostGeowidget(
 
     const SCRIPT_ID = "inpost-geowidget-js";
     const STYLE_ID = "inpost-geowidget-css";
-    const isProduction = import.meta.env.MODE === "production";
+    const isProduction = config.environment === "production";
     const scriptUrl = isProduction
       ? "https://geowidget.inpost.pl/inpost-geowidget.js"
       : "https://sandbox-easy-geowidget-sdk.easypack24.net/inpost-geowidget.js";

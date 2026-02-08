@@ -102,6 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({
       enabled: Boolean(geowidgetToken),
       geowidgetToken: geowidgetToken || null,
+      environment: isProduction ? "production" : "sandbox",
     });
   });
 

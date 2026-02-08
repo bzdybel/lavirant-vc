@@ -1,6 +1,5 @@
 export const STRIPE_CONFIG = {
-  isMockMode: import.meta.env.VITE_USE_MOCK_STRIPE === 'true' ||
-    !import.meta.env.VITE_STRIPE_PUBLIC_KEY ||
+  isMockMode: !import.meta.env.VITE_STRIPE_PUBLIC_KEY ||
     import.meta.env.VITE_STRIPE_PUBLIC_KEY === 'pk_test_your_public_key_here',
   publicKey: import.meta.env.VITE_STRIPE_PUBLIC_KEY
 };

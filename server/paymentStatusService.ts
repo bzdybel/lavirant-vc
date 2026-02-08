@@ -1,4 +1,5 @@
-import type { Order, Product } from "@shared/schema";
+import type { Order } from "@shared/types/order";
+import type { Product } from "@shared/types/product";
 import { storage, type OrderStatus } from "./storage";
 import { generateInvoiceForOrder } from "./invoiceService";
 import { emailService } from "./emailService";

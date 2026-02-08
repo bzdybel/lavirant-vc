@@ -1,5 +1,6 @@
 import type { ShippingProvider, ShipmentInput, ShipmentOutput } from "./ShippingProvider";
 import { getShipXClient } from "../../lib/inpost/shipxClient";
+import { getInpostConfig, type InPostConfig } from "./inpostConfig";
 
 interface ShipXShipmentResponse {
   id?: string;
@@ -12,86 +13,6 @@ interface ShipXShipmentResponse {
   };
 }
 
-interface InPostConfig {
-  token: string;
-  serviceLocker: string;
-  serviceCourier: string;
-  parcelTemplate: string;
-  parcelDimensions: {
-    length: string;
-    width: string;
-    height: string;
-    unit: "mm";
-  };
-  parcelWeight: {
-    amount: string;
-    unit: "kg";
-  };
-  sender: {
-    companyName: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    street: string;
-    buildingNumber: string;
-    city: string;
-    postalCode: string;
-    country: string;
-  };
-}
-
-function resolveEnv(name: string, fallback = ""): string {
-  return (process.env[name] || fallback).trim();
-}
-
-function requireEnv(name: string): string {
-  const value = resolveEnv(name);
-  if (!value) {
-    throw new Error(`[CONFIG ERROR] Missing ${name} environment variable`);
-  }
-  if (/<[^>]+>/.test(value)) {
-    throw new Error(`[CONFIG ERROR] Invalid ${name} placeholder value`);
-  }
-  return value;
-}
-
-function getConfig(): InPostConfig | null {
-  const token = resolveEnv("INPOST_API_SHIPX");
-  if (!token) return null;
-
-  const organizationId = resolveEnv("INPOST_SHIPX_ORG_ID");
-  if (!organizationId) return null;
-
-  return {
-    token,
-    serviceLocker: resolveEnv("INPOST_SERVICE_LOCKER", "inpost_locker_standard"),
-    serviceCourier: resolveEnv("INPOST_SERVICE_COURIER", "inpost_courier_standard"),
-    parcelTemplate: resolveEnv("INPOST_PARCEL_TEMPLATE", "small"),
-    parcelDimensions: {
-      length: resolveEnv("INPOST_PARCEL_LENGTH_MM", "80"),
-      width: resolveEnv("INPOST_PARCEL_WIDTH_MM", "360"),
-      height: resolveEnv("INPOST_PARCEL_HEIGHT_MM", "640"),
-      unit: "mm",
-    },
-    parcelWeight: {
-      amount: resolveEnv("INPOST_PARCEL_WEIGHT_KG", "2"),
-      unit: "kg",
-    },
-    sender: {
-      companyName: requireEnv("INVOICE_SELLER_NAME"),
-      firstName: requireEnv("INVOICE_SELLER_FIRST_NAME"),
-      lastName: requireEnv("INVOICE_SELLER_LAST_NAME"),
-      email: requireEnv("INVOICE_SELLER_EMAIL"),
-      phone: requireEnv("INVOICE_SELLER_PHONE"),
-      street: requireEnv("INVOICE_SELLER_STREET"),
-      buildingNumber: requireEnv("INVOICE_SELLER_BUILDING"),
-      city: requireEnv("INVOICE_SELLER_CITY"),
-      postalCode: requireEnv("INVOICE_SELLER_POST_CODE"),
-      country: "PL",
-    },
-  };
-}
 
 function buildTrackingUrl(trackingNumber: string): string {
   return `https://tracking.inpost.pl/?number=${encodeURIComponent(trackingNumber)}`;
@@ -153,12 +74,12 @@ export class InPostProvider implements ShippingProvider {
   private organizationId: string;
 
   constructor() {
-    const config = getConfig();
+    const config = getInpostConfig();
     if (!config) {
       throw new Error("INPOST_API_SHIPX or INPOST_SHIPX_ORG_ID is not configured");
     }
     this.config = config;
-    this.organizationId = resolveEnv("INPOST_SHIPX_ORG_ID");
+    this.organizationId = config.organizationId;
   }
 
   async createShipment({ order }: ShipmentInput): Promise<ShipmentOutput> {

@@ -12,11 +12,12 @@ import {
   orders,
   shipments,
   webhookEvents,
-} from "@shared/schema";
+} from "./db/schema";
 import { db } from "./db";
+import { PaymentStatus } from "@shared/enums/paymentStatus";
 import { and, eq, or, sql, isNull, isNotNull, notInArray } from "drizzle-orm";
 
-export type OrderStatus = "CREATED" | "PAYMENT_PENDING" | "PAID" | "FAILED";
+export type OrderStatus = PaymentStatus;
 
 export interface WebhookEventRecord {
   id: string;

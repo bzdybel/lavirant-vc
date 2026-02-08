@@ -1,13 +1,12 @@
 import { API_ENDPOINTS } from "@/config/checkout.config";
+import type { InpostDeliveryMethod, InpostDeliveryPoint } from "@shared/types/inpost";
 
 export interface CreateOrderRequest {
   productId: number;
   quantity: number;
   paymentIntentId: string;
-  deliveryMethod?: "INPOST_PACZKOMAT" | "INPOST_KURIER";
-  deliveryPoint?: {
-    id: string;
-  };
+  deliveryMethod?: InpostDeliveryMethod;
+  deliveryPoint?: InpostDeliveryPoint;
   firstName: string;
   lastName: string;
   email: string;
