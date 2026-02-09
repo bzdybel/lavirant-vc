@@ -22,12 +22,11 @@ interface OrderConfirmationData {
 class EmailService {
   private transporter: Transporter | null = null;
   private isConfigured: boolean = false;
+  private initialized: boolean = false;
 
-  constructor() {
-    this.initialize();
-  }
-
-  private initialize() {
+  initialize() {
+    if (this.initialized) return;
+    this.initialized = true;
     const {
       EMAIL_HOST,
       EMAIL_PORT,
@@ -67,6 +66,12 @@ class EmailService {
     } catch (error) {
       console.error('❌ Failed to initialize email service:', error);
       this.isConfigured = false;
+    }
+  }
+
+  private ensureInitialized() {
+    if (!this.initialized) {
+      this.initialize();
     }
   }
 
@@ -341,6 +346,7 @@ W razie pytań napisz do nas: zamowienia@lavirant.pl
     invoiceNumber: string;
     invoicePdfPath: string;
   }): Promise<boolean> {
+    this.ensureInitialized();
     const { order, product, invoiceNumber, invoicePdfPath } = params;
 
     if (!this.isConfigured || !this.transporter) {
@@ -378,6 +384,7 @@ W razie pytań napisz do nas: zamowienia@lavirant.pl
   }
 
   async sendOrderConfirmation(data: OrderConfirmationData): Promise<boolean> {
+    this.ensureInitialized();
     if (!this.isConfigured || !this.transporter) {
       console.log(`📧 [Mock] Wysłano email potwierdzający zamówienie do ${data.email}`);
       console.log(`   Zamówienie #${data.orderId} - ${data.productName} x ${data.quantity}`);
@@ -407,6 +414,7 @@ W razie pytań napisz do nas: zamowienia@lavirant.pl
     trackingNumber: string;
     trackingUrl: string;
   }): Promise<boolean> {
+    this.ensureInitialized();
     const { order, trackingNumber, trackingUrl } = params;
 
     if (!this.isConfigured || !this.transporter) {

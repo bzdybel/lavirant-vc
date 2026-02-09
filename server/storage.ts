@@ -13,7 +13,7 @@ import {
   shipments,
   webhookEvents,
 } from "./db/schema";
-import { db } from "./db";
+import { getDb } from "./db";
 import { PaymentStatus } from "@shared/enums/paymentStatus";
 import { and, eq, or, sql, isNull, isNotNull, notInArray } from "drizzle-orm";
 
@@ -58,32 +58,36 @@ export interface IStorage {
 }
 
 export class DbStorage implements IStorage {
+  private get db() {
+    return getDb();
+  }
+
   async getUser(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
     return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
     return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(insertUser).returning();
+    const result = await this.db.insert(users).values(insertUser).returning();
     return result[0];
   }
 
   async getAllProducts(): Promise<Product[]> {
-    return db.select().from(products);
+    return this.db.select().from(products);
   }
 
   async getProduct(id: number): Promise<Product | undefined> {
-    const result = await db.select().from(products).where(eq(products.id, id)).limit(1);
+    const result = await this.db.select().from(products).where(eq(products.id, id)).limit(1);
     return result[0];
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const result = await db.insert(products).values(insertProduct).returning();
+    const result = await this.db.insert(products).values(insertProduct).returning();
     return result[0];
   }
 
@@ -110,23 +114,23 @@ export class DbStorage implements IStorage {
       emailSentAt: insertOrder.emailSentAt ?? null,
     };
 
-    const result = await db.insert(orders).values(values).returning();
+    const result = await this.db.insert(orders).values(values).returning();
     console.log("[DB] Order persisted", { id: result[0].id });
     return result[0];
   }
 
   async getOrder(id: number): Promise<Order | undefined> {
-    const result = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    const result = await this.db.select().from(orders).where(eq(orders.id, id)).limit(1);
     return result[0];
   }
 
   async updateOrder(id: number, update: Partial<Order>): Promise<Order | undefined> {
-    const result = await db.update(orders).set(update).where(eq(orders.id, id)).returning();
+    const result = await this.db.update(orders).set(update).where(eq(orders.id, id)).returning();
     return result[0];
   }
 
   async getOrderByPaymentReference(paymentReference: string): Promise<Order | undefined> {
-    const result = await db
+    const result = await this.db
       .select()
       .from(orders)
       .where(or(eq(orders.paymentReference, paymentReference), eq(orders.paymentIntentId, paymentReference)))
@@ -135,12 +139,12 @@ export class DbStorage implements IStorage {
   }
 
   async listOrdersByStatus(status: OrderStatus): Promise<Order[]> {
-    return db.select().from(orders).where(eq(orders.status, status));
+    return this.db.select().from(orders).where(eq(orders.status, status));
   }
 
   async listOrdersForShipmentPolling(): Promise<Order[]> {
     const terminalStatuses = ["delivered", "returned"];
-    return db
+    return this.db
       .select()
       .from(orders)
       .where(
@@ -159,7 +163,7 @@ export class DbStorage implements IStorage {
     const month = `${issuedAt.getMonth() + 1}`.padStart(2, "0");
     const prefix = `FV/${year}/${month}/`;
 
-    const result = await db.execute<{ max: number | null }>(sql`
+    const result = await this.db.execute<{ max: number | null }>(sql`
       select max(cast(substring(${orders.invoiceNumber} from '.*/(\\d+)$') as int)) as max
       from ${orders}
       where ${orders.invoiceNumber} like ${prefix + "%"}
@@ -172,12 +176,12 @@ export class DbStorage implements IStorage {
   }
 
   async hasProcessedWebhookEvent(eventId: string): Promise<boolean> {
-    const result = await db.select({ id: webhookEvents.id }).from(webhookEvents).where(eq(webhookEvents.id, eventId)).limit(1);
+    const result = await this.db.select({ id: webhookEvents.id }).from(webhookEvents).where(eq(webhookEvents.id, eventId)).limit(1);
     return Boolean(result[0]);
   }
 
   async recordWebhookEvent(event: WebhookEventRecord): Promise<void> {
-    await db.insert(webhookEvents).values({
+    await this.db.insert(webhookEvents).values({
       id: event.id,
       receivedAt: event.receivedAt,
       provider: event.provider,
@@ -190,7 +194,7 @@ export class DbStorage implements IStorage {
   }
 
   async createShipment(insertShipment: InsertShipment): Promise<Shipment> {
-    const result = await db
+    const result = await this.db
       .insert(shipments)
       .values({
         ...insertShipment,
@@ -211,12 +215,12 @@ export class DbStorage implements IStorage {
   }
 
   async updateShipment(id: number, update: Partial<Shipment>): Promise<Shipment | undefined> {
-    const result = await db.update(shipments).set(update).where(eq(shipments.id, id)).returning();
+    const result = await this.db.update(shipments).set(update).where(eq(shipments.id, id)).returning();
     return result[0];
   }
 
   async getShipmentByOrderId(orderId: number): Promise<Shipment | undefined> {
-    const result = await db.select().from(shipments).where(eq(shipments.orderId, orderId)).limit(1);
+    const result = await this.db.select().from(shipments).where(eq(shipments.orderId, orderId)).limit(1);
     return result[0];
   }
 }

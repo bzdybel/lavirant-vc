@@ -4,13 +4,16 @@ import { getShipXClient, ShipXError } from "../../lib/inpost/shipxClient";
 import type { ShipXShipmentDetails } from "../../lib/inpost/types";
 import type { ShipmentOutput } from "./ShippingProvider";
 import { InPostProvider } from "./InPostProvider";
-const PROVIDER = process.env.SHIPPING_PROVIDER || "INPOST";
+
+function getProviderName(): string {
+  return process.env.SHIPPING_PROVIDER || "INPOST";
+}
 
 function resolveProvider() {
   if (process.env.MOCK_INPOST === "true") {
     throw new Error("[CONFIG ERROR] MOCK_INPOST cannot be used in runtime or E2E mode");
   }
-  if (PROVIDER !== "INPOST") {
+  if (getProviderName() !== "INPOST") {
     throw new Error("[CONFIG ERROR] Only INPOST provider is allowed in runtime");
   }
   return new InPostProvider();

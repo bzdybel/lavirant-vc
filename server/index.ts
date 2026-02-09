@@ -6,6 +6,8 @@ import { setupSitemapRoute } from "./sitemap";
 import { startPaymentStatusJob } from "./paymentStatusJob";
 import { startShipXPollingJob } from "./inpost/shipxPollingJob";
 import { initializeDatabase } from "./db";
+import { emailService } from "./emailService";
+import { validateStripeConfig } from "./stripeClient";
 
 const app = express();
 
@@ -68,6 +70,8 @@ app.use((req, res, next) => {
     throw new Error("[CONFIG ERROR] INPOST_SHIPX_ORG_ID is required for runtime ShipX integration");
   }
 
+  validateStripeConfig();
+  emailService.initialize();
   await initializeDatabase();
   const server = await registerRoutes(app);
 

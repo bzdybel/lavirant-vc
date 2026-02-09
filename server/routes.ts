@@ -5,11 +5,8 @@ import { storage } from "./storage";
 import crypto from "crypto";
 import { applyPaymentStatusUpdate, type PaymentWebhookStatus } from "./paymentStatusService";
 import { emailService } from "./emailService";
-import { stripe, USE_MOCK_STRIPE } from "./stripeClient";
+import { getStripeClient, isMockStripeEnabled } from "./stripeClient";
 import { shippingService } from "./shipping/ShippingService";
-
-const WEBHOOK_SECRET = process.env.PAYMENT_WEBHOOK_SECRET || "";
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 
 function normalizeSignatureHeader(signatureHeader: string): string {
   if (signatureHeader.includes("=")) {
@@ -94,6 +91,11 @@ function parseWebhookPayload(payload: any): {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET || "";
+  const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+  const stripe = getStripeClient();
+  const useMockStripe = isMockStripeEnabled();
+
   app.get("/api/shipping/inpost-config", (_req, res) => {
     const isProduction = process.env.NODE_ENV === "production";
     const geowidgetToken = isProduction
@@ -116,15 +118,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const stripeSignature = req.headers["stripe-signature"] as string | undefined;
     const hmacSignature = (req.headers["x-webhook-signature"] || req.headers["x-signature"]) as string | undefined;
 
-    if (stripe && stripeSignature && STRIPE_WEBHOOK_SECRET) {
+    if (stripe && stripeSignature && stripeWebhookSecret) {
       try {
-        payload = stripe.webhooks.constructEvent(rawBody, stripeSignature, STRIPE_WEBHOOK_SECRET);
+        payload = stripe.webhooks.constructEvent(rawBody, stripeSignature, stripeWebhookSecret);
         signatureValid = true;
       } catch (error) {
         console.error("❌ Stripe webhook signature verification failed:", error);
       }
-    } else if (hmacSignature && WEBHOOK_SECRET) {
-      signatureValid = verifyHmacSignature(rawBody, hmacSignature, WEBHOOK_SECRET);
+    } else if (hmacSignature && webhookSecret) {
+      signatureValid = verifyHmacSignature(rawBody, hmacSignature, webhookSecret);
       if (signatureValid) {
         try {
           payload = JSON.parse(rawBody.toString("utf8"));
@@ -324,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Mock mode for development
-      if (USE_MOCK_STRIPE) {
+      if (useMockStripe) {
         const mockId = `mock_pi_${Date.now()}`;
         const mockClientSecret = `${mockId}_secret_${Math.random().toString(36).substring(7)}`;
         if (orderId) {

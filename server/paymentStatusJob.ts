@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import { stripe, USE_MOCK_STRIPE } from "./stripeClient";
+import { getStripeClient, isMockStripeEnabled } from "./stripeClient";
 import { applyPaymentStatusUpdate } from "./paymentStatusService";
 
 const DEFAULT_INTERVAL_MINUTES = 45;
@@ -27,7 +27,10 @@ export function startPaymentStatusJob() {
   const pendingThresholdMinutes = parseMinutes(process.env.PAYMENT_PENDING_THRESHOLD_MINUTES, DEFAULT_PENDING_THRESHOLD_MINUTES);
   const dryRun = process.env.PAYMENT_STATUS_JOB_DRY_RUN === "true";
 
-  if (USE_MOCK_STRIPE || !stripe) {
+  const stripe = getStripeClient();
+  const useMockStripe = isMockStripeEnabled();
+
+  if (useMockStripe || !stripe) {
     console.log("ℹ️ Payment status job skipped: Stripe not configured or mock mode enabled.");
     return;
   }

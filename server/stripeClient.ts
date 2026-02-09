@@ -1,15 +1,35 @@
 import Stripe from "stripe";
 
-export const USE_MOCK_STRIPE = process.env.USE_MOCK_STRIPE === "true";
+let stripeInstance: Stripe | null | undefined;
 
-if (!process.env.STRIPE_SECRET_KEY && !USE_MOCK_STRIPE) {
-  console.warn("Missing STRIPE_SECRET_KEY environment variable. Payment functionality will be disabled.");
+export function isMockStripeEnabled(): boolean {
+  return process.env.USE_MOCK_STRIPE === "true";
 }
 
-export const stripe = (process.env.STRIPE_SECRET_KEY && !USE_MOCK_STRIPE)
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2025-04-30.basil" })
-  : null;
+export function getStripeClient(): Stripe | null {
+  if (stripeInstance !== undefined) {
+    return stripeInstance;
+  }
 
-if (USE_MOCK_STRIPE) {
-  console.log("🔧 Running in MOCK STRIPE mode for development");
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey || isMockStripeEnabled()) {
+    stripeInstance = null;
+    return stripeInstance;
+  }
+
+  stripeInstance = new Stripe(secretKey, { apiVersion: "2025-04-30.basil" });
+  return stripeInstance;
+}
+
+export function validateStripeConfig(): void {
+  const useMockStripe = isMockStripeEnabled();
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+
+  if (!secretKey && !useMockStripe) {
+    console.warn("Missing STRIPE_SECRET_KEY environment variable. Payment functionality will be disabled.");
+  }
+
+  if (useMockStripe) {
+    console.log("🔧 Running in MOCK STRIPE mode for development");
+  }
 }

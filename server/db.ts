@@ -4,19 +4,36 @@ import { sql } from "drizzle-orm";
 import * as schema from "./db/schema";
 import { products } from "./db/schema";
 
-const DATABASE_URL = process.env.DATABASE_URL;
+let pool: Pool | null = null;
+let dbInstance: ReturnType<typeof drizzle> | null = null;
 
-if (!DATABASE_URL) {
-  throw new Error("[DB] DATABASE_URL is not set. Database connection is required.");
+function getDatabaseUrl(): string {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error("[DB] DATABASE_URL is not set. Database connection is required.");
+  }
+  return url;
 }
 
-const pool = new Pool({ connectionString: DATABASE_URL });
+function getPool(): Pool {
+  if (!pool) {
+    pool = new Pool({ connectionString: getDatabaseUrl() });
+  }
+  return pool;
+}
 
-export const db = drizzle(pool, { schema });
+export function getDb() {
+  if (!dbInstance) {
+    dbInstance = drizzle(getPool(), { schema });
+  }
+  return dbInstance;
+}
 
 const REQUIRED_TABLES = ["users", "products", "orders", "shipments", "webhook_events"];
 
 export async function initializeDatabase(): Promise<void> {
+  const pool = getPool();
+  const db = getDb();
   try {
     await pool.query("select 1");
   } catch (error) {
