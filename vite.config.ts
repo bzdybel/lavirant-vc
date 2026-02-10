@@ -19,7 +19,7 @@ export default defineConfig({
   },
 
   build: {
-    outDir: "server/public",
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
 
