@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import ScrollToTop from "@/components/scroll-to-top";
 import Router from "./router";
 import MaintenanceScreen from "@/components/maintenance-screen";
-const maintenanceEnabled = true;
+const maintenanceEnabled = false;
 
 function App() {
   if (maintenanceEnabled) {
