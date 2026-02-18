@@ -11,7 +11,6 @@ import { CustomerInfoFields } from "@/components/checkout/CustomerInfoFields";
 import { PaymentSection } from "@/components/checkout/PaymentSection";
 import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { DeliveryMethodSelector } from "@/components/checkout/DeliveryMethodSelector";
-import { PaymentMethodSelector } from "@/components/checkout/PaymentMethodSelector";
 import { extractFormData } from "@/components/checkout/formUtils";
 import { validateCustomerData } from "@/components/checkout/validation";
 import { saveFormDataForRedirect, clearSavedFormData } from "@/components/checkout/paymentRedirectUtils";
@@ -31,7 +30,6 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
   const [quantity, setQuantity] = useState(1);
   const [deliveryMethod, setDeliveryMethod] = useState("inpost");
   const [deliveryPointId, setDeliveryPointId] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("card");
   const [, navigate] = useLocation();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -213,14 +211,7 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
         onDeliveryPointChange={setDeliveryPointId}
       />
 
-      {STRIPE_CONFIG.isMockMode ? (
-        <PaymentMethodSelector
-          selectedMethod={paymentMethod}
-          onMethodChange={setPaymentMethod}
-        />
-      ) : (
-        <PaymentSection />
-      )}
+      <PaymentSection />
 
       <OrderSummary
         productName={pricing.productPrice}
