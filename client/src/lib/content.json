@@ -1,0 +1,630 @@
+{
+  "hero": {
+    "mainTitle": "Jedno kłamstwo. Wszyscy podejrzani.",
+    "tagline": "Intensywna gra blefu i dedukcji, w której każda odpowiedź może zdradzić kłamcę.",
+    "description": "Jedna osoba kłamie – reszta musi ją zdemaskować\nTe same pytania ujawniają różnice w odpowiedziach\nPsychologia i dedukcja decydują o zwycięstwie",
+    "socialProof": "⭐ 4.8/5 od graczy • Idealna na imprezy i wieczory ze znajomymi",
+    "badges": {
+      "players": "5-8 graczy",
+      "time": "Około 45 minut",
+      "age": "Od 13 lat"
+    },
+    "buttons": {
+      "primary": "Zamów teraz – odkryj kłamcę",
+      "secondary": "Zobacz jak wygląda rozgrywka (45 s)"
+    },
+    "sections": [
+      {
+        "id": "true-deduction",
+        "title": "Prawdziwa dedukcja, nie przypadek",
+        "description": "Każdy gracz odpowiada na te same pytania, zapisując odpowiedzi w tajemnicy. Pozornie identyczne odpowiedzi zaczynają się różnić — i właśnie tam rodzą się podejrzenia.",
+        "imageSrc": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
+        "imageAlt": "Gra planszowa Lavirant",
+        "imageBadge": "Nowość 2025!",
+        "reverse": false,
+        "badges": [
+          { "id": "dedukcja", "icon": "MessageCircle", "text": "Analiza odpowiedzi" },
+          { "id": "zabawa", "icon": "Award", "text": "Uważna obserwacja" }
+        ]
+      },
+      {
+        "id": "psychologia",
+        "title": "Blef, manipulacja i psychologia",
+        "description": "Nie wygrywa ten, kto mówi prawdę. Wygrywa ten, kto potrafi sprawić, że inni w nią uwierzą — nawet wtedy, gdy kłamie.",
+        "imageSrc": "https://images.unsplash.com/photo-1582921017967-79d1cb6702ee?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
+        "imageAlt": "Gracze przy stole",
+        "reverse": true,
+        "badges": [
+          { "id": "wielostronne", "icon": "Users", "text": "Gra umysłów" },
+          { "id": "szansa", "icon": "Award", "text": "Wpływ na decyzje" }
+        ]
+      },
+      {
+        "id": "rozgrywka-inna",
+        "title": "Żadna rozgrywka nie przebiega tak samo",
+        "description": "Losowe pytania, zmieniający się kłamca i reakcje graczy sprawiają, że każda partia prowadzi do zupełnie innych podejrzeń i decyzji.",
+        "imageSrc": "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
+        "imageAlt": "Gra planszowa Lavirant",
+        "imageBadge": "Nowość 2025!",
+        "reverse": false,
+        "badges": [
+          { "id": "dedukcja2", "icon": "MessageCircle", "text": "Losowe pytania" },
+          { "id": "zabawa2", "icon": "Award", "text": "Zmienna dynamika" }
+        ]
+      },
+      {
+        "id": "faza-dyskusji",
+        "title": "Moment, w którym wszystko wychodzi na jaw",
+        "description": "Padają oskarżenia, ktoś się broni, ktoś milczy zbyt długo. Jedna rozmowa potrafi całkowicie zmienić to, kogo uznawaliście za niewinnego.",
+        "imageSrc": "https://images.unsplash.com/photo-1582921017967-79d1cb6702ee?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800&q=80",
+        "imageAlt": "Gracze przy stole",
+        "reverse": true,
+        "badges": [
+          { "id": "wielostronne2", "icon": "Users", "text": "Otwarte oskarżenia" },
+          { "id": "szansa2", "icon": "Award", "text": "Napięcie przy stole" }
+        ]
+      }
+    ]
+  },
+  "aboutGame": {
+    "title": "O Grze",
+    "heading": "Lavirant to dynamiczna gra towarzyska, która łączy:",
+    "list": [
+      { "id": "logical-thinking", "text": "logiczne myślenie," },
+      { "id": "reading-people", "text": "umiejętność czytania ludzi," },
+      { "id": "emotion-control", "text": "kontrolę emocji," },
+      { "id": "perfect-lie", "text": "oraz… perfekcyjne kłamstwo." }
+    ],
+    "description": "W każdej rundzie jeden z graczy zostaje Kłamcą – jedyną osobą, która zna prawdziwe odpowiedzi. Pozostali muszą udawać, że je znają, jednocześnie próbując odkryć, kto mówi prawdę, a kto blefuje.",
+    "subtitle": "To gra, w której:",
+    "insights": [
+      { "id": "correct-answer-risky", "text": "poprawna odpowiedź nie zawsze jest bezpieczna," },
+      { "id": "confidence-trap", "text": "pewność siebie bywa pułapką," },
+      { "id": "silence-speaks", "text": "a cisza przy stole mówi więcej niż słowa." }
+    ]
+  },
+  "howToPlay": {
+    "title": "Jak wygląda rozgrywka?",
+    "subtitle": "Proste zasady, emocjonujące momenty",
+    "steps": [
+      {
+        "number": "1",
+        "title": "Każdy gracz odpowiada na pytania – w tajemnicy.",
+        "description": "Prowadzący losuje pytania z aplikacji. Wszyscy zapisują odpowiedzi na swoich tablicach. Tajemnica jest kluczowa!"
+      },
+      {
+        "number": "2",
+        "title": "Jedna osoba zna prawdziwe odpowiedzi i próbuje się nie zdradzić.",
+        "description": "To jest Kłamca – gracz z tablicą LAVIRANT. Pozostali muszą udawać, że znają prawdę, jednocześnie próbując odkryć, kto kłamie."
+      },
+      {
+        "number": "3",
+        "title": "Po rundzie rozpoczyna się dyskusja i głosowanie.",
+        "description": "Gracze debatują, analizują odpowiedzi i próbują ustalić tożsamość Kłamcy. Napięcie rośnie!"
+      },
+      {
+        "number": "4",
+        "title": "Jeśli gracze wskażą Kłamcę – ponosi konsekwencje.",
+        "description": "Kłamca wraca na start lub losuje kartę kary. Gracze, którzy głosowali prawidłowo, mogą otrzymać nagrodę."
+      },
+      {
+        "number": "5",
+        "title": "Jeśli nie – Kłamca przejmuje kontrolę nad rozgrywką.",
+        "description": "Kłamca cofina pozostałych graczy o wynik kostki. Niewinni gracze, którzy zostali oskarżeni, otrzymują nagrodę."
+      },
+      {
+        "number": "6",
+        "title": "Gra toczy się do momentu, aż ktoś pierwszy dotrze do mety.",
+        "description": "Lub skończy się pytania – wtedy wygrywa osoba zajmująca najdalsze pole na planszy!"
+      }
+    ]
+  },
+  "trueDeduction": {
+    "title": "Prawdziwa Dedukcja, Nie Zgadywanie",
+    "description": "Każdy gracz odpowiada na te same pytania, zapisując odpowiedzi w tajemnicy. Dopiero później zaczyna się analiza, rozmowa i głosowanie.",
+    "features": [
+      {
+        "id": "true-deduction-feat",
+        "title": "🧠 Prawdziwa dedukcja, nie zgadywanie",
+        "description": "Każdy gracz odpowiada na te same pytania, zapisując odpowiedzi w tajemnicy. Dopiero później zaczyna się analiza, rozmowa i głosowanie."
+      },
+      {
+        "id": "bluff-psychology",
+        "title": "🎭 Blef, manipulacja i psychologia",
+        "description": "Nie wygrywa ten, kto wie najwięcej, ale ten, kto najlepiej potrafi przekonać innych."
+      }
+    ]
+  },
+  "everyoneCanWin": {
+    "title": "Wszyscy Mogą Wygrać",
+    "subtitle": "Różnorodność i emocje w każdej rozgrywce",
+    "features": [
+      {
+        "id": "unique-gameplay",
+        "title": "🔄 Każda rozgrywka jest inna",
+        "description": "Losowe pytania z aplikacji oraz zmieniający się Kłamca sprawiają, że nie ma dwóch takich samych partii."
+      },
+      {
+        "id": "exciting-discussion",
+        "title": "🗣️ Emocjonująca faza dyskusji",
+        "description": "Moment, w którym gracze dyskutują i głosują, to serce gry – napięcie, podejrzenia i nagłe zwroty akcji są gwarantowane."
+      }
+    ]
+  },
+  "productShowcase": {
+    "title": "Co znajdziesz w pudełku?",
+    "subtitle": "Lavirant zawiera wszystko, czego potrzebujesz do niesamowitego doświadczenia grania towarzyskiego.",
+    "images": [
+      "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
+      "https://images.unsplash.com/photo-1611996575749-79a3a250f948?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
+      "https://images.unsplash.com/photo-1632501641765-e568d28b0015?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80",
+      "https://images.unsplash.com/photo-1566694271453-390536dd1f0d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80"
+    ],
+    "features": [
+      {
+        "icon": "Map",
+        "title": "Planszę do gry",
+        "description": "Dwustronna plansza z polami ruchu i efektami gry"
+      },
+      {
+        "icon": "CircleDot",
+        "title": "9 pionków (w tym zapasowy)",
+        "description": "Różnokolorowe żetony do gry dla wszystkich graczy"
+      },
+      {
+        "icon": "ClipboardList",
+        "title": "8 tablic do zapisywania odpowiedzi",
+        "description": "Eleganckie tablice dla każdego gracza (jedna zawiera LAVIRANT)"
+      },
+      {
+        "icon": "Pen",
+        "title": "8 markerów z gąbką",
+        "description": "Wygodne markery do pisania odpowiedzi"
+      },
+      {
+        "icon": "Smartphone",
+        "title": "Dostęp do aplikacji Lavirant",
+        "description": "Losowanie pytań, zarządzanie grą i reguły w aplikacji"
+      },
+      {
+        "icon": "Package",
+        "title": "Wszystko, czego potrzebujesz",
+        "description": "Kompletny zestaw do natychmiastowej rozgrywki"
+      }
+    ]
+  },
+  "emotions": {
+    "title": "Emocje, które zostają na dłużej",
+    "subtitle": "Po rozgrywce gracze wracają do domu z czymś więcej niż wspomnieniami",
+    "points": [
+      {
+        "id": "analyze-behavior",
+        "title": "Analizują swoje zachowania",
+        "description": "Gracze zastanawiają się nad własnymi decyzjami i tym, jak ich postrzegali inni podczas gry."
+      },
+      {
+        "id": "one-glance",
+        "title": "Wracają do \"tego jednego spojrzenia\"",
+        "description": "Długo po grze dyskutują o kluczowych momentach, mikromimice i gestach, które mogły zdradzić kłamcę."
+      },
+      {
+        "id": "best-liar",
+        "title": "Zastanawiają się, kto kłamał najlepiej",
+        "description": "To gra, o której rozmawia się jeszcze długo po zakończeniu partii. Każdy chce poznać sekrety innych."
+      }
+    ],
+    "quote": "To gra, która nie kończy się po ostatniej rundzie – ona trwa w rozmowach, wspomnieniach i śmiechu."
+  },
+  "forWhom": {
+    "title": "Dla kogo jest Lavirant?",
+    "subtitle": "Gra dla każdego, kto szuka czegos więcej niż zwykłej planszówki",
+    "items": [
+      "Dla fanów gier typu Werewolf / Mafia / Secret Hitler, ale szukających czegoś świeżego",
+      "Dla grup znajomych, które lubią dyskusje i psychologiczne zagrywki",
+      "Na imprezy, wieczory planszówkowe, integracje",
+      "Dla graczy 13+, którzy chcą czegoś więcej niż klasycznej planszówki"
+    ]
+  },
+  "cta": {
+    "heading": "🎲 Gotowy, by sprawdzić, komu naprawdę możesz ufać?",
+    "description": "Dodaj Lavirant do koszyka i przekonaj się, jak cienka jest granica między prawdą a kłamstwem.",
+    "buttons": {
+      "primary": "Zamów Teraz",
+      "secondary": "Dowiedz Się Więcej"
+    },
+    "benefits": [
+      {
+        "icon": "Truck",
+        "text": "Darmowa dostawa 3-5 dni"
+      },
+      {
+        "icon": "ShieldCheck",
+        "text": "30-dniowa gwarancja zwrotu pieniędzy"
+      },
+      {
+        "icon": "Lock",
+        "text": "Bezpieczna płatność"
+      }
+    ]
+  },
+  "pricing": {
+    "title": "Kup grę planszową Lavirant",
+    "subtitle": "Kompletna gra planszowa w jednym pudełku",
+    "note": "Darmowa dostawa przy zamówieniach powyżej 200 zł. Dostępna wysyłka międzynarodowa.",
+    "badge": "",
+    "button": "Zamów grę Lavirant",
+    "contentTitle": "W pudełku znajdziesz:",
+    "priceContext": "Pełna edycja gotowa do rozgrywki od razu po otwarciu.",
+    "priceSubtext": "Wysokiej jakości komponenty zaprojektowane na lata użytkowania.",
+    "valueStatement": "Gra premium zaprojektowana do wielokrotnych rozgrywek.",
+    "products": [
+      {
+        "id": "board-game",
+        "name": "Lavirant – gra blefu i dedukcji",
+        "tagline": "Pełna edycja z aplikacją mobilną",
+        "imageSrc": "../../assets/image.png",
+        "imageCaption": "Pełna zawartość pudełka Lavirant",
+        "price": 299,
+        "popular": false,
+        "features": [
+          { "id": "board", "text": "Plansza gry", "included": true, "bold": true },
+          { "id": "tokens", "text": "8 pionków do gry", "included": true, "bold": true },
+          { "id": "boards", "text": "8 tablic odpowiedzi", "included": true, "bold": true },
+          { "id": "markers", "text": "8 markerów z gąbkami", "included": true },
+          { "id": "dice", "text": "Kostkę do gry", "included": true },
+          { "id": "mobile-app", "text": "Dostęp do aplikacji mobilnej", "included": true },
+          { "id": "manual", "text": "Instrukcja i przewodnik", "included": true }
+        ]
+      }
+    ],
+    "payments": [
+      { "id": "visa", "alt": "Visa", "src": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" },
+      { "id": "mastercard", "alt": "Mastercard", "src": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" }
+    ]
+  },
+  "testimonials": {
+    "title": "Co mówią gracze?",
+    "subtitle": "Krótkie wrażenia po pierwszych rozgrywkach",
+    "reviewCount": null,
+    "viewAllText": "Zobacz więcej opinii graczy",
+    "viewAllOpinions": "",
+    "reviews": [
+      {
+        "id": "review-karol",
+        "name": "Kasia M.",
+        "title": "",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80&q=80",
+        "rating": 4,
+        "comment": "Najlepszy moment był wtedy, gdy wszyscy byliśmy pewni, że wiemy, kto kłamie — i kompletnie się pomyliliśmy."
+      },
+      {
+        "id": "review-anna",
+        "name": "Tomek R.",
+        "title": "",
+        "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80&q=80",
+        "rating": 5,
+        "comment": "Po pierwszej rundzie było cicho przy stole. Każdy zaczął analizować odpowiedzi."
+      },
+      {
+        "id": "review-piotr",
+        "name": "Ania S.",
+        "title": "",
+        "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80&q=80",
+        "rating": 5,
+        "comment": "Używam jej na zajęciach integracyjnych. Widzę, jak uczniowie naprawdę się wsłuchują w odpowiedzi innych."
+      }
+    ]
+  },
+  "faq": {
+    "title": "Często zadawane pytania",
+    "subtitle": "Wszystko, co musisz wiedzieć o grze Lavirant.",
+    "contactText": "Masz więcej pytań? Jesteśmy tutaj, aby pomóc!",
+    "contactCTA": "Skontaktuj się z naszym zespołem wsparcia pod adresem kontakt@lavirant.pl",
+    "faqs": [
+      {
+        "id": "faq-players",
+        "question": "Dla ilu graczy jest Lavirant?",
+        "answer": "Lavirant jest grą dla 5-8 graczy w wieku 13+. Celem gry jest połączenie wiedzy, dedukcji oraz umiejętności społecznych. Gracze odpowiadają na pytania, poruszają się po planszy oraz próbują zidentyfikować gracza, który w danej rundzie pełni rolę kłamcy."
+      },
+      {
+        "id": "faq-duration",
+        "question": "Ile czasu trwa typowa rozgrywka?",
+        "answer": "Średni czas rozgrywki wynosi około 45 minut. Gra kończy się w momencie, kiedy pierwsza osoba dojdzie na metę lub skończy się pytania. W tym drugim wypadku rozgrywkę wygrywa osoba, która zajęła najdalsze pole."
+      },
+      {
+        "id": "faq-contents",
+        "question": "Co znajduje się w pudełku gry?",
+        "answer": "Pudełko zawiera: planszę do gry, 9 pionków do gry (w tym jeden zapasowy), 8 tablic na odpowiedzi, 8 markerów z gąbką oraz dostęp do aplikacji Lavirant, którą znajdziesz w Google Play i App Store."
+      },
+      {
+        "id": "faq-organizer",
+        "question": "Jaka jest rola prowadzącego?",
+        "answer": "Prowadzący przygotowuje rozgrywkę, uruchamia aplikację, losuje pytania i odczytuje je wraz z możliwymi odpowiedziami. Prowadzący odpowiada za przebieg rozgrywki, jednak NIE pełni roli sędziego. Każdy gracz powinien mieć okazję być prowadzącym w różnych rundach."
+      },
+      {
+        "id": "faq-boards",
+        "question": "Jak działa system tablic?",
+        "answer": "Na początku każdej rundy prowadzący losowo rozdaje tablice wszystkim graczom. Wszystkie tablice wyglądają identycznie, ale jedna zawiera napis LAVIRANT oraz poprawne odpowiedzi. Pozostałe tablice zawierają losowe odpowiedzi. Gracz z tablicą LAVIRANT zostaje kłamcą w danej rundzie. Odpowiedzi zapisane na tablicach są tajne."
+      }
+    ]
+  },
+  "checkout": {
+    "title": "Kasa",
+    "subtitle": "Dokończ zakup",
+    "backButton": "Wróć do zakupów",
+    "loading": "Ładowanie produktu...",
+    "preparing": "Przygotowywanie kasy...",
+    "customerInfo": {
+      "title": "Dane kontaktowe i adres dostawy",
+      "firstName": "Imię",
+      "lastName": "Nazwisko",
+      "email": "Adres e-mail",
+      "phone": "Numer telefonu",
+      "address": "Ulica i numer",
+      "city": "Miasto",
+      "postalCode": "Kod pocztowy",
+      "country": "Kraj"
+    },
+    "errors": {
+      "configTitle": "Błąd konfiguracji płatności",
+      "configDescription": "Płatności Stripe nie są poprawnie skonfigurowane. Skontaktuj się z pomocą techniczną.",
+      "backToHome": "Powrót do strony głównej",
+      "required": "To pole jest wymagane",
+      "invalidEmail": "Nieprawidłowy adres e-mail",
+      "invalidPhone": "Numer telefonu powinien zawierać tylko cyfry",
+      "invalidName": "Imię i nazwisko nie mogą zawierać cyfr",
+      "invalidPostalCode": "Kod pocztowy powinien być w formacie XX-XXX (np. 00-123)"
+    },
+    "mockMode": {
+      "title": "Tryb testowy płatności",
+      "description": "Działasz w trybie deweloperskim. Kliknij \"Zapłać\" aby zasymulować udaną płatność. Żadne prawdziwe transakcje nie zostaną przeprowadzone."
+    },
+    "pricing": {
+      "productPrice": "Cena produktu",
+      "shipping": "Dostawa",
+      "shippingCost": 15,
+      "total": "Razem"
+    },
+    "summary": {
+      "title": "Podsumowanie zamówienia",
+      "shipping": "Dostawa",
+      "total": "Razem"
+    },
+    "delivery": {
+      "title": "Metoda dostawy",
+      "pointPicker": {
+        "title": "Wybierz paczkomat InPost",
+        "selectedLabel": "Wybrany paczkomat",
+        "manualLabel": "Numer paczkomatu",
+        "manualPlaceholder": "np. WAW123",
+        "mapPlaceholder": "Wybierz paczkomat na mapie",
+        "loading": "Ładowanie mapy InPost…",
+        "manualFallback": "Podaj kod paczkomatu ręcznie, jeśli mapa jest niedostępna.",
+        "manualFailure": "Mapa InPost nie załadowała się. Sprawdź token lub dozwolone domeny i podaj kod ręcznie."
+      },
+      "labels": {
+        "free": "Gratis",
+        "pricePrefix": "+",
+        "currency": "zł",
+        "estimatedDelivery": "Przewidywany czas dostawy"
+      },
+      "options": [
+        {
+          "id": "inpost",
+          "name": "InPost Paczkomaty",
+          "price": 0,
+          "estimatedDays": "1-2 dni robocze",
+          "description": "Dostawa do wybranego paczkomatu"
+        },
+        {
+          "id": "inpost-courier",
+          "name": "InPost Kurier",
+          "price": 7,
+          "estimatedDays": "1 dzień roboczy",
+          "description": "Ekspresowa dostawa kurierem"
+        }
+      ]
+    },
+    "paymentMethods": {
+      "title": "Metoda płatności",
+      "labels": {
+        "blikCode": "Kod BLIK",
+        "blikPlaceholder": "000 000",
+        "blikHelper": "Wpisz 6-cyfrowy kod BLIK z aplikacji bankowej",
+        "cardNumber": "Numer karty",
+        "cardNumberPlaceholder": "1234 5678 9012 3456",
+        "cardExpiry": "Data ważności",
+        "cardExpiryPlaceholder": "MM/RR",
+        "cardCvv": "CVV",
+        "cardCvvPlaceholder": "123"
+      },
+      "options": [
+        {
+          "id": "card",
+          "name": "Karta płatnicza",
+          "description": "Visa, Mastercard, Maestro",
+          "icon": "CreditCard"
+        },
+        {
+          "id": "blik",
+          "name": "BLIK",
+          "description": "Płatność kodem BLIK",
+          "icon": "Smartphone"
+        },
+        {
+          "id": "transfer",
+          "name": "Przelew bankowy",
+          "description": "Tradycyjny przelew",
+          "icon": "Building"
+        },
+        {
+          "id": "cod",
+          "name": "Płatność przy odbiorze",
+          "description": "Zapłać przy odbiorze paczki",
+          "icon": "Wallet"
+        }
+      ]
+    },
+    "buttons": {
+      "processing": "Przetwarzanie...",
+      "pay": "Zapłać"
+    },
+    "security": {
+      "securePayment": "Bezpieczne przetwarzanie płatności",
+      "freeShipping": "Darmowa dostawa od 200 zł"
+    },
+    "toast": {
+      "mockSuccess": {
+        "title": "Płatność testowa zakończona sukcesem",
+        "description": "To jest płatność testowa. Nie przeprowadzono prawdziwej transakcji."
+      },
+      "paymentFailed": {
+        "title": "Płatność nie powiodła się"
+      },
+      "paymentSuccess": {
+        "title": "Płatność zakończona sukcesem",
+        "description": "Dziękujemy za zakup!"
+      },
+      "paymentProcessing": {
+        "title": "Płatność w trakcie realizacji",
+        "description": "Twoja płatność jest przetwarzana. Otrzymasz wiadomość email z potwierdzeniem."
+      },
+      "paymentCancelled": {
+        "title": "Płatność anulowana",
+        "description": "Płatność nie została zrealizowana. Spróbuj ponownie."
+      }
+    }
+  },
+  "orderSuccess": {
+    "title": "Zamówienie Złożone!",
+    "subtitle": "Twoje zamówienie zostało pomyślnie zrealizowane",
+    "description": "Dziękujemy za zakup Lavirant! Sprawdź swoją skrzynkę pocztową – wysłaliśmy potwierdzenie zamówienia.",
+    "steps": [
+      {
+        "id": "email-confirmation",
+        "icon": "Mail",
+        "title": "Potwierdzenie e-mail",
+        "description": "Otrzymasz wiadomość z potwierdzeniem zamówienia i szczegółami"
+      },
+      {
+        "id": "shipping",
+        "icon": "Package",
+        "title": "Przygotowanie wysyłki",
+        "description": "Twoje zamówienie zostanie wysłane w ciągu 1-2 dni roboczych"
+      },
+      {
+        "id": "delivery",
+        "icon": "CheckCircle2",
+        "title": "Dostawa",
+        "description": "Paczka dotrze do Ciebie zgodnie z wybraną metodą dostawy"
+      }
+    ],
+    "support": {
+      "title": "Potrzebujesz pomocy?",
+      "description": "Skontaktuj się z nami pod adresem kontakt@lavirant.pl – chętnie odpowiemy na wszystkie pytania."
+    },
+    "buttons": {
+      "home": "Wróć do strony głównej"
+    }
+  },
+  "orderFailure": {
+    "title": "Płatność Nieudana",
+    "subtitle": "Nie udało się przetworzyć Twojej płatności",
+    "description": "Nie martw się – żadne środki nie zostały pobrane z Twojego konta. Możesz spróbować ponownie.",
+    "reasons": [
+      {
+        "id": "insufficient-funds",
+        "text": "Niewystarczające środki na koncie lub limit karty"
+      },
+      {
+        "id": "incorrect-data",
+        "text": "Niepoprawne dane karty lub kod BLIK"
+      },
+      {
+        "id": "bank-rejection",
+        "text": "Transakcja odrzucona przez bank lub operatora płatności"
+      },
+      {
+        "id": "technical-issue",
+        "text": "Tymczasowy problem techniczny"
+      }
+    ],
+    "support": {
+      "title": "Potrzebujesz pomocy?",
+      "description": "Jeśli problem się powtarza, skontaktuj się z nami: kontakt@lavirant.pl"
+    },
+    "buttons": {
+      "retry": "Spróbuj ponownie",
+      "home": "Wróć do strony głównej"
+    }
+  },
+  "notFound": {
+    "title": "Błąd 404",
+    "subtitle": "Strona nie została odnaleziona",
+    "description": "Wygląda na to, że ta strona zgubiła się w grze. Może ktoś kłamie o jej istnieniu?",
+    "homeButton": "Wróć do strony głównej",
+    "shopButton": "Przejdź do sklepu",
+    "features": [
+      {
+        "icon": "Search",
+        "text": "Sprawdź adres URL"
+      },
+      {
+        "icon": "Home",
+        "text": "Wróć na stronę główną"
+      },
+      {
+        "icon": "ShoppingBag",
+        "text": "Zobacz nasze produkty"
+      }
+    ]
+  },
+  "maintenance": {
+    "badge": "Prace w toku",
+    "title": "Aktualnie pracujemy nad stroną",
+    "message": "Dziękujemy za cierpliwość. Trwają prace serwisowe i chwilowo wyłączyliśmy pozostałe funkcje. Wróć do nas później, a znajdziesz tutaj pełną wersję."
+  },
+  "footer": {
+    "brandName": "Lavirant",
+    "logoUrl": "/logo3.svg",
+    "logoAlt": "Lavirant Logo",
+    "description": "Wciągająca gra towarzyska oparta na dyskusji, przekonywaniu i strategicznym głosowaniu, która spodoba się wszystkim miłośnikom planszówek.",
+    "quickLinks": {
+      "title": "Na skróty",
+      "links": [
+        { "text": "Strona główna", "href": "/" },
+        { "text": "Jak wygląda rozgrywka?", "href": "/#how-to-play" },
+        { "text": "Co znajdziesz w pudełku?", "href": "/#contents" },
+        { "text": "Dla kogo jest Lavirant?", "href": "/#for-whom" },
+        { "text": "Opinie", "href": "/#reviews" },
+        { "text": "FAQ", "href": "/#faq" }
+      ]
+    },
+    "contact": {
+      "title": "Kontakt",
+      "address": {
+        "street": "ul. Planszowa 123",
+        "postal": "00-001 Warszawa",
+        "country": "Polska"
+      },
+      "phone": "+48 123 456 789",
+      "email": "kontakt@lavirant.pl"
+    },
+    "social": {
+      "title": "Śledź nas",
+      "platforms": [
+        { "name": "Facebook", "icon": "Facebook", "url": "#", "ariaLabel": "Odwiedź naszą stronę na Facebooku" },
+        { "name": "Instagram", "icon": "Instagram", "url": "#", "ariaLabel": "Odwiedź nasz profil na Instagramie" },
+        { "name": "TikTok", "icon": "TikTok", "url": "#", "ariaLabel": "Odwiedź nasz profil na TikToku" }
+      ]
+    },
+    "legal": {
+      "copyright": "© 2025 Lavirant. Wszelkie prawa zastrzeżone.",
+      "links": [
+        { "text": "Regulamin", "href": "/Regulamin.pdf" },
+        { "text": "Polityka Prywatności", "href": "/Polityka_Prywatnosci.pdf" },
+        { "text": "Polityka Cookies", "href": "/Polityka_Cookies.pdf" }
+      ]
+    }
+  }
+}
