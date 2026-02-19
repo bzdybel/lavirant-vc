@@ -182,26 +182,81 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
       redirect: 'if_required',
     });
 
-    if (error) {
+     if (error) {
+      setIsProcessing(false);
       clearSavedFormData();
+
+       const errorMessage =
+        error.code === 'incomplete_payment_method' ? "Metoda płatności niekompletna. Spróbuj ponownie." :
+        error.code === 'payment_intent_authentication_failure' ? "Uwierzytelnienie płatności nie powiodło się. Spróbuj ponownie." :
+        error.message;
+
       toast({
         title: toastContent.paymentFailed.title,
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
-      setIsProcessing(false);
       return;
     }
 
-    if (paymentIntent?.status === 'succeeded') {
-      clearSavedFormData();
+     if (!paymentIntent) {
+      setIsProcessing(false);
       toast({
-        title: toastContent.paymentSuccess.title,
-        description: toastContent.paymentSuccess.description,
+        title: toastContent.paymentFailed.title,
+        description: "Nie znaleziono intencji płatności",
+        variant: "destructive",
       });
+      return;
+    }
 
-      const orderRequest = createOrderRequest(paymentIntent.id);
-      orderMutation.mutate(orderRequest);
+    switch (paymentIntent.status) {
+      case 'succeeded': {
+        clearSavedFormData();
+        toast({
+          title: toastContent.paymentSuccess.title,
+          description: toastContent.paymentSuccess.description,
+        });
+        const orderRequest = createOrderRequest(paymentIntent.id);
+        orderMutation.mutate(orderRequest);
+        break;
+      }
+
+      case 'requires_payment_method':
+      case 'canceled':
+         setIsProcessing(false);
+        clearSavedFormData();
+        toast({
+          title: "Płatność anulowana",
+          description: "Płatność została anulowana. Spróbuj ponownie lub wybierz inny sposób zapłaty.",
+          variant: "destructive",
+        });
+        break;
+
+      case 'requires_action':
+         setIsProcessing(false);
+        break;
+
+      case 'processing':
+         setTimeout(() => {
+          if (isProcessing) {
+            setIsProcessing(false);
+            toast({
+              title: "Oczekiwanie na potwierdzenie",
+              description: "Przetwarzanie płatności trwa dłużej niż zwykle. Sprawdź status później.",
+              variant: "destructive",
+            });
+          }
+        }, 8000);
+        break;
+
+      default:
+         setIsProcessing(false);
+        clearSavedFormData();
+        toast({
+          title: toastContent.paymentFailed.title,
+          description: `Płatność nie powiodła się. Status: ${paymentIntent.status}. Spróbuj ponownie.`,
+          variant: "destructive",
+        });
     }
   };
 
