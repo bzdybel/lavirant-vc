@@ -26,6 +26,7 @@ import {
   createBreadcrumbSchema,
 } from "@/lib/seo-schemas";
 import content from "@/lib/content.json";
+import { ensurePrivateAccess } from "@/lib/ensurePrivateAccess";
 
 
 const getProductId = (): string => {
@@ -34,6 +35,7 @@ const getProductId = (): string => {
 };
 
 export default function Checkout() {
+  ensurePrivateAccess();
   const [, navigate] = useLocation();
   const productId = getProductId();
 
