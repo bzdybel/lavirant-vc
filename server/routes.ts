@@ -380,7 +380,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create payment intent with full amount (items + shipping)
-      const amountInCents = Math.round(finalAmount * 100);
+      let amountInCents = Math.round(finalAmount * 100);
+
+      // PRODUCTION TEST MODE – REMOVE AFTER TESTING
+      // When STRIPE_PROD_TEST_MODE=true, override charge to 0.01 PLN (1 grosz)
+      // Real amounts stored in metadata for webhook validation
+      if (process.env.STRIPE_PROD_TEST_MODE === 'true') {
+        console.log('⚠️ PRODUCTION TEST MODE ENABLED – Charging 0.01 PLN only');
+        amountInCents = 1; // 1 grosz = 0.01 PLN
+      }
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amountInCents,
