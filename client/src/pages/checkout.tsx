@@ -134,8 +134,7 @@ export default function Checkout() {
               />
             )}
 
-            {/* 💳 STRIPE MODE */}
-            {!STRIPE_CONFIG.isMockMode && clientSecret && stripePromise && (
+             {!STRIPE_CONFIG.isMockMode && clientSecret && stripePromise && (
               <Elements
                 stripe={stripePromise}
                 options={{
@@ -167,7 +166,12 @@ export default function Checkout() {
                         backgroundColor: "#1a3244",
                         border: "1px solid #c9a24d",
                         boxShadow: "0 0 0 1px #c9a24d",
+                        color: "#c9a24d",
                       },
+                      ".Tab--selected:hover":{
+                        color: "#c9a24d",
+                      },
+                      ".TabIcon--selected":{fill:"#e5e7eb"},
                       ".Input": {
                         backgroundColor: "#0f2433",
                         border:
