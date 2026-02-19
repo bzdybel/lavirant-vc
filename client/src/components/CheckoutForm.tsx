@@ -1,5 +1,5 @@
 import { useStripe, useElements } from '@stripe/react-stripe-js';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { extractFormData } from "@/components/checkout/formUtils";
 import { validateCustomerData } from "@/components/checkout/validation";
 import { saveFormDataForRedirect, clearSavedFormData } from "@/components/checkout/paymentRedirectUtils";
 import { usePaymentRedirect } from "@/hooks/usePaymentRedirect";
+import { apiRequest } from "@/lib/queryClient";
 import content from "@/lib/content.json";
 
 interface CheckoutFormProps {
@@ -30,6 +31,7 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
   const [quantity, setQuantity] = useState(1);
   const [deliveryMethod, setDeliveryMethod] = useState("inpost");
   const [deliveryPointId, setDeliveryPointId] = useState("");
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [, navigate] = useLocation();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -50,6 +52,24 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
       setIsProcessing(false);
     },
   });
+
+   useEffect(() => {
+    if (!STRIPE_CONFIG.isMockMode && stripe && elements) {
+      const updatePaymentIntent = async () => {
+        try {
+          const res = await apiRequest("POST", "/api/create-payment-intent", {
+            amount: totalAmount
+          });
+          const data = await res.json();
+          setClientSecret(data.clientSecret);
+        } catch (error) {
+          console.error("Failed to update payment intent:", error);
+        }
+      };
+
+      updatePaymentIntent();
+    }
+  }, [totalAmount, stripe, elements]);
 
   usePaymentRedirect({
     orderMutation,
