@@ -235,14 +235,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ? payload?.data?.object?.amount
       : null;
 
+    const stripeMetadata = payload?.data?.object?.metadata || {};
+
+
     if (Number.isFinite(stripeAmount)) {
       const productTotal = product ? product.price * order.quantity : order.total;
-      const deliveryCost = Math.max(0, Number(stripeAmount) - productTotal);
 
-      if (deliveryCost !== order.deliveryCost || Number(stripeAmount) !== order.total) {
+      let deliveryCostFromMetadata = Number.isFinite(stripeMetadata.shippingCost)
+        ? Math.round(Number(stripeMetadata.shippingCost))
+        : null;
+
+      let deliveryCost = deliveryCostFromMetadata ?? Math.max(0, Number(stripeAmount) - productTotal);
+      let finalAmount = Number(stripeAmount);
+
+
+
+      if (deliveryCost !== order.deliveryCost || finalAmount !== order.total) {
         const updated = await storage.updateOrder(order.id, {
           deliveryCost,
-          total: Number(stripeAmount),
+          total: finalAmount,
         });
         order = updated ?? order;
       }
@@ -300,11 +311,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe payment intent route
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
-      const { amount, orderId } = req.body;
+      const { amount, orderId, itemsTotal, shippingCost } = req.body;
 
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: "Invalid amount" });
       }
+
+      const itemsAmount = Number.isFinite(itemsTotal) ? itemsTotal : 0;
+      const shippingAmount = Number.isFinite(shippingCost) ? shippingCost : 0;
+      const finalAmount = itemsAmount + shippingAmount || amount;
+
+      console.log("💳 Payment Intent Creation", {
+        itemsTotal: itemsAmount,
+        shippingCost: shippingAmount,
+        finalAmount,
+        amountFromFrontend: amount,
+        orderId,
+        stripeMode: stripe ? "live" : "mock",
+      });
 
       let order: Awaited<ReturnType<typeof storage.getOrder>> | undefined;
       if (orderId) {
@@ -318,6 +342,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(500).json({ message: "Stripe is not configured" });
           }
           const existingIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
+          console.log("📌 Retrieving existing payment intent", {
+            paymentIntentId: order.paymentIntentId,
+            existingAmount: existingIntent.amount,
+          });
           return res.json({
             clientSecret: existingIntent.client_secret,
             paymentIntentId: existingIntent.id,
@@ -329,6 +357,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (useMockStripe) {
         const mockId = `mock_pi_${Date.now()}`;
         const mockClientSecret = `${mockId}_secret_${Math.random().toString(36).substring(7)}`;
+        console.log("🧪 Mock payment intent created", {
+          mockId,
+          amount: finalAmount,
+          itemsTotal: itemsAmount,
+          shippingCost: shippingAmount,
+        });
         if (orderId) {
           await storage.updateOrder(Number(orderId), {
             status: "PAYMENT_PENDING",
@@ -345,14 +379,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Stripe is not configured" });
       }
 
+      // Create payment intent with full amount (items + shipping)
+      const amountInCents = Math.round(finalAmount * 100);
+
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
+        amount: amountInCents,
         currency: "pln",
         automatic_payment_methods: {
           enabled: true,
           allow_redirects: 'always',
         },
-        metadata: orderId ? { orderId: String(orderId) } : undefined,
+        metadata: {
+          ...(orderId ? { orderId: String(orderId) } : {}),
+          itemsTotal: String(itemsAmount),
+          shippingCost: String(shippingAmount),
+          finalAmount: String(finalAmount),
+        },
+        description: orderId ? `Order #${orderId}` : undefined,
+      });
+
+      console.log("✅ Stripe payment intent created (LIVE)", {
+        paymentIntentId: paymentIntent.id,
+        amountInCents,
+        amountInPLN: finalAmount,
+        itemsTotal: itemsAmount,
+        shippingCost: shippingAmount,
+        metadata: paymentIntent.metadata,
       });
 
       if (orderId) {
@@ -367,6 +419,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id });
     } catch (error: any) {
+      console.error("❌ Error creating payment intent", {
+        error: error.message,
+        code: error.code,
+      });
       res.status(500).json({ message: `Error creating payment intent: ${error.message}` });
     }
   });

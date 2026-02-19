@@ -31,7 +31,6 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
   const [quantity, setQuantity] = useState(1);
   const [deliveryMethod, setDeliveryMethod] = useState("inpost");
   const [deliveryPointId, setDeliveryPointId] = useState("");
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [, navigate] = useLocation();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -57,11 +56,15 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
     if (!STRIPE_CONFIG.isMockMode && stripe && elements) {
       const updatePaymentIntent = async () => {
         try {
-          const res = await apiRequest("POST", "/api/create-payment-intent", {
-            amount: totalAmount
+          const itemsTotal = productPrice;
+          const shipping = shippingCost;
+
+          await apiRequest("POST", "/api/create-payment-intent", {
+            amount: totalAmount,
+            itemsTotal,
+            shippingCost: shipping,
           });
-          const data = await res.json();
-          setClientSecret(data.clientSecret);
+
         } catch (error) {
           console.error("Failed to update payment intent:", error);
         }
@@ -69,7 +72,7 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
 
       updatePaymentIntent();
     }
-  }, [totalAmount, stripe, elements]);
+  }, [totalAmount, stripe, elements, productPrice, shippingCost, quantity]);
 
   usePaymentRedirect({
     orderMutation,

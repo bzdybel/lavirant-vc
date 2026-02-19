@@ -34,7 +34,13 @@ const fetchProduct = async (productId: string): Promise<Product> => {
 };
 
 const createPaymentIntent = async (price: number): Promise<string> => {
-  const res = await apiRequest("POST", "/api/create-payment-intent", { amount: price });
+   const baseShipping = 15;
+
+  const res = await apiRequest("POST", "/api/create-payment-intent", {
+    amount: price + baseShipping,
+    itemsTotal: price,
+    shippingCost: baseShipping,
+  });
   const data: PaymentIntentResponse = await res.json();
   return data.clientSecret;
 };
