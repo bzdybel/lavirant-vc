@@ -16,6 +16,8 @@ import {
 import { getDb } from "./db";
 import { PaymentStatus } from "@shared/enums/paymentStatus";
 import { and, eq, or, sql, isNull, isNotNull, notInArray } from "drizzle-orm";
+import { TERMINAL_SHIPMENT_STATUSES } from "./constants/shipmentStatus";
+import { LogPrefix } from "./constants/logPrefixes";
 
 export type OrderStatus = PaymentStatus;
 
@@ -115,7 +117,7 @@ export class DbStorage implements IStorage {
     };
 
     const result = await this.db.insert(orders).values(values).returning();
-    console.log("[DB] Order persisted", { id: result[0].id });
+    console.log(`${LogPrefix.DATABASE} Order persisted`, { id: result[0].id });
     return result[0];
   }
 
@@ -143,7 +145,6 @@ export class DbStorage implements IStorage {
   }
 
   async listOrdersForShipmentPolling(): Promise<Order[]> {
-    const terminalStatuses = ["delivered", "returned"];
     return this.db
       .select()
       .from(orders)
@@ -152,7 +153,7 @@ export class DbStorage implements IStorage {
           isNotNull(orders.shipmentId),
           or(
             isNull(orders.shipmentStatus),
-            notInArray(sql`lower(${orders.shipmentStatus})`, terminalStatuses),
+            notInArray(sql`lower(${orders.shipmentStatus})`, TERMINAL_SHIPMENT_STATUSES),
           ),
         ),
       );

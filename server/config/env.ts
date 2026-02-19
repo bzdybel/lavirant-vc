@@ -1,14 +1,14 @@
+/**
+ * @deprecated Use server/utils/env.ts instead
+ * This file is kept for backward compatibility only
+ */
+
+import { resolveEnv as resolveEnvUtil, requireEnv as requireEnvUtil } from "../utils/env";
+
 export function resolveEnv(name: string, fallback = ""): string {
-  return (process.env[name] || fallback).trim();
+  return resolveEnvUtil(name, fallback);
 }
 
 export function requireEnv(name: string): string {
-  const value = resolveEnv(name);
-  if (!value) {
-    throw new Error(`[CONFIG ERROR] Missing ${name} environment variable`);
-  }
-  if (/<[^>]+>/.test(value)) {
-    throw new Error(`[CONFIG ERROR] Invalid ${name} placeholder value`);
-  }
-  return value;
+  return requireEnvUtil(name);
 }

@@ -1,141 +1,20 @@
-import type { ShipXShipmentDetails } from "../../lib/inpost/types";
-import { getShipXClient, ShipXError } from "../../lib/inpost/shipxClient";
-import { storage } from "../storage";
-import { updateOrderShipmentState } from "./shipxOrderUpdater";
+/**
+ * @deprecated This file has been refactored
+ * Import from server/jobs/ShipXPollingJob.ts instead
+ */
 
-const POLL_INTERVAL_MINUTES = 10;
-const RETRY_ATTEMPTS = 3;
-const RETRY_BASE_DELAY_MS = 500;
+import { ShipXPollingJob } from "../jobs/ShipXPollingJob";
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+// Create job instance
+const shipxPollingJob = new ShipXPollingJob();
+
+/**
+ * Starts the ShipX polling job
+ * @deprecated Use ShipXPollingJob class instance instead
+ */
+export function startShipXPollingJob(): void {
+  shipxPollingJob.start();
 }
 
-function isRetryableError(error: unknown): boolean {
-  if (error instanceof ShipXError) {
-    return error.status >= 500;
-  }
-
-  if (error instanceof Error) {
-    return error.name === "FetchError" || error.name === "TypeError";
-  }
-
-  return false;
-}
-
-async function withRetry<T>(action: () => Promise<T>): Promise<T> {
-  let attempt = 0;
-  while (true) {
-    try {
-      return await action();
-    } catch (error) {
-      attempt += 1;
-      if (!isRetryableError(error) || attempt >= RETRY_ATTEMPTS) {
-        throw error;
-      }
-      const backoff = RETRY_BASE_DELAY_MS * attempt;
-      await delay(backoff);
-    }
-  }
-}
-
-function resolveTrackingNumber(shipment: ShipXShipmentDetails): string | null {
-  return shipment.tracking_number || shipment.trackingNumber || null;
-}
-
-export async function pollShipXShipments(): Promise<void> {
-  const token = process.env.INPOST_API_SHIPX;
-  if (!token) {
-    console.log("ℹ️ ShipX polling skipped: INPOST_API_SHIPX not configured.");
-    return;
-  }
-
-  const orders = await storage.listOrdersForShipmentPolling();
-  if (orders.length === 0) return;
-
-  const client = getShipXClient();
-  const environment = (process.env.INPOST_SHIPX_ENV as string) || (process.env.NODE_ENV === "production" ? "production" : "sandbox");
-
-  for (const order of orders) {
-    if (!order.shipmentId) continue;
-    if (order.shipmentId.startsWith("MOCK-")) {
-      console.warn("[ShipX Polling] Skipping mock shipment id", {
-        orderId: order.id,
-        shipmentId: order.shipmentId,
-      });
-      continue;
-    }
-
-    console.log("[ShipX Polling] Fetching shipment from sandbox", {
-      orderId: order.id,
-      providerShipmentId: order.shipmentId,
-      environment,
-    });
-
-    try {
-      const shipment = await withRetry(() =>
-        client.request<ShipXShipmentDetails>(`/v1/shipments/${order.shipmentId}`, {
-          method: "GET",
-        })
-      );
-
-      const shipmentStatus = shipment.status ?? order.shipmentStatus ?? null;
-      const trackingNumber = resolveTrackingNumber(shipment);
-
-      let updatedOrder = await updateOrderShipmentState(order, {
-        shipmentStatus,
-        trackingNumber: trackingNumber ?? undefined,
-      });
-
-      const existingShipment = await storage.getShipmentByOrderId(order.id);
-      if (existingShipment) {
-        await storage.updateShipment(existingShipment.id, {
-          status: shipmentStatus === "confirmed" ? "SHIPPED" : existingShipment.status,
-          trackingNumber: trackingNumber ?? existingShipment.trackingNumber,
-        });
-      }
-
-      if (
-        shipmentStatus === "confirmed" &&
-        updatedOrder.labelGenerated !== true
-      ) {
-        await withRetry(() =>
-          client.requestBinary(
-            `/v1/shipments/${order.shipmentId}/label?format=pdf`,
-            { method: "GET" }
-          )
-        );
-
-        updatedOrder = await updateOrderShipmentState(updatedOrder, {
-          labelGenerated: true,
-        });
-
-        if (existingShipment) {
-          await storage.updateShipment(existingShipment.id, {
-            status: "SHIPPED",
-          });
-        }
-      }
-    } catch (error) {
-      console.error("❌ ShipX polling failed for shipment", {
-        orderId: order.id,
-        shipmentId: order.shipmentId,
-        error,
-      });
-    }
-  }
-}
-
-export function startShipXPollingJob() {
-  const intervalMs = POLL_INTERVAL_MINUTES * 60 * 1000;
-
-  pollShipXShipments().catch((error) => {
-    console.error("❌ ShipX polling initial run failed:", error);
-  });
-
-  setInterval(() => {
-    pollShipXShipments().catch((error) => {
-      console.error("❌ ShipX polling failed:", error);
-    });
-  }, intervalMs);
-}
+// Re-export for backward compatibility
+export { ShipXPollingJob } from "../jobs/ShipXPollingJob";

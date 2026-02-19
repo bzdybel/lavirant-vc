@@ -1,3 +1,11 @@
+import dotenv from "dotenv";
+import path from "path";
+
+// Load environment variables from .env file
+const envPath = process.env.DOTENV_CONFIG_PATH
+  ? path.resolve(process.env.DOTENV_CONFIG_PATH)
+  : path.resolve(".env");
+dotenv.config({ path: envPath });
 
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
@@ -8,6 +16,11 @@ import { startShipXPollingJob } from "./inpost/shipxPollingJob";
 import { initializeDatabase } from "./db";
 import { emailService } from "./emailService";
 import { validateStripeConfig } from "./stripeClient";
+import { logShippingStatus } from "./shipping/diagnostics";
+import { AppConfig } from "./config/appConfig";
+import { errorHandler } from "./middleware/errorHandler";
+import { requestLogger } from "./middleware/requestLogger";
+import { LogPrefix } from "./constants/logPrefixes";
 
 const app = express();
 
@@ -27,52 +40,18 @@ app.use((req, res, next) => {
   return express.urlencoded({ extended: false })(req, res, next);
 });
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const requestPath = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (requestPath.startsWith("/api")) {
-      let logLine = `${req.method} ${requestPath} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
-});
+// Apply request logging middleware
+app.use(requestLogger);
 
 (async () => {
-  if (process.env.MOCK_INPOST === "true") {
-    throw new Error("[CONFIG ERROR] MOCK_INPOST cannot be used in runtime or E2E mode");
-  }
-
-  if (!process.env.INPOST_API_SHIPX) {
-    throw new Error("[CONFIG ERROR] INPOST_API_SHIPX is required for runtime ShipX integration");
-  }
-
-  if (!process.env.INPOST_SHIPX_ORG_ID) {
-    throw new Error("[CONFIG ERROR] INPOST_SHIPX_ORG_ID is required for runtime ShipX integration");
-  }
+  // Validate runtime configuration
+  AppConfig.validateRuntimeConfig();
 
   validateStripeConfig();
+  logShippingStatus();
   emailService.initialize();
   await initializeDatabase();
+
   const server = await registerRoutes(app);
 
   startPaymentStatusJob();
@@ -81,13 +60,8 @@ app.use((req, res, next) => {
   // Setup SEO sitemap route
   setupSitemapRoute(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
+  // Apply error handling middleware (must be last)
+  app.use(errorHandler);
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
@@ -98,13 +72,13 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
+  // ALWAYS serve the app on port 5000 (actually 5173)
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5173;
+  const port = AppConfig.PORT;
   server.listen({
     port,
-    host: "0.0.0.0",
+    host: AppConfig.HOST,
   }, () => {
     log(`serving on port ${port}`);
   });
