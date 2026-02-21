@@ -6,7 +6,6 @@ import type { StripeService } from "./services/StripeService";
 import type { PaymentStatusService } from "./services/PaymentStatusService";
 import type { ShippingService } from "./services/ShippingService";
 
-// Route Handlers
 import { PaymentWebhookHandler } from "./handlers/PaymentWebhookHandler";
 import { ListProductsHandler, GetProductHandler } from "./handlers/ProductHandlers";
 import { CreatePaymentIntentHandler } from "./handlers/CreatePaymentIntentHandler";
@@ -23,15 +22,13 @@ export async function registerRoutes(
     shippingService: ShippingService;
   }
 ): Promise<Server> {
-  
-  // ============================= Shipping Routes =============================
-  app.get(
+
+   app.get(
     "/api/shipping/inpost-config",
     GetInPostConfigHandler()
   );
 
-  // ============================= Payment Routes =============================
-  app.post(
+   app.post(
     "/api/payments/webhook",
     express.raw({ type: "*/*" }),
     PaymentWebhookHandler({
@@ -48,12 +45,10 @@ export async function registerRoutes(
     })
   );
 
-  // ============================= Product Routes =============================
-  app.get("/api/products", ListProductsHandler());
+   app.get("/api/products", ListProductsHandler());
   app.get("/api/products/:id", GetProductHandler());
 
-  // ============================= Order Routes =============================
-  app.post(
+   app.post(
     "/api/orders",
     CreateOrderHandler({
       emailService: services.emailService,
@@ -62,8 +57,7 @@ export async function registerRoutes(
     })
   );
 
-  // ============================= Admin Routes =============================
-  app.post(
+   app.post(
     "/api/admin/shipments/:orderId/ship",
     MarkOrderShippedHandler({
       emailService: services.emailService,

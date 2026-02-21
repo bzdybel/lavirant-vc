@@ -24,9 +24,6 @@ interface WebhookDependencies {
   paymentStatusService: PaymentStatusService;
 }
 
-/**
- * Normalizes webhook signature header by extracting the actual signature value
- */
 function normalizeSignatureHeader(signatureHeader: string): string {
   if (signatureHeader.includes("=")) {
     const parts = signatureHeader.split("=");
@@ -35,9 +32,6 @@ function normalizeSignatureHeader(signatureHeader: string): string {
   return signatureHeader.trim();
 }
 
-/**
- * Verifies HMAC signature for custom webhook providers
- */
 function verifyHmacSignature(rawBody: Buffer, signatureHeader: string, secret: string): boolean {
   if (!secret || !signatureHeader) return false;
   const normalized = normalizeSignatureHeader(signatureHeader);
@@ -58,13 +52,9 @@ function verifyHmacSignature(rawBody: Buffer, signatureHeader: string, secret: s
   return crypto.timingSafeEqual(computed, provided);
 }
 
-/**
- * Parses webhook payload into standardized format
- */
 function parseWebhookPayload(payload: any): ParsedWebhookData {
   const eventId = payload?.eventId || payload?.event_id || payload?.id || null;
 
-  // Stripe format
   if (payload?.type && payload?.data?.object) {
     const object = payload.data.object;
     const stripeStatus = object?.status || "";
@@ -109,9 +99,6 @@ function parseWebhookPayload(payload: any): ParsedWebhookData {
   };
 }
 
-/**
- * Verifies webhook signature based on provider
- */
 async function verifyWebhookSignature(
   rawBody: Buffer,
   stripeSignature: string | undefined,
@@ -157,9 +144,6 @@ async function verifyWebhookSignature(
   return { valid: false, payload: null };
 }
 
-/**
- * Records invalid webhook signature event
- */
 async function recordInvalidSignature(rawBody: Buffer): Promise<void> {
   await storage.recordWebhookEvent({
     id: crypto.createHash("sha256").update(rawBody).digest("hex"),
@@ -173,11 +157,7 @@ async function recordInvalidSignature(rawBody: Buffer): Promise<void> {
   });
 }
 
-/**
- * Checks if event should be ignored based on filters
- */
 function shouldIgnoreEvent(payload: any): { ignore: boolean; reason?: string } {
-  // Manual-only mode check
   if (AppConfig.WEBHOOK_MANUAL_ONLY && payload?.type && payload?.data?.object) {
     const metadata = payload.data.object.metadata || {};
     if (metadata.manualWebhook !== "true") {
@@ -185,7 +165,6 @@ function shouldIgnoreEvent(payload: any): { ignore: boolean; reason?: string } {
     }
   }
 
-  // Unsupported event type
   if (payload?.type && payload?.data?.object) {
     const type = payload.type as string;
     if (type !== "payment_intent.succeeded") {
@@ -196,9 +175,6 @@ function shouldIgnoreEvent(payload: any): { ignore: boolean; reason?: string } {
   return { ignore: false };
 }
 
-/**
- * Finds order by ID or payment reference
- */
 async function findOrder(parsed: ParsedWebhookData): Promise<any | null> {
   let order = parsed.orderId ? await storage.getOrder(parsed.orderId) : undefined;
   if (!order && parsed.paymentReference) {
@@ -207,9 +183,6 @@ async function findOrder(parsed: ParsedWebhookData): Promise<any | null> {
   return order || null;
 }
 
-/**
- * Updates order amounts from Stripe metadata
- */
 async function updateOrderAmountsFromStripe(order: any, payload: any): Promise<any> {
   const stripeAmount = payload?.type === "payment_intent.succeeded"
     ? payload?.data?.object?.amount
@@ -241,16 +214,13 @@ async function updateOrderAmountsFromStripe(order: any, payload: any): Promise<a
   return order;
 }
 
-/**
- * Processes successful payment webhook
- */
 async function processPayment(
   order: any,
   parsed: ParsedWebhookData,
   deps: WebhookDependencies
 ): Promise<any> {
   const product = order.productId ? await storage.getProduct(order.productId) : undefined;
-  
+
   return await deps.paymentStatusService.applyPaymentStatusUpdate({
     order: order as Order,
     status: "COMPLETED",
@@ -260,9 +230,6 @@ async function processPayment(
   });
 }
 
-/**
- * Records successful webhook event
- */
 async function recordSuccessfulWebhook(
   eventId: string,
   parsed: ParsedWebhookData,
@@ -280,10 +247,6 @@ async function recordSuccessfulWebhook(
   });
 }
 
-/**
- * Payment Webhook Handler Factory
- * Handles incoming payment webhooks from Stripe or custom providers
- */
 export function PaymentWebhookHandler(deps: WebhookDependencies) {
   return async (req: Request, res: Response) => {
     const rawBody = Buffer.isBuffer(req.body)
@@ -293,14 +256,12 @@ export function PaymentWebhookHandler(deps: WebhookDependencies) {
     const stripeSignature = req.headers["stripe-signature"] as string | undefined;
     const hmacSignature = (req.headers["x-webhook-signature"] || req.headers["x-signature"]) as string | undefined;
 
-    // Step 1: Verify webhook signature
     const { valid, payload } = await verifyWebhookSignature(rawBody, stripeSignature, hmacSignature, deps);
     if (!valid || !payload) {
       await recordInvalidSignature(rawBody);
       return res.status(401).json({ message: "Invalid webhook signature" });
     }
 
-    // Step 2: Check if event should be ignored
     const ignoreCheck = shouldIgnoreEvent(payload);
     if (ignoreCheck.ignore) {
       console.log(`ℹ️ Webhook ignored (${ignoreCheck.reason})`, {
@@ -310,7 +271,6 @@ export function PaymentWebhookHandler(deps: WebhookDependencies) {
       return res.status(200).json({ received: true, ignored: ignoreCheck.reason });
     }
 
-    // Step 3: Parse webhook data
     const parsed = parseWebhookPayload(payload);
     const eventId = parsed.eventId || crypto.createHash("sha256").update(rawBody).digest("hex");
 
@@ -322,14 +282,12 @@ export function PaymentWebhookHandler(deps: WebhookDependencies) {
       provider: parsed.provider,
     });
 
-    // Step 4: Check for duplicate events
     const alreadyProcessed = await storage.hasProcessedWebhookEvent(eventId);
     if (alreadyProcessed) {
       console.log("ℹ️ Webhook ignored (duplicate)", { eventId });
       return res.status(200).json({ received: true, duplicate: true });
     }
 
-    // Step 5: Find order
     if (!parsed.orderId && parsed.paymentReference) {
       console.warn("⚠️ Webhook missing orderId, falling back to payment reference", {
         eventId,
@@ -353,7 +311,6 @@ export function PaymentWebhookHandler(deps: WebhookDependencies) {
       paymentIntentId: order.paymentIntentId,
     });
 
-    // Step 6: Check if order already paid
     if (order.status === "PAID") {
       console.log("ℹ️ Webhook ignored (order already paid)", {
         eventId,
@@ -362,13 +319,10 @@ export function PaymentWebhookHandler(deps: WebhookDependencies) {
       return res.status(200).json({ received: true, order: "already_paid" });
     }
 
-    // Step 7: Update order amounts from Stripe if available
     order = await updateOrderAmountsFromStripe(order, payload);
 
-    // Step 8: Process payment
     const updatedOrder = await processPayment(order, parsed, deps);
 
-    // Step 9: Record successful webhook event
     if (updatedOrder.status === "PAID") {
       await recordSuccessfulWebhook(eventId, parsed, rawBody);
     }

@@ -1,9 +1,6 @@
 import type { Request, Response } from "express";
 import { storage } from "../storage";
 
-/**
- * List All Products Handler
- */
 export function ListProductsHandler() {
   return async (_req: Request, res: Response) => {
     try {
@@ -15,9 +12,6 @@ export function ListProductsHandler() {
   };
 }
 
-/**
- * Get Single Product Handler
- */
 export function GetProductHandler() {
   return async (req: Request, res: Response) => {
     try {

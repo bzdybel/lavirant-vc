@@ -30,15 +30,12 @@ interface CreateOrderRequest {
   country: string;
 }
 
-/**
- * Validates order creation request
- */
 function validateOrderRequest(body: any): { valid: boolean; error?: string } {
   if (!body.productId || !body.quantity || body.quantity <= 0) {
     return { valid: false, error: "Invalid order data" };
   }
 
-  if (!body.firstName || !body.lastName || !body.email || !body.phone || 
+  if (!body.firstName || !body.lastName || !body.email || !body.phone ||
       !body.address || !body.city || !body.postalCode || !body.country) {
     return { valid: false, error: "Missing customer information" };
   }
@@ -50,9 +47,6 @@ function validateOrderRequest(body: any): { valid: boolean; error?: string } {
   return { valid: true };
 }
 
-/**
- * Calculates order total
- */
 function calculateOrderTotal(
   product: any,
   quantity: number,
@@ -67,9 +61,6 @@ function calculateOrderTotal(
   return { deliveryCostCents, total };
 }
 
-/**
- * Creates order in database
- */
 async function createOrderRecord(
   request: CreateOrderRequest,
   product: any,
@@ -101,7 +92,6 @@ async function createOrderRecord(
     createdAt: new Date().toISOString(),
   });
 
-  // Update to PAYMENT_PENDING if payment reference exists
   if (resolvedPaymentReference) {
     const updated = await storage.updateOrder(createdOrder.id, { status: "PAYMENT_PENDING" });
     return updated ?? createdOrder;
@@ -110,9 +100,6 @@ async function createOrderRecord(
   return createdOrder;
 }
 
-/**
- * Sends order confirmation email
- */
 async function sendOrderConfirmationEmail(
   order: any,
   product: any,
@@ -136,9 +123,6 @@ async function sendOrderConfirmationEmail(
   });
 }
 
-/**
- * Reconciles payment with Stripe
- */
 async function reconcileStripePayment(
   order: any,
   product: any,
@@ -183,37 +167,27 @@ async function reconcileStripePayment(
   }
 }
 
-/**
- * Create Order Handler Factory
- * Creates a new order with customer information
- */
 export function CreateOrderHandler(deps: CreateOrderDependencies) {
   return async (req: Request, res: Response) => {
     try {
       const request = req.body as CreateOrderRequest;
 
-      // Validate request
       const validation = validateOrderRequest(request);
       if (!validation.valid) {
         return res.status(400).json({ message: validation.error });
       }
 
-      // Get product
       const product = await storage.getProduct(request.productId);
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
 
-      // Calculate totals
       const totals = calculateOrderTotal(product, request.quantity, request.deliveryCost);
 
-      // Create order
       const order = await createOrderRecord(request, product, totals);
 
-      // Send confirmation email
       await sendOrderConfirmationEmail(order, product, deps.emailService);
 
-      // Reconcile with Stripe if payment intent exists
       await reconcileStripePayment(order, product, deps);
 
       return res.status(201).json(order);

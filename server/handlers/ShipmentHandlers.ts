@@ -9,15 +9,11 @@ interface ShipmentDependencies {
   shippingService: ShippingService;
 }
 
-/**
- * Mark Order as Shipped Handler Factory
- * Marks an order as shipped and sends tracking email
- */
 export function MarkOrderShippedHandler(deps: ShipmentDependencies) {
   return async (req: Request, res: Response) => {
     try {
       const orderId = Number(req.params.orderId);
-      
+
       if (!Number.isFinite(orderId)) {
         return res.status(400).json({ message: "Invalid order ID" });
       }

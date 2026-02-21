@@ -13,9 +13,6 @@ interface PaymentIntentRequest {
   shippingCost?: number;
 }
 
-/**
- * Validates payment intent request
- */
 function validateRequest(body: any): { valid: boolean; error?: string } {
   if (!body.amount || body.amount <= 0) {
     return { valid: false, error: "Invalid amount" };
@@ -23,9 +20,6 @@ function validateRequest(body: any): { valid: boolean; error?: string } {
   return { valid: true };
 }
 
-/**
- * Calculates final payment amount
- */
 function calculateAmount(request: PaymentIntentRequest): {
   itemsAmount: number;
   shippingAmount: number;
@@ -38,9 +32,6 @@ function calculateAmount(request: PaymentIntentRequest): {
   return { itemsAmount, shippingAmount, finalAmount };
 }
 
-/**
- * Retrieves existing payment intent for an order
- */
 async function getExistingPaymentIntent(orderId: number, stripeService: StripeService) {
   const order = await storage.getOrder(orderId);
   if (!order) {
@@ -59,16 +50,13 @@ async function getExistingPaymentIntent(orderId: number, stripeService: StripeSe
   return { order, intent: null, error: null };
 }
 
-/**
- * Creates mock payment intent for development
- */
 async function createMockPaymentIntent(
   amounts: { itemsAmount: number; shippingAmount: number; finalAmount: number },
   orderId?: number
 ) {
   const mockId = `mock_pi_${Date.now()}`;
   const mockClientSecret = `${mockId}_secret_${Math.random().toString(36).substring(7)}`;
-  
+
   console.log("🧪 Mock payment intent created", {
     mockId,
     amount: amounts.finalAmount,
@@ -89,9 +77,6 @@ async function createMockPaymentIntent(
   return { clientSecret: mockClientSecret, paymentIntentId: mockId };
 }
 
-/**
- * Creates real Stripe payment intent
- */
 async function createStripePaymentIntent(
   stripeService: StripeService,
   amounts: { itemsAmount: number; shippingAmount: number; finalAmount: number },
@@ -141,22 +126,16 @@ async function createStripePaymentIntent(
   };
 }
 
-/**
- * Create Payment Intent Handler Factory
- * Creates or retrieves a Stripe payment intent for an order
- */
 export function CreatePaymentIntentHandler(deps: PaymentIntentDependencies) {
   return async (req: Request, res: Response) => {
     try {
       const { amount, orderId, itemsTotal, shippingCost } = req.body as PaymentIntentRequest;
 
-      // Validate request
       const validation = validateRequest(req.body);
       if (!validation.valid) {
         return res.status(400).json({ message: validation.error });
       }
 
-      // Calculate amounts
       const amounts = calculateAmount({ amount, orderId, itemsTotal, shippingCost });
 
       console.log("💳 Payment Intent Creation", {
@@ -168,7 +147,6 @@ export function CreatePaymentIntentHandler(deps: PaymentIntentDependencies) {
         stripeMode: deps.stripeService.isAvailable() ? "live" : "mock",
       });
 
-      // Check for existing payment intent
       if (orderId) {
         const existing = await getExistingPaymentIntent(orderId, deps.stripeService);
         if (existing.error) {
@@ -186,7 +164,6 @@ export function CreatePaymentIntentHandler(deps: PaymentIntentDependencies) {
         }
       }
 
-      // Create payment intent (mock or real)
       if (deps.stripeService.isMockMode()) {
         const result = await createMockPaymentIntent(amounts, orderId);
         return res.json(result);
