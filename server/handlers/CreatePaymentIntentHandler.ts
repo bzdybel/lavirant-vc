@@ -17,6 +17,7 @@ function validateRequest(body: any): { valid: boolean; error?: string } {
   if (!body.amount || body.amount <= 0) {
     return { valid: false, error: "Invalid amount" };
   }
+  
   return { valid: true };
 }
 
@@ -34,20 +35,39 @@ function calculateAmount(request: PaymentIntentRequest): {
 
 async function getExistingPaymentIntent(orderId: number, stripeService: StripeService) {
   const order = await storage.getOrder(orderId);
+  
   if (!order) {
     return { error: "Order not found", order: null, intent: null };
   }
 
-  if (order.paymentIntentId) {
-    const stripe = stripeService.getClient();
-    if (!stripe) {
-      return { error: "Stripe is not configured", order, intent: null };
-    }
-    const intent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
-    return { order, intent, error: null };
+  if (!order.paymentIntentId) {
+    return { order, intent: null, error: null };
   }
 
-  return { order, intent: null, error: null };
+  const stripe = stripeService.getClient();
+  
+  if (!stripe) {
+    return { error: "Stripe is not configured", order, intent: null };
+  }
+
+  const intent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
+  return { order, intent, error: null };
+}
+
+async function updateOrderPaymentPending(
+  orderId: number | undefined,
+  paymentIntentId: string,
+  paymentReference: string
+): Promise<void> {
+  if (!orderId) return;
+
+  await storage.updateOrder(orderId, {
+    status: "PAYMENT_PENDING",
+    paymentPendingAt: new Date().toISOString(),
+    paymentProvider: "stripe",
+    paymentIntentId,
+    paymentReference,
+  });
 }
 
 async function createMockPaymentIntent(
@@ -64,15 +84,7 @@ async function createMockPaymentIntent(
     shippingCost: amounts.shippingAmount,
   });
 
-  if (orderId) {
-    await storage.updateOrder(orderId, {
-      status: "PAYMENT_PENDING",
-      paymentPendingAt: new Date().toISOString(),
-      paymentProvider: "stripe",
-      paymentIntentId: mockId,
-      paymentReference: mockId,
-    });
-  }
+  await updateOrderPaymentPending(orderId, mockId, mockId);
 
   return { clientSecret: mockClientSecret, paymentIntentId: mockId };
 }
@@ -110,15 +122,7 @@ async function createStripePaymentIntent(
     metadata: paymentIntent.metadata,
   });
 
-  if (orderId) {
-    await storage.updateOrder(orderId, {
-      status: "PAYMENT_PENDING",
-      paymentPendingAt: new Date().toISOString(),
-      paymentProvider: "stripe",
-      paymentReference: paymentIntent.id,
-      paymentIntentId: paymentIntent.id,
-    });
-  }
+  await updateOrderPaymentPending(orderId, paymentIntent.id, paymentIntent.id);
 
   return {
     clientSecret: paymentIntent.client_secret,
@@ -149,9 +153,11 @@ export function CreatePaymentIntentHandler(deps: PaymentIntentDependencies) {
 
       if (orderId) {
         const existing = await getExistingPaymentIntent(orderId, deps.stripeService);
+        
         if (existing.error) {
           return res.status(existing.order ? 500 : 404).json({ message: existing.error });
         }
+        
         if (existing.intent) {
           console.log("📌 Retrieving existing payment intent", {
             paymentIntentId: existing.intent.id,
@@ -164,13 +170,12 @@ export function CreatePaymentIntentHandler(deps: PaymentIntentDependencies) {
         }
       }
 
-      if (deps.stripeService.isMockMode()) {
-        const result = await createMockPaymentIntent(amounts, orderId);
-        return res.json(result);
-      } else {
-        const result = await createStripePaymentIntent(deps.stripeService, amounts, orderId);
-        return res.json(result);
-      }
+      const createIntent = deps.stripeService.isMockMode()
+        ? () => createMockPaymentIntent(amounts, orderId)
+        : () => createStripePaymentIntent(deps.stripeService, amounts, orderId);
+
+      const result = await createIntent();
+      return res.json(result);
     } catch (error: any) {
       console.error("❌ Error creating payment intent", {
         error: error.message,
