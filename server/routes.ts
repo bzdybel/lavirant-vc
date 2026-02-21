@@ -3,10 +3,14 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import crypto from "crypto";
-import { applyPaymentStatusUpdate, type PaymentWebhookStatus } from "./paymentStatusService";
-import { emailService } from "./emailService";
-import { getStripeClient, isMockStripeEnabled } from "./stripeClient";
-import { shippingService } from "./shipping/ShippingService";
+import type { PaymentWebhookStatusType } from "./constants/paymentStatus";
+import type { EmailService } from "./services/EmailService";
+import type { StripeService } from "./services/StripeService";
+import type { PaymentStatusService } from "./services/PaymentStatusService";
+import type { ShippingService } from "./services/ShippingService";
+
+// Type alias for backward compatibility
+type PaymentWebhookStatus = PaymentWebhookStatusType;
 
 function normalizeSignatureHeader(signatureHeader: string): string {
   if (signatureHeader.includes("=")) {
@@ -90,11 +94,19 @@ function parseWebhookPayload(payload: any): {
   };
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
+export async function registerRoutes(
+  app: Express,
+  services: {
+    emailService: EmailService;
+    stripeService: StripeService;
+    paymentStatusService: PaymentStatusService;
+    shippingService: ShippingService;
+  }
+): Promise<Server> {
   const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET || "";
   const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
-  const stripe = getStripeClient();
-  const useMockStripe = isMockStripeEnabled();
+  const stripe = services.stripeService.isAvailable() ? services.stripeService.getClient() : null;
+  const useMockStripe = services.stripeService.isMockMode();
 
   app.get("/api/shipping/inpost-config", (_req, res) => {
     const isProduction = process.env.NODE_ENV === "production";
@@ -259,7 +271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
 
-    const updatedOrder = await applyPaymentStatusUpdate({
+    const updatedOrder = await services.paymentStatusService.applyPaymentStatusUpdate({
       order,
       status: "COMPLETED",
       paymentReference: parsed.paymentReference,
@@ -503,7 +515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? (await storage.updateOrder(createdOrder.id, { status: "PAYMENT_PENDING" })) ?? createdOrder
         : createdOrder;
 
-      emailService.sendOrderConfirmation({
+      services.emailService.sendOrderConfirmation({
         orderId: order.id,
         firstName,
         lastName,
@@ -528,7 +540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const paymentIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
           if (paymentIntent.status === "succeeded" && order.status !== "PAID") {
-            const updatedOrder = await applyPaymentStatusUpdate({
+            const updatedOrder = await services.paymentStatusService.applyPaymentStatusUpdate({
               order,
               status: "COMPLETED",
               paymentReference: paymentIntent.id,
@@ -569,12 +581,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Order not found" });
       }
 
-      const shipment = await shippingService.markShipped(orderId);
+      const shipment = await services.shippingService.markShipped(orderId);
       if (!shipment) {
         return res.status(404).json({ message: "Shipment not found" });
       }
 
-      await emailService.sendShipmentEmail({
+      await services.emailService.sendShipmentEmail({
         order,
         trackingNumber: shipment.trackingNumber,
         trackingUrl: shipment.trackingUrl,

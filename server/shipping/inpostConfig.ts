@@ -1,4 +1,4 @@
-import { requireEnv, resolveEnv } from "../config/env";
+import { requireEnv, resolveEnv } from "../utils/env";
 
 export interface InPostConfig {
   token: string;

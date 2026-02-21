@@ -11,12 +11,11 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupSitemapRoute } from "./sitemap";
-import { startPaymentStatusJob } from "./paymentStatusJob";
-import { startShipXPollingJob } from "./inpost/shipxPollingJob";
+import { PaymentStatusJob } from "./jobs/PaymentStatusJob";
+import { ShipXPollingJob } from "./jobs/ShipXPollingJob";
 import { initializeDatabase } from "./db";
-import { emailService } from "./emailService";
-import { validateStripeConfig } from "./stripeClient";
-import { logShippingStatus } from "./shipping/diagnostics";
+import { emailService, stripeService, paymentStatusService, shippingService } from "./services/init";
+import { StripeService } from "./services/StripeService";
 import { AppConfig } from "./config/appConfig";
 import { errorHandler } from "./middleware/errorHandler";
 import { requestLogger } from "./middleware/requestLogger";
@@ -47,15 +46,23 @@ app.use(requestLogger);
   // Validate runtime configuration
   AppConfig.validateRuntimeConfig();
 
-  validateStripeConfig();
-  logShippingStatus();
+  StripeService.validateConfiguration();
   emailService.initialize();
   await initializeDatabase();
 
-  const server = await registerRoutes(app);
+  const server = await registerRoutes(app, {
+    emailService,
+    stripeService,
+    paymentStatusService,
+    shippingService,
+  });
 
-  startPaymentStatusJob();
-  startShipXPollingJob();
+  // Initialize and start background jobs
+  const paymentStatusJob = new PaymentStatusJob(stripeService, paymentStatusService);
+  const shipXPollingJob = new ShipXPollingJob();
+
+  paymentStatusJob.start();
+  shipXPollingJob.start();
 
   // Setup SEO sitemap route
   setupSitemapRoute(app);

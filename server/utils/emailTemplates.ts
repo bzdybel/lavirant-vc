@@ -1,6 +1,6 @@
 import type { Order } from "@shared/types/order";
 import type { Product } from "@shared/types/product";
-import type { OrderConfirmationData } from "./EmailService";
+import type { OrderConfirmationData } from "../services/EmailService";
 
 /**
  * Email Template Response
