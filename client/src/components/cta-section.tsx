@@ -15,7 +15,7 @@ export default function CTASection() {
         <p className="text-xl max-w-2xl mx-auto mb-8">
           {cta.description}
         </p>
-        
+
         <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-12">
           <Link href="/checkout">
             <Button size="lg" className="bg-white text-secondary-700 hover:bg-neutral-100">
@@ -26,7 +26,7 @@ export default function CTASection() {
             {cta.buttons.secondary}
           </Button>
         </div>
-        
+
         <div className="flex flex-wrap justify-center gap-4 mt-8">
           {cta.benefits.map((benefit, idx) => {
             const iconMap: Record<string, React.ReactNode> = {

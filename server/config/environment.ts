@@ -4,7 +4,7 @@ import * as fs from "fs";
 
 /**
  * Environment Schema Definition
- * 
+ *
  * Centralized Zod schema for all environment variables.
  * Provides type safety and runtime validation.
  */
@@ -21,16 +21,16 @@ export const EnvironmentSchema = z
   .object({
     // Node Environment
     NODE_ENV: NodeEnv,
-    
+
     // Server Configuration
     PORT: Port.default(5173),
     HOST: z.string().default("0.0.0.0"),
     BASE_URL: Url.optional(),
     DOTENV_CONFIG_PATH: z.string().optional(),
-    
+
     // Database Configuration
     DATABASE_URL: z.string().min(1),
-    
+
     // Email Configuration (SMTP)
     EMAIL_HOST: z.string().optional(),
     EMAIL_PORT: Port.default(587),
@@ -39,16 +39,16 @@ export const EnvironmentSchema = z
     EMAIL_PASSWORD: z.string().optional(),
     EMAIL_FROM: Email.optional(),
     EMAIL_SECURE: BooleanString.optional(),
-    
+
     // Stripe Payment Configuration
     STRIPE_SECRET_KEY: z.string().optional(),
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
     USE_MOCK_STRIPE: BooleanString.default("false"),
-    
+
     // Payment Webhook Configuration
     PAYMENT_WEBHOOK_SECRET: z.string().optional(),
     WEBHOOK_MANUAL_ONLY: BooleanString.default("false"),
-    
+
     // InPost Shipping Configuration
     INPOST_API_SHIPX: z.string().optional(),
     INPOST_SHIPX_ORG_ID: z.string().optional(),
@@ -64,13 +64,13 @@ export const EnvironmentSchema = z
     INPOST_PARCEL_WEIGHT_KG: z.coerce.number().default(2),
     MOCK_INPOST: BooleanString.default("false"),
     SHIPPING_PROVIDER: z.enum(["INPOST", "MOCK"]).default("INPOST"),
-    
+
     // Background Jobs Configuration
     PAYMENT_STATUS_JOB_INTERVAL_MINUTES: z.coerce.number().int().positive().default(5),
     PAYMENT_PENDING_THRESHOLD_MINUTES: z.coerce.number().int().positive().default(30),
     PAYMENT_STATUS_JOB_DRY_RUN: BooleanString.default("false"),
     SHIPX_POLLING_JOB_INTERVAL_MINUTES: z.coerce.number().int().positive().default(15),
-    
+
     // Invoice Configuration
     INVOICE_STORAGE_DIR: z.string().optional(),
     INVOICE_SELLER_NAME: z.string().optional(),
@@ -152,7 +152,7 @@ class CachedEnvironmentLoader implements EnvironmentLoader {
 
   load(): Environment {
     const currentHash = this.computeHash(process.env);
-    
+
     if (this._env && this._hash === currentHash) {
       return this._env;
     }
@@ -208,7 +208,7 @@ class EncryptedEnvironmentLoader implements EnvironmentLoader {
       Buffer.from(this.decryptionKey, "hex"),
       iv
     );
-    
+
     let decrypted = decipher.update(encrypted);
     decrypted = Buffer.concat([decrypted, decipher.final()]);
     return decrypted.toString();
@@ -223,7 +223,7 @@ class EncryptedEnvironmentLoader implements EnvironmentLoader {
       const encryptedData = fs.readFileSync(this.secretsPath, "utf-8");
       const decryptedData = this.decrypt(encryptedData);
       const envData = JSON.parse(decryptedData);
-      
+
       this._env = EnvironmentSchema.parse(envData);
       return this._env;
     } catch (error) {
@@ -261,24 +261,24 @@ export function createEnvironmentLoader(): EnvironmentLoader {
     case "test":
       // Simple loader for tests
       return new ProcessEnvironmentLoader();
-    
+
     case "development":
     case "staging":
       // Cached loader for dev/staging
       return new CachedEnvironmentLoader();
-    
+
     case "production":
       // Check if encrypted secrets are available
       const secretsPath = process.env.SECRETS_PATH;
       const decryptionKey = process.env.DECRYPTION_KEY;
-      
+
       if (secretsPath && decryptionKey) {
         return new EncryptedEnvironmentLoader(secretsPath, decryptionKey);
       }
-      
+
       // Fallback to cached loader
       return new CachedEnvironmentLoader();
-    
+
     default:
       return new CachedEnvironmentLoader();
   }

@@ -105,8 +105,8 @@ export async function registerRoutes(
     shippingService: ShippingService;
   }
 ): Promise<Server> {
-  const webhookSecret = AppConfig.PAYMENT_WEBHOOK_SECRET || "";
-  const stripeWebhookSecret = AppConfig.STRIPE_WEBHOOK_SECRET || "";
+  const webhookSecret = AppConfig.PAYMENT_WEBHOOK_SECRET;
+  const stripeWebhookSecret = AppConfig.STRIPE_WEBHOOK_SECRET;
   const stripe = services.stripeService.isAvailable() ? services.stripeService.getClient() : null;
   const useMockStripe = services.stripeService.isMockMode();
 
@@ -130,14 +130,27 @@ export async function registerRoutes(
     const stripeSignature = req.headers["stripe-signature"] as string | undefined;
     const hmacSignature = (req.headers["x-webhook-signature"] || req.headers["x-signature"]) as string | undefined;
 
-    if (stripe && stripeSignature && stripeWebhookSecret) {
-      try {
-        payload = stripe.webhooks.constructEvent(rawBody, stripeSignature, stripeWebhookSecret);
-        signatureValid = true;
-      } catch (error) {
-        console.error("❌ Stripe webhook signature verification failed:", error);
+    // Stripe webhook verification
+    if (stripeSignature) {
+      if (useMockStripe) {
+        // Mock mode: accept without signature verification
+        try {
+          payload = JSON.parse(rawBody.toString("utf8"));
+          signatureValid = true;
+        } catch (error) {
+          console.error("❌ Failed to parse mock webhook payload:", error);
+        }
+      } else {
+        // Real mode: stripe and stripeWebhookSecret guaranteed by prerequisites
+        try {
+          payload = stripe!.webhooks.constructEvent(rawBody, stripeSignature, stripeWebhookSecret!);
+          signatureValid = true;
+        } catch (error) {
+          console.error("❌ Stripe webhook signature verification failed:", error);
+        }
       }
     } else if (hmacSignature && webhookSecret) {
+      // Custom webhook with HMAC signature
       signatureValid = verifyHmacSignature(rawBody, hmacSignature, webhookSecret);
       if (signatureValid) {
         try {
@@ -350,10 +363,8 @@ export async function registerRoutes(
         }
 
         if (order.paymentIntentId) {
-          if (!stripe) {
-            return res.status(500).json({ message: "Stripe is not configured" });
-          }
-          const existingIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
+          // In real mode, stripe is guaranteed by prerequisites; in mock mode we don't get here
+          const existingIntent = await stripe!.paymentIntents.retrieve(order.paymentIntentId);
           console.log("📌 Retrieving existing payment intent", {
             paymentIntentId: order.paymentIntentId,
             existingAmount: existingIntent.amount,
@@ -387,14 +398,10 @@ export async function registerRoutes(
         return res.json({ clientSecret: mockClientSecret, paymentIntentId: mockId });
       }
 
-      if (!stripe) {
-        return res.status(500).json({ message: "Stripe is not configured" });
-      }
-
-      // Create payment intent with full amount (items + shipping)
+      // Real mode: stripe is guaranteed by prerequisites when USE_MOCK_STRIPE=false
       const amountInCents = Math.round(finalAmount * 100);
 
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntent = await stripe!.paymentIntents.create({
         amount: amountInCents,
         currency: "pln",
         automatic_payment_methods: {
@@ -532,13 +539,14 @@ export async function registerRoutes(
         console.error("Failed to send order confirmation email:", error);
       });
 
-      if (order.paymentIntentId && stripe) {
+      // Payment reconciliation (only in real Stripe mode)
+      if (order.paymentIntentId && !useMockStripe) {
         try {
-          await stripe.paymentIntents.update(order.paymentIntentId, {
+          await stripe!.paymentIntents.update(order.paymentIntentId, {
             metadata: { orderId: String(order.id) },
           });
 
-          const paymentIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
+          const paymentIntent = await stripe!.paymentIntents.retrieve(order.paymentIntentId);
           if (paymentIntent.status === "succeeded" && order.status !== "PAID") {
             const updatedOrder = await services.paymentStatusService.applyPaymentStatusUpdate({
               order: order as Order,

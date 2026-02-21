@@ -6,7 +6,7 @@ import { JobConfig } from "../constants/jobConfig";
  *
  * Centralized configuration management for the application.
  * All environment variable access should go through this module.
- * 
+ *
  * Uses Zod-validated environment variables for type safety.
  */
 export class AppConfig {

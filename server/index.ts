@@ -20,6 +20,8 @@ import { AppConfig } from "./config/appConfig";
 import { errorHandler } from "./middleware/errorHandler";
 import { requestLogger } from "./middleware/requestLogger";
 import { LogPrefix } from "./constants/logPrefixes";
+import { getEnvironment } from "./config/environment";
+import { Prerequisites } from "./config/prerequisites";
 
 const app = express();
 
@@ -43,6 +45,10 @@ app.use((req, res, next) => {
 app.use(requestLogger);
 
 (async () => {
+  // Load and validate environment
+  const env = getEnvironment();
+  Prerequisites.validateOrExit(env);
+
   // Validate runtime configuration
   AppConfig.validateRuntimeConfig();
 
