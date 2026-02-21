@@ -1,6 +1,6 @@
 import { z } from "zod";
-import * as path from "path";
 import * as fs from "fs";
+import crypto from "crypto";
 
 /**
  * Environment Schema Definition
@@ -9,26 +9,20 @@ import * as fs from "fs";
  * Provides type safety and runtime validation.
  */
 
-// Custom Zod validators
 const Port = z.coerce.number().int().positive().min(1).max(65535);
 const Email = z.string().email();
+const EmailFromField = z.string().min(1);
 const Url = z.string().url();
-const NonEmptyString = z.string().min(1);
 const BooleanString = z.enum(["true", "false"]).transform(val => val === "true");
 const NodeEnv = z.enum(["development", "production", "test", "staging"]).default("development");
 
 export const EnvironmentSchema = z
   .object({
-    // Node Environment
     NODE_ENV: NodeEnv,
-
-    // Server Configuration
     PORT: Port.default(5173),
     HOST: z.string().default("0.0.0.0"),
     BASE_URL: Url.optional(),
     DOTENV_CONFIG_PATH: z.string().optional(),
-
-    // Database Configuration
     DATABASE_URL: z.string().min(1),
 
     // Email Configuration (SMTP)
@@ -37,19 +31,13 @@ export const EnvironmentSchema = z
     EMAIL_USER: z.string().optional(),
     EMAIL_PASS: z.string().optional(),
     EMAIL_PASSWORD: z.string().optional(),
-    EMAIL_FROM: Email.optional(),
+    EMAIL_FROM: EmailFromField.optional(),
     EMAIL_SECURE: BooleanString.optional(),
-
-    // Stripe Payment Configuration
     STRIPE_SECRET_KEY: z.string().optional(),
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
     USE_MOCK_STRIPE: BooleanString.default("false"),
-
-    // Payment Webhook Configuration
     PAYMENT_WEBHOOK_SECRET: z.string().optional(),
     WEBHOOK_MANUAL_ONLY: BooleanString.default("false"),
-
-    // InPost Shipping Configuration
     INPOST_API_SHIPX: z.string().optional(),
     INPOST_SHIPX_ORG_ID: z.string().optional(),
     INPOST_SHIPX_ENV: z.enum(["sandbox", "production"]).optional(),
@@ -64,14 +52,10 @@ export const EnvironmentSchema = z
     INPOST_PARCEL_WEIGHT_KG: z.coerce.number().default(2),
     MOCK_INPOST: BooleanString.default("false"),
     SHIPPING_PROVIDER: z.enum(["INPOST", "MOCK"]).default("INPOST"),
-
-    // Background Jobs Configuration
     PAYMENT_STATUS_JOB_INTERVAL_MINUTES: z.coerce.number().int().positive().default(5),
     PAYMENT_PENDING_THRESHOLD_MINUTES: z.coerce.number().int().positive().default(30),
     PAYMENT_STATUS_JOB_DRY_RUN: BooleanString.default("false"),
     SHIPX_POLLING_JOB_INTERVAL_MINUTES: z.coerce.number().int().positive().default(15),
-
-    // Invoice Configuration
     INVOICE_STORAGE_DIR: z.string().optional(),
     INVOICE_SELLER_NAME: z.string().optional(),
     INVOICE_SELLER_FIRST_NAME: z.string().optional(),
@@ -87,28 +71,20 @@ export const EnvironmentSchema = z
   })
   .strip();
 
-/**
- * Parsed and validated environment variables
- */
 export type Environment = z.infer<typeof EnvironmentSchema>;
 
-/**
- * Environment loader interface
- */
 export interface EnvironmentLoader {
   load(): Environment;
   reload(): Environment;
   get<K extends keyof Environment>(key: K): Environment[K];
 }
 
-/**
- * Simple environment loader that loads from process.env
- */
 class ProcessEnvironmentLoader implements EnvironmentLoader {
   private _env: Environment | null = null;
 
   load(): Environment {
     try {
+      console.log("Loading environment, DATABASE_URL:", process.env.DATABASE_URL);
       this._env = EnvironmentSchema.parse(process.env);
       return this._env;
     } catch (error) {
@@ -135,15 +111,11 @@ class ProcessEnvironmentLoader implements EnvironmentLoader {
   }
 }
 
-/**
- * Cache-enabled environment loader with lazy loading
- */
 class CachedEnvironmentLoader implements EnvironmentLoader {
   private _env: Environment | null = null;
   private _hash: string | null = null;
 
   private computeHash(env: NodeJS.ProcessEnv): string {
-    const crypto = require("crypto");
     return crypto
       .createHash("sha256")
       .update(JSON.stringify(env))
@@ -186,10 +158,6 @@ class CachedEnvironmentLoader implements EnvironmentLoader {
   }
 }
 
-/**
- * File-based encrypted environment loader
- * Similar to bgord's EnvironmentLoaderEncryptedAdapter
- */
 class EncryptedEnvironmentLoader implements EnvironmentLoader {
   private _env: Environment | null = null;
 
@@ -199,7 +167,6 @@ class EncryptedEnvironmentLoader implements EnvironmentLoader {
   ) {}
 
   private decrypt(data: string): string {
-    const crypto = require("crypto");
     const parts = data.split(":");
     const iv = Buffer.from(parts[0], "hex");
     const encrypted = Buffer.from(parts[1], "hex");
@@ -250,25 +217,18 @@ class EncryptedEnvironmentLoader implements EnvironmentLoader {
   }
 }
 
-/**
- * Factory function to create appropriate environment loader
- * Similar to bgord's createEnvironmentLoader pattern
- */
 export function createEnvironmentLoader(): EnvironmentLoader {
   const nodeEnv = process.env.NODE_ENV || "development";
 
   switch (nodeEnv) {
     case "test":
-      // Simple loader for tests
       return new ProcessEnvironmentLoader();
 
     case "development":
     case "staging":
-      // Cached loader for dev/staging
       return new CachedEnvironmentLoader();
 
-    case "production":
-      // Check if encrypted secrets are available
+    case "production": {
       const secretsPath = process.env.SECRETS_PATH;
       const decryptionKey = process.env.DECRYPTION_KEY;
 
@@ -276,22 +236,16 @@ export function createEnvironmentLoader(): EnvironmentLoader {
         return new EncryptedEnvironmentLoader(secretsPath, decryptionKey);
       }
 
-      // Fallback to cached loader
       return new CachedEnvironmentLoader();
+    }
 
     default:
       return new CachedEnvironmentLoader();
   }
 }
 
-/**
- * Global environment loader instance
- */
 let _globalLoader: EnvironmentLoader | null = null;
 
-/**
- * Gets the global environment loader (singleton)
- */
 export function getEnvironmentLoader(): EnvironmentLoader {
   if (!_globalLoader) {
     _globalLoader = createEnvironmentLoader();
@@ -299,23 +253,14 @@ export function getEnvironmentLoader(): EnvironmentLoader {
   return _globalLoader;
 }
 
-/**
- * Convenience function to get environment
- */
 export function getEnvironment(): Environment {
   return getEnvironmentLoader().load();
 }
 
-/**
- * Convenience function to get a specific environment variable
- */
 export function getEnv<K extends keyof Environment>(key: K): Environment[K] {
   return getEnvironmentLoader().get(key);
 }
 
-/**
- * Resets the global loader (useful for testing)
- */
 export function resetEnvironmentLoader(): void {
   _globalLoader = null;
 }
