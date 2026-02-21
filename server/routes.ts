@@ -8,6 +8,8 @@ import type { EmailService } from "./services/EmailService";
 import type { StripeService } from "./services/StripeService";
 import type { PaymentStatusService } from "./services/PaymentStatusService";
 import type { ShippingService } from "./services/ShippingService";
+import type { Order } from "@shared/types/order";
+import { AppConfig } from "./config/appConfig";
 
 // Type alias for backward compatibility
 type PaymentWebhookStatus = PaymentWebhookStatusType;
@@ -103,16 +105,14 @@ export async function registerRoutes(
     shippingService: ShippingService;
   }
 ): Promise<Server> {
-  const webhookSecret = process.env.PAYMENT_WEBHOOK_SECRET || "";
-  const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+  const webhookSecret = AppConfig.PAYMENT_WEBHOOK_SECRET || "";
+  const stripeWebhookSecret = AppConfig.STRIPE_WEBHOOK_SECRET || "";
   const stripe = services.stripeService.isAvailable() ? services.stripeService.getClient() : null;
   const useMockStripe = services.stripeService.isMockMode();
 
   app.get("/api/shipping/inpost-config", (_req, res) => {
-    const isProduction = process.env.NODE_ENV === "production";
-    const geowidgetToken = isProduction
-      ? (process.env.INPOST_GEOWIDGET || "")
-      : (process.env.INPOST_GEOWIDGET_NGROK || process.env.INPOST_GEOWIDGET || "");
+    const isProduction = AppConfig.IS_PRODUCTION;
+    const geowidgetToken = AppConfig.getGeowidgetToken();
     res.json({
       enabled: Boolean(geowidgetToken),
       geowidgetToken: geowidgetToken || null,
@@ -163,7 +163,7 @@ export async function registerRoutes(
     }
 
     if (
-      process.env.WEBHOOK_MANUAL_ONLY === "true" &&
+      AppConfig.WEBHOOK_MANUAL_ONLY &&
       payload?.type &&
       payload?.data?.object
     ) {
@@ -272,7 +272,7 @@ export async function registerRoutes(
     }
 
     const updatedOrder = await services.paymentStatusService.applyPaymentStatusUpdate({
-      order,
+      order: order as Order,
       status: "COMPLETED",
       paymentReference: parsed.paymentReference,
       paymentProvider: parsed.provider,
@@ -541,7 +541,7 @@ export async function registerRoutes(
           const paymentIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
           if (paymentIntent.status === "succeeded" && order.status !== "PAID") {
             const updatedOrder = await services.paymentStatusService.applyPaymentStatusUpdate({
-              order,
+              order: order as Order,
               status: "COMPLETED",
               paymentReference: paymentIntent.id,
               paymentProvider: "stripe",
@@ -587,7 +587,7 @@ export async function registerRoutes(
       }
 
       await services.emailService.sendShipmentEmail({
-        order,
+        order: order as Order,
         trackingNumber: shipment.trackingNumber,
         trackingUrl: shipment.trackingUrl,
       });

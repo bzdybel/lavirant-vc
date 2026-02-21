@@ -1,5 +1,6 @@
 import type { Order } from "@shared/types/order";
 import type { Product } from "@shared/types/product";
+import { AppConfig } from "../config/appConfig";
 
 function formatPrice(cents: number): string {
   return `${(cents / 100).toFixed(2)} zł`;
@@ -19,10 +20,10 @@ export function renderInvoiceHtml(
   invoiceNumber: string,
   issuedAt: Date
 ): string {
-  const sellerName = process.env.INVOICE_SELLER_NAME || "Lavirant";
-  const sellerAddress = process.env.INVOICE_SELLER_ADDRESS || "";
-  const sellerNip = process.env.INVOICE_SELLER_NIP || "";
-  const sellerEmail = process.env.INVOICE_SELLER_EMAIL || "zamowienia@lavirant.pl";
+  const sellerName = AppConfig.INVOICE_SELLER_NAME || "Lavirant";
+  const sellerAddress = AppConfig.INVOICE_SELLER_ADDRESS || "";
+  const sellerNip = AppConfig.INVOICE_SELLER_NIP || "";
+  const sellerEmail = AppConfig.INVOICE_SELLER_EMAIL || "zamowienia@lavirant.pl";
 
   const buyerName = `${order.firstName} ${order.lastName}`;
   const buyerAddress = `${order.address}, ${order.postalCode} ${order.city}, ${order.country}`;

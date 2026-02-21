@@ -12,9 +12,9 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 
   // Intercept res.json to capture response
   const originalResJson = res.json.bind(res);
-  res.json = function (bodyJson: any, ...args: any[]) {
+  res.json = function (bodyJson: any) {
     capturedJsonResponse = bodyJson;
-    return originalResJson(bodyJson, ...args);
+    return originalResJson(bodyJson);
   };
 
   // Log after response finishes

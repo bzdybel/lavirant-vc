@@ -72,7 +72,7 @@ export class EmailService {
     try {
       this.transporter = nodemailer.createTransport({
         host: AppConfig.EMAIL_HOST,
-        port: parseInt(AppConfig.EMAIL_PORT),
+        port: AppConfig.EMAIL_PORT,
         secure: AppConfig.EMAIL_SECURE,
         auth: {
           user: AppConfig.EMAIL_USER,

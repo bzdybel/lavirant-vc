@@ -29,7 +29,7 @@ export default function CTASection() {
         
         <div className="flex flex-wrap justify-center gap-4 mt-8">
           {cta.benefits.map((benefit, idx) => {
-            const iconMap = {
+            const iconMap: Record<string, React.ReactNode> = {
               "Truck": <Truck className="mr-2 h-4 w-4" />,
               "ShieldCheck": <ShieldCheck className="mr-2 h-4 w-4" />,
               "Lock": <Lock className="mr-2 h-4 w-4" />

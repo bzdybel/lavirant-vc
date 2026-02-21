@@ -121,7 +121,7 @@ export class InPostProvider implements ShippingProvider {
       provider: "INPOST",
       trackingNumber,
       trackingUrl: buildTrackingUrl(trackingNumber),
-      status: responseJson.status || "CREATED",
+      status: (responseJson.status as "CREATED" | "SHIPPED") || "CREATED",
       shipmentId,
       shipxStatus: responseJson.status ?? null,
       selectedOfferId: responseJson.selected_offer?.id ?? null,

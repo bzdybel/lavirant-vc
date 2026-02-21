@@ -39,5 +39,5 @@ export async function updateOrderShipmentState(
   }
 
   const updated = await storage.updateOrder(order.id, patch);
-  return updated ?? order;
+  return (updated ?? order) as Order;
 }

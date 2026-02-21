@@ -3,12 +3,13 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import * as schema from "./db/schema";
 import { products } from "./db/schema";
+import { getEnv } from "./config/environment";
 
 let pool: Pool | null = null;
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 
 function getDatabaseUrl(): string {
-  const url = process.env.DATABASE_URL;
+  const url = getEnv("DATABASE_URL");
   if (!url) {
     throw new Error("[DB] DATABASE_URL is not set. Database connection is required.");
   }

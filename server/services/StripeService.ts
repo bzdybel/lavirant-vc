@@ -212,6 +212,6 @@ export class StripeService {
    * Gets webhook secret
    */
   getWebhookSecret(): string {
-    return AppConfig.STRIPE_WEBHOOK_SECRET;
+    return AppConfig.STRIPE_WEBHOOK_SECRET || "";
   }
 }

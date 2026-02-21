@@ -37,7 +37,7 @@ export default function Testimonials() {
         </div>
 
         <ViewAllReviews
-          count={testimonials.reviewCount}
+          count={testimonials.reviewCount ?? 0}
           text={testimonials.viewAllText}
           opinionsText={testimonials.viewAllOpinions}
         />

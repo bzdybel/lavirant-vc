@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
 import { HttpStatus } from "../constants/httpStatus";
+import { AppConfig } from "../config/appConfig";
 
 /**
  * Error Response Interface
@@ -75,7 +76,7 @@ export function errorHandler(
   _next: NextFunction
 ): void {
   const statusCode = getStatusCode(err);
-  const includeStack = process.env.NODE_ENV === "development";
+  const includeStack = AppConfig.IS_DEVELOPMENT;
   const errorResponse = formatErrorResponse(err, includeStack);
 
   // Log error details

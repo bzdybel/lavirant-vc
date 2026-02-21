@@ -5,6 +5,7 @@ import type { Order } from "@shared/types/order";
 import type { Product } from "@shared/types/product";
 import { storage } from "./storage";
 import { renderInvoiceHtml } from "./invoice/renderInvoiceHtml";
+import { AppConfig } from "./config/appConfig";
 
 interface InvoiceGenerationResult {
   invoiceNumber: string;
@@ -45,8 +46,8 @@ class PuppeteerPdfRenderer implements PdfRenderer {
 const pdfRenderer: PdfRenderer = new PuppeteerPdfRenderer();
 
 function getInvoiceStorageDir(): string {
-  return process.env.INVOICE_STORAGE_DIR
-    ? path.resolve(process.env.INVOICE_STORAGE_DIR)
+  return AppConfig.INVOICE_STORAGE_DIR
+    ? path.resolve(AppConfig.INVOICE_STORAGE_DIR)
     : DEFAULT_STORAGE_DIR;
 }
 

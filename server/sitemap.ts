@@ -1,4 +1,5 @@
 import express from 'express';
+import { AppConfig } from './config/appConfig';
 
 /**
  * Sitemap Generator Route
@@ -7,7 +8,7 @@ import express from 'express';
  */
 export function setupSitemapRoute(app: express.Application) {
   app.get('/sitemap.xml', (req, res) => {
-    const baseUrl = process.env.BASE_URL || 'https://lavirant.pl';
+    const baseUrl = AppConfig.BASE_URL || 'https://lavirant.pl';
     const currentDate = new Date().toISOString().split('T')[0];
 
     const urls = [
