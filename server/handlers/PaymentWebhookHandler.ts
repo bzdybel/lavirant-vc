@@ -8,11 +8,9 @@ import type { Order } from "@shared/types/order";
 import { storage } from "../storage";
 import { AppConfig } from "../config/appConfig";
 
-type PaymentWebhookStatus = PaymentWebhookStatusType;
-
 interface ParsedWebhookData {
   eventId: string | null;
-  status: PaymentWebhookStatus;
+  status: PaymentWebhookStatusType;
   paymentReference: string | null;
   orderId: number | null;
   provider: string;
@@ -24,7 +22,11 @@ interface WebhookDependencies {
   paymentStatusService: PaymentStatusService;
 }
 
-function normalizeSignatureHeader(signatureHeader: string): string {
+function generateEventId(rawBody: Buffer, parsed?: ParsedWebhookData): string {
+  return parsed?.eventId || crypto.createHash("sha256").update(rawBody).digest("hex");
+}
+
+function extractSignature(signatureHeader: string): string {
   if (signatureHeader.includes("=")) {
     const parts = signatureHeader.split("=");
     return parts[parts.length - 1].trim();
@@ -32,71 +34,98 @@ function normalizeSignatureHeader(signatureHeader: string): string {
   return signatureHeader.trim();
 }
 
-function verifyHmacSignature(rawBody: Buffer, signatureHeader: string, secret: string): boolean {
-  if (!secret || !signatureHeader) return false;
-  const normalized = normalizeSignatureHeader(signatureHeader);
-  const computedHex = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
-  const computed = Buffer.from(computedHex, "hex");
+function verifyHmac(rawBody: Buffer, signature: string, secret: string): boolean {
+  if (!secret || !signature) return false;
 
-  let provided: Buffer;
+  const normalized = extractSignature(signature);
+  const computed = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  const computedBuffer = Buffer.from(computed, "hex");
+
+  let providedBuffer: Buffer;
   try {
-    provided = Buffer.from(normalized, "hex");
-    if (provided.length !== computed.length) {
-      provided = Buffer.from(normalized, "base64");
+    providedBuffer = Buffer.from(normalized, "hex");
+    if (providedBuffer.length !== computedBuffer.length) {
+      providedBuffer = Buffer.from(normalized, "base64");
     }
   } catch {
     return false;
   }
 
-  if (provided.length !== computed.length) return false;
-  return crypto.timingSafeEqual(computed, provided);
+  if (providedBuffer.length !== computedBuffer.length) return false;
+  return crypto.timingSafeEqual(computedBuffer, providedBuffer);
 }
 
-function parseWebhookPayload(payload: any): ParsedWebhookData {
-  const eventId = payload?.eventId || payload?.event_id || payload?.id || null;
+function extractEventId(payload: any): string | null {
+  return payload?.eventId || payload?.event_id || payload?.id || null;
+}
 
-  if (payload?.type && payload?.data?.object) {
-    const object = payload.data.object;
-    const stripeStatus = object?.status || "";
+function mapStatusFromString(rawStatus: string): PaymentWebhookStatusType {
+  const status = rawStatus.toUpperCase();
 
-    let status: PaymentWebhookStatus = "UNKNOWN";
-    if (payload.type === "payment_intent.succeeded" && stripeStatus === "succeeded") {
-      status = "COMPLETED";
-    }
-
-    const paymentReference = object?.payment_intent || object?.id || null;
-    const metadataOrderId = object?.metadata?.orderId ? Number(object.metadata.orderId) : null;
-
-    return {
-      eventId,
-      status,
-      paymentReference,
-      orderId: Number.isFinite(metadataOrderId) ? metadataOrderId : null,
-      provider: "stripe",
-    };
+  if (["COMPLETED", "SUCCESS", "PAID", "SUCCEEDED"].includes(status)) {
+    return "COMPLETED";
+  }
+  if (["PENDING", "PROCESSING"].includes(status)) {
+    return "PENDING";
+  }
+  if (["CANCELED", "CANCELLED"].includes(status)) {
+    return "CANCELED";
+  }
+  if (["FAILED", "ERROR"].includes(status)) {
+    return "FAILED";
   }
 
-  const rawStatus = String(payload?.status || payload?.paymentStatus || payload?.orderStatus || "").toUpperCase();
-  let status: PaymentWebhookStatus = "UNKNOWN";
-  if (["COMPLETED", "SUCCESS", "PAID", "SUCCEEDED"].includes(rawStatus)) {
-    status = "COMPLETED";
-  } else if (["PENDING", "PROCESSING"].includes(rawStatus)) {
-    status = "PENDING";
-  } else if (["CANCELED", "CANCELLED", "FAILED", "ERROR"].includes(rawStatus)) {
-    status = rawStatus.startsWith("CANCEL") ? "CANCELED" : "FAILED";
-  }
+  return "UNKNOWN";
+}
 
-  const paymentReference = payload?.paymentReference || payload?.paymentIntentId || payload?.paymentIntent || payload?.orderId || payload?.extOrderId || null;
-  const orderIdRaw = payload?.orderId || payload?.extOrderId || null;
+function extractOrderId(payload: any): number | null {
+  const orderIdRaw = payload?.orderId || payload?.extOrderId;
   const orderId = orderIdRaw ? Number(orderIdRaw) : null;
+  return Number.isFinite(orderId) ? orderId : null;
+}
+
+function extractPaymentReference(payload: any): string | null {
+  const ref = payload?.paymentReference || payload?.paymentIntentId || payload?.paymentIntent || payload?.orderId || payload?.extOrderId;
+  return ref ? String(ref) : null;
+}
+
+function parseStripeWebhook(payload: any, eventId: string | null): ParsedWebhookData {
+  const object = payload.data.object;
+  const status = payload.type === "payment_intent.succeeded" && object?.status === "succeeded"
+    ? "COMPLETED"
+    : "UNKNOWN";
+
+  const metadataOrderId = object?.metadata?.orderId ? Number(object.metadata.orderId) : null;
 
   return {
     eventId,
-    status,
-    paymentReference: paymentReference ? String(paymentReference) : null,
-    orderId: Number.isFinite(orderId) ? orderId : null,
+    status: status as PaymentWebhookStatusType,
+    paymentReference: object?.payment_intent || object?.id || null,
+    orderId: Number.isFinite(metadataOrderId) ? metadataOrderId : null,
+    provider: "stripe",
+  };
+}
+
+function parseGenericWebhook(payload: any, eventId: string | null): ParsedWebhookData {
+  const rawStatus = String(payload?.status || payload?.paymentStatus || payload?.orderStatus || "");
+
+  return {
+    eventId,
+    status: mapStatusFromString(rawStatus),
+    paymentReference: extractPaymentReference(payload),
+    orderId: extractOrderId(payload),
     provider: payload?.provider || "unknown",
   };
+}
+
+function parseWebhookPayload(payload: any): ParsedWebhookData {
+  const eventId = extractEventId(payload);
+
+  if (payload?.type && payload?.data?.object) {
+    return parseStripeWebhook(payload, eventId);
+  }
+
+  return parseGenericWebhook(payload, eventId);
 }
 
 async function verifyWebhookSignature(
@@ -104,7 +133,7 @@ async function verifyWebhookSignature(
   stripeSignature: string | undefined,
   hmacSignature: string | undefined,
   deps: WebhookDependencies
-): Promise<{ valid: boolean; payload: any | null }> {
+): Promise<any | null> {
   const stripe = deps.stripeService.isAvailable() ? deps.stripeService.getClient() : null;
   const useMockStripe = deps.stripeService.isMockMode();
   const webhookSecret = AppConfig.PAYMENT_WEBHOOK_SECRET;
@@ -113,66 +142,55 @@ async function verifyWebhookSignature(
   if (stripeSignature) {
     if (useMockStripe) {
       try {
-        const payload = JSON.parse(rawBody.toString("utf8"));
-        return { valid: true, payload };
-      } catch (error) {
-        console.error("❌ Failed to parse mock webhook payload:", error);
-        return { valid: false, payload: null };
-      }
-    } else {
-      try {
-        const payload = stripe!.webhooks.constructEvent(rawBody, stripeSignature, stripeWebhookSecret!);
-        return { valid: true, payload };
-      } catch (error) {
-        console.error("❌ Stripe webhook signature verification failed:", error);
-        return { valid: false, payload: null };
+        return JSON.parse(rawBody.toString("utf8"));
+      } catch {
+        return null;
       }
     }
-  } else if (hmacSignature && webhookSecret) {
-    const valid = verifyHmacSignature(rawBody, hmacSignature, webhookSecret);
-    if (valid) {
-      try {
-        const payload = JSON.parse(rawBody.toString("utf8"));
-        return { valid: true, payload };
-      } catch (error) {
-        console.error("❌ Failed to parse webhook payload:", error);
-        return { valid: false, payload: null };
-      }
+
+    try {
+      return stripe!.webhooks.constructEvent(rawBody, stripeSignature, stripeWebhookSecret!);
+    } catch {
+      return null;
     }
   }
 
-  return { valid: false, payload: null };
+  if (hmacSignature && webhookSecret) {
+    const valid = verifyHmac(rawBody, hmacSignature, webhookSecret);
+    if (!valid) return null;
+
+    try {
+      return JSON.parse(rawBody.toString("utf8"));
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
-async function recordInvalidSignature(rawBody: Buffer): Promise<void> {
+async function recordWebhookEvent(eventId: string, parsed: ParsedWebhookData, rawBody: Buffer, signatureValid: boolean): Promise<void> {
   await storage.recordWebhookEvent({
-    id: crypto.createHash("sha256").update(rawBody).digest("hex"),
+    id: eventId,
     receivedAt: new Date().toISOString(),
-    provider: "unknown",
-    status: "INVALID_SIGNATURE",
-    paymentReference: null,
-    orderId: null,
-    signatureValid: false,
+    provider: signatureValid ? parsed.provider : "unknown",
+    status: signatureValid ? parsed.status : "INVALID_SIGNATURE",
+    paymentReference: signatureValid ? parsed.paymentReference : null,
+    orderId: signatureValid ? parsed.orderId : null,
+    signatureValid,
     rawPayload: rawBody.toString("utf8"),
   });
 }
 
-function shouldIgnoreEvent(payload: any): { ignore: boolean; reason?: string } {
-  if (AppConfig.WEBHOOK_MANUAL_ONLY && payload?.type && payload?.data?.object) {
-    const metadata = payload.data.object.metadata || {};
-    if (metadata.manualWebhook !== "true") {
-      return { ignore: true, reason: "manual_only" };
-    }
+function shouldIgnoreEvent(payload: any): string | null {
+  if (!payload?.type || !payload?.data?.object) return null;
+
+  const type = payload.type as string;
+  if (type !== "payment_intent.succeeded") {
+    return "unsupported_event";
   }
 
-  if (payload?.type && payload?.data?.object) {
-    const type = payload.type as string;
-    if (type !== "payment_intent.succeeded") {
-      return { ignore: true, reason: "unsupported_event" };
-    }
-  }
-
-  return { ignore: false };
+  return null;
 }
 
 async function findOrder(parsed: ParsedWebhookData): Promise<any | null> {
@@ -183,30 +201,35 @@ async function findOrder(parsed: ParsedWebhookData): Promise<any | null> {
   return order || null;
 }
 
-async function updateOrderAmountsFromStripe(order: any, payload: any): Promise<any> {
-  const stripeAmount = payload?.type === "payment_intent.succeeded"
-    ? payload?.data?.object?.amount
-    : null;
+function extractStripeAmount(payload: any): number | null {
+  if (payload?.type !== "payment_intent.succeeded") return null;
 
-  if (!Number.isFinite(stripeAmount)) {
-    return order;
-  }
+  const amount = payload?.data?.object?.amount;
+  return Number.isFinite(amount) ? Number(amount) : null;
+}
+
+function extractStripeMetadata(payload: any): Record<string, any> {
+  return payload?.data?.object?.metadata || {};
+}
+
+async function updateOrderAmountsFromStripe(order: any, payload: any): Promise<any> {
+  const stripeAmount = extractStripeAmount(payload);
+  if (!stripeAmount) return order;
 
   const product = order.productId ? await storage.getProduct(order.productId) : undefined;
   const productTotal = product ? product.price * order.quantity : order.total;
-  const stripeMetadata = payload?.data?.object?.metadata || {};
+  const metadata = extractStripeMetadata(payload);
 
-  const deliveryCostFromMetadata = Number.isFinite(stripeMetadata.shippingCost)
-    ? Math.round(Number(stripeMetadata.shippingCost))
+  const deliveryCostFromMetadata = Number.isFinite(metadata.shippingCost)
+    ? Math.round(Number(metadata.shippingCost))
     : null;
 
-  const deliveryCost = deliveryCostFromMetadata ?? Math.max(0, Number(stripeAmount) - productTotal);
-  const finalAmount = Number(stripeAmount);
+  const deliveryCost = deliveryCostFromMetadata ?? Math.max(0, stripeAmount - productTotal);
 
-  if (deliveryCost !== order.deliveryCost || finalAmount !== order.total) {
+  if (deliveryCost !== order.deliveryCost || stripeAmount !== order.total) {
     const updated = await storage.updateOrder(order.id, {
       deliveryCost,
-      total: finalAmount,
+      total: stripeAmount,
     });
     return updated ?? order;
   }
@@ -235,16 +258,7 @@ async function recordSuccessfulWebhook(
   parsed: ParsedWebhookData,
   rawBody: Buffer
 ): Promise<void> {
-  await storage.recordWebhookEvent({
-    id: eventId,
-    receivedAt: new Date().toISOString(),
-    provider: parsed.provider,
-    status: parsed.status,
-    paymentReference: parsed.paymentReference,
-    orderId: parsed.orderId,
-    signatureValid: true,
-    rawPayload: rawBody.toString("utf8"),
-  });
+  await recordWebhookEvent(eventId, parsed, rawBody, true);
 }
 
 export function PaymentWebhookHandler(deps: WebhookDependencies) {
@@ -256,66 +270,33 @@ export function PaymentWebhookHandler(deps: WebhookDependencies) {
     const stripeSignature = req.headers["stripe-signature"] as string | undefined;
     const hmacSignature = (req.headers["x-webhook-signature"] || req.headers["x-signature"]) as string | undefined;
 
-    const { valid, payload } = await verifyWebhookSignature(rawBody, stripeSignature, hmacSignature, deps);
-    if (!valid || !payload) {
-      await recordInvalidSignature(rawBody);
+    const payload = await verifyWebhookSignature(rawBody, stripeSignature, hmacSignature, deps);
+    if (!payload) {
+      const parsed = parseWebhookPayload({});
+      const eventId = generateEventId(rawBody);
+      await recordWebhookEvent(eventId, parsed, rawBody, false);
       return res.status(401).json({ message: "Invalid webhook signature" });
     }
 
-    const ignoreCheck = shouldIgnoreEvent(payload);
-    if (ignoreCheck.ignore) {
-      console.log(`ℹ️ Webhook ignored (${ignoreCheck.reason})`, {
-        eventId: payload?.id,
-        type: payload?.type,
-      });
-      return res.status(200).json({ received: true, ignored: ignoreCheck.reason });
+    const ignoreReason = shouldIgnoreEvent(payload);
+    if (ignoreReason) {
+      return res.status(200).json({ received: true, ignored: ignoreReason });
     }
 
     const parsed = parseWebhookPayload(payload);
-    const eventId = parsed.eventId || crypto.createHash("sha256").update(rawBody).digest("hex");
-
-    console.log("📥 Webhook event received", {
-      eventId,
-      status: parsed.status,
-      paymentReference: parsed.paymentReference,
-      orderId: parsed.orderId,
-      provider: parsed.provider,
-    });
+    const eventId = generateEventId(rawBody, parsed);
 
     const alreadyProcessed = await storage.hasProcessedWebhookEvent(eventId);
     if (alreadyProcessed) {
-      console.log("ℹ️ Webhook ignored (duplicate)", { eventId });
       return res.status(200).json({ received: true, duplicate: true });
-    }
-
-    if (!parsed.orderId && parsed.paymentReference) {
-      console.warn("⚠️ Webhook missing orderId, falling back to payment reference", {
-        eventId,
-        paymentReference: parsed.paymentReference,
-      });
     }
 
     let order = await findOrder(parsed);
     if (!order) {
-      console.warn("⚠️ Webhook received but no matching order found", {
-        eventId,
-        paymentReference: parsed.paymentReference,
-        orderId: parsed.orderId,
-      });
       return res.status(202).json({ received: true, order: "not_found" });
     }
 
-    console.log("✅ Webhook resolved order", {
-      eventId,
-      orderId: order.id,
-      paymentIntentId: order.paymentIntentId,
-    });
-
     if (order.status === "PAID") {
-      console.log("ℹ️ Webhook ignored (order already paid)", {
-        eventId,
-        orderId: order.id,
-      });
       return res.status(200).json({ received: true, order: "already_paid" });
     }
 

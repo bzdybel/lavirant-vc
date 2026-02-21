@@ -110,30 +110,25 @@ async function createRealIntent(
 
 export function CreatePaymentIntentHandler(deps: PaymentIntentDependencies) {
   return async (req: Request, res: Response) => {
-    try {
-      const { amount, orderId, itemsTotal, shippingCost } = req.body as PaymentIntentRequest;
+    const { amount, orderId, itemsTotal, shippingCost } = req.body as PaymentIntentRequest;
 
-      if (!amount || amount <= 0) {
-        return res.status(400).json({ message: "Invalid amount" });
-      }
-
-      if (orderId) {
-        const existing = await findExistingIntent(orderId, deps.stripeService);
-        if (existing) {
-          return res.json(existing);
-        }
-      }
-
-      const amounts = calculateAmounts({ amount, orderId, itemsTotal, shippingCost });
-
-      const createIntent = deps.stripeService.isMockMode()
-        ? createMockIntent
-        : (amounts: PaymentAmounts, orderId?: number) => createRealIntent(deps.stripeService, amounts, orderId);
-
-      const result = await createIntent(amounts, orderId);
-      return res.json(result);
-    } catch (error: any) {
-      return res.status(500).json({ message: error.message });
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
     }
+
+    if (orderId) {
+      const existing = await findExistingIntent(orderId, deps.stripeService);
+      if (existing) {
+        return res.json(existing);
+      }
+    }
+
+    const amounts = calculateAmounts({ amount, orderId, itemsTotal, shippingCost });
+
+    const result = deps.stripeService.isMockMode()
+      ? await createMockIntent(amounts, orderId)
+      : await createRealIntent(deps.stripeService, amounts, orderId);
+
+    return res.json(result);
   };
 }

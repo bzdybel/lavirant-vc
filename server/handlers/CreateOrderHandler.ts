@@ -30,57 +30,52 @@ interface CreateOrderRequest {
   country: string;
 }
 
-function validateOrderRequest(body: any): { valid: boolean; error?: string } {
-  if (!body.productId || !body.quantity || body.quantity <= 0) {
-    return { valid: false, error: "Invalid order data" };
+function validateOrderFields(request: CreateOrderRequest): string | null {
+  if (!request.productId || !request.quantity || request.quantity <= 0) {
+    return "Invalid order data";
   }
 
-  if (!body.firstName || !body.lastName || !body.email || !body.phone ||
-      !body.address || !body.city || !body.postalCode || !body.country) {
-    return { valid: false, error: "Missing customer information" };
+  if (!request.firstName || !request.lastName || !request.email || !request.phone ||
+      !request.address || !request.city || !request.postalCode || !request.country) {
+    return "Missing customer information";
   }
 
-  if (body.deliveryMethod === "INPOST_PACZKOMAT" && !body.deliveryPoint?.id) {
-    return { valid: false, error: "Missing InPost delivery point" };
+  if (request.deliveryMethod === "INPOST_PACZKOMAT" && !request.deliveryPoint?.id) {
+    return "Missing InPost delivery point";
   }
 
-  return { valid: true };
+  return null;
 }
 
-function calculateOrderTotal(
-  product: any,
-  quantity: number,
-  deliveryCost: number | undefined
-): { deliveryCostCents: number; total: number } {
-  const deliveryCostCents = Number.isFinite(Number(deliveryCost))
-    ? Math.max(0, Math.round(Number(deliveryCost)))
-    : 0;
+function calculateOrderTotal(product: any, quantity: number, deliveryCost?: number): number {
+  const shipping = Number.isFinite(Number(deliveryCost)) ? Math.max(0, Math.round(Number(deliveryCost))) : 0;
+  return product.price * quantity + shipping;
+}
 
-  const total = product.price * quantity + deliveryCostCents;
-
-  return { deliveryCostCents, total };
+function resolvePaymentReference(request: CreateOrderRequest): string | null {
+  return request.paymentReference || request.paymentIntentId || null;
 }
 
 async function createOrderRecord(
   request: CreateOrderRequest,
   product: any,
-  totals: { deliveryCostCents: number; total: number }
-) {
-  const resolvedPaymentReference = request.paymentReference || request.paymentIntentId || null;
+  total: number
+): Promise<any> {
+  const paymentRef = resolvePaymentReference(request);
 
-  const createdOrder = await storage.createOrder({
+  return await storage.createOrder({
     userId: null,
     productId: request.productId,
     quantity: request.quantity,
-    total: totals.total,
-    deliveryCost: totals.deliveryCostCents,
+    total,
+    deliveryCost: Number.isFinite(Number(request.deliveryCost)) ? Math.max(0, Math.round(Number(request.deliveryCost))) : 0,
     deliveryMethod: request.deliveryMethod ?? null,
     deliveryPointId: request.deliveryPoint?.id ?? null,
-    status: "CREATED",
+    status: paymentRef ? "PAYMENT_PENDING" : "CREATED",
     paymentIntentId: request.paymentIntentId || null,
-    paymentReference: resolvedPaymentReference,
+    paymentReference: paymentRef,
     paymentProvider: request.paymentProvider || (request.paymentIntentId ? "stripe" : null),
-    paymentPendingAt: resolvedPaymentReference ? new Date().toISOString() : null,
+    paymentPendingAt: paymentRef ? new Date().toISOString() : null,
     firstName: request.firstName,
     lastName: request.lastName,
     email: request.email,
@@ -91,21 +86,10 @@ async function createOrderRecord(
     country: request.country,
     createdAt: new Date().toISOString(),
   });
-
-  if (resolvedPaymentReference) {
-    const updated = await storage.updateOrder(createdOrder.id, { status: "PAYMENT_PENDING" });
-    return updated ?? createdOrder;
-  }
-
-  return createdOrder;
 }
 
-async function sendOrderConfirmationEmail(
-  order: any,
-  product: any,
-  emailService: EmailService
-): Promise<void> {
-  emailService.sendOrderConfirmation({
+function sendOrderConfirmationEmail(order: any, product: any, emailService: EmailService): Promise<any> {
+  return emailService.sendOrderConfirmation({
     orderId: order.id,
     firstName: order.firstName,
     lastName: order.lastName,
@@ -118,16 +102,10 @@ async function sendOrderConfirmationEmail(
     postalCode: order.postalCode,
     country: order.country,
     orderDate: order.createdAt,
-  }).catch(error => {
-    console.error("Failed to send order confirmation email:", error);
   });
 }
 
-async function reconcileStripePayment(
-  order: any,
-  product: any,
-  deps: CreateOrderDependencies
-): Promise<void> {
+async function reconcileStripePayment(order: any, product: any, deps: CreateOrderDependencies): Promise<void> {
   if (!order.paymentIntentId || deps.stripeService.isMockMode()) {
     return;
   }
@@ -137,62 +115,43 @@ async function reconcileStripePayment(
     return;
   }
 
-  try {
-    await stripe.paymentIntents.update(order.paymentIntentId, {
-      metadata: { orderId: String(order.id) },
-    });
+  await stripe.paymentIntents.update(order.paymentIntentId, {
+    metadata: { orderId: String(order.id) },
+  });
 
-    const paymentIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
-    if (paymentIntent.status === "succeeded" && order.status !== "PAID") {
-      const updatedOrder = await deps.paymentStatusService.applyPaymentStatusUpdate({
-        order: order as Order,
-        status: "COMPLETED",
-        paymentReference: paymentIntent.id,
-        paymentProvider: "stripe",
-        product,
-      });
+  const paymentIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
 
-      if (updatedOrder.status === "PAID") {
-        console.log("✅ Order paid via reconciliation", {
-          orderId: updatedOrder.id,
-          paymentIntentId: paymentIntent.id,
-        });
-      }
-    }
-  } catch (error) {
-    console.warn("⚠️ Failed to reconcile payment intent for order", {
-      orderId: order.id,
-      error,
+  if (paymentIntent.status === "succeeded" && order.status !== "PAID") {
+    await deps.paymentStatusService.applyPaymentStatusUpdate({
+      order: order as Order,
+      status: "COMPLETED",
+      paymentReference: paymentIntent.id,
+      paymentProvider: "stripe",
+      product,
     });
   }
 }
 
 export function CreateOrderHandler(deps: CreateOrderDependencies) {
   return async (req: Request, res: Response) => {
-    try {
-      const request = req.body as CreateOrderRequest;
+    const request = req.body as CreateOrderRequest;
 
-      const validation = validateOrderRequest(request);
-      if (!validation.valid) {
-        return res.status(400).json({ message: validation.error });
-      }
-
-      const product = await storage.getProduct(request.productId);
-      if (!product) {
-        return res.status(404).json({ message: "Product not found" });
-      }
-
-      const totals = calculateOrderTotal(product, request.quantity, request.deliveryCost);
-
-      const order = await createOrderRecord(request, product, totals);
-
-      await sendOrderConfirmationEmail(order, product, deps.emailService);
-
-      await reconcileStripePayment(order, product, deps);
-
-      return res.status(201).json(order);
-    } catch (error: any) {
-      return res.status(500).json({ message: error.message });
+    const validationError = validateOrderFields(request);
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
     }
+
+    const product = await storage.getProduct(request.productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const total = calculateOrderTotal(product, request.quantity, request.deliveryCost);
+    const order = await createOrderRecord(request, product, total);
+
+    await sendOrderConfirmationEmail(order, product, deps.emailService).catch(() => {});
+    await reconcileStripePayment(order, product, deps).catch(() => {});
+
+    return res.status(201).json(order);
   };
 }
