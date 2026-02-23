@@ -1,6 +1,9 @@
+const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY ?? "";
+
 export const STRIPE_CONFIG = {
-  isMockMode: import.meta.env.VITE_USE_MOCK_STRIPE === "true",
-  publicKey: import.meta.env.VITE_STRIPE_PUBLIC_KEY ?? ""
+  isMockMode:
+    import.meta.env.VITE_USE_MOCK_STRIPE === "true" || !stripePublicKey,
+  publicKey: stripePublicKey
 };
 export const PAYMENT_CONFIG = {
   redirectDelay: 2000,
