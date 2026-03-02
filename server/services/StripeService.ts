@@ -46,7 +46,7 @@ export class StripeService {
     }
 
     return new Stripe(AppConfig.STRIPE_SECRET_KEY, {
-      apiVersion: "2025-04-30.basil",
+      apiVersion: "2025-08-27.basil",
     });
   }
 
@@ -97,11 +97,12 @@ export class StripeService {
     const finalItemsTotal = Number.isFinite(itemsTotal) ? itemsTotal! : 0;
     const finalShippingCost = Number.isFinite(shippingCost) ? shippingCost! : 0;
     const finalAmount = finalItemsTotal + finalShippingCost || amount;
+    const normalizedFinalAmount = Math.round(finalAmount * 100) / 100;
 
     console.log(`${LogPrefix.STRIPE} Payment Intent Creation`, {
       itemsTotal: finalItemsTotal,
       shippingCost: finalShippingCost,
-      finalAmount,
+      finalAmount: normalizedFinalAmount,
       amountFromFrontend: amount,
       orderId,
       stripeMode: this.client ? "live" : "mock",
@@ -109,7 +110,7 @@ export class StripeService {
 
     // Mock mode
     if (this.useMockMode) {
-      return this.createMockPaymentIntent(finalAmount, finalItemsTotal, finalShippingCost);
+      return this.createMockPaymentIntent(normalizedFinalAmount, finalItemsTotal, finalShippingCost);
     }
 
     // Real Stripe
@@ -117,7 +118,7 @@ export class StripeService {
       throw new ServiceUnavailableError("Stripe", "Stripe is not configured");
     }
 
-    const amountInCents = Math.round(finalAmount * 100);
+    const amountInCents = Math.round(normalizedFinalAmount * 100);
 
     const paymentIntent = await this.client.paymentIntents.create({
       amount: amountInCents,
@@ -130,7 +131,7 @@ export class StripeService {
         ...(orderId ? { orderId: String(orderId) } : {}),
         itemsTotal: String(finalItemsTotal),
         shippingCost: String(finalShippingCost),
-        finalAmount: String(finalAmount),
+        finalAmount: String(normalizedFinalAmount),
       },
       description: orderId ? `Order #${orderId}` : undefined,
     });
@@ -138,7 +139,7 @@ export class StripeService {
     console.log("✅ Stripe payment intent created (LIVE)", {
       paymentIntentId: paymentIntent.id,
       amountInCents,
-      amountInPLN: finalAmount,
+      amountInPLN: normalizedFinalAmount,
       itemsTotal: finalItemsTotal,
       shippingCost: finalShippingCost,
       metadata: paymentIntent.metadata,

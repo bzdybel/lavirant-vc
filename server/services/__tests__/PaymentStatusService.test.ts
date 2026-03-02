@@ -17,9 +17,7 @@ type MockedStorage = typeof storage & {
   updateOrder: jest.Mock;
 };
 
-type MockedInvoiceService = {
-  generateInvoiceForOrder: jest.Mock;
-};
+
 
 describe("PaymentStatusService", () => {
   const mockedStorage = storage as MockedStorage;
@@ -85,7 +83,7 @@ describe("PaymentStatusService", () => {
         paymentProvider: null,
       };
 
-      const result = await service.applyPaymentStatusUpdate({
+      await service.applyPaymentStatusUpdate({
         order,
         status: PaymentWebhookStatus.FAILED,
         paymentReference: "ref_456",
@@ -110,7 +108,7 @@ describe("PaymentStatusService", () => {
         paymentProvider: null,
       };
 
-      const result = await service.applyPaymentStatusUpdate({
+       await service.applyPaymentStatusUpdate({
         order,
         status: PaymentWebhookStatus.CANCELED,
         paymentReference: "ref_789",
@@ -136,7 +134,7 @@ describe("PaymentStatusService", () => {
         emailSentAt: null,
       };
 
-      const result = await service.applyPaymentStatusUpdate({
+       await service.applyPaymentStatusUpdate({
         order,
         status: PaymentWebhookStatus.COMPLETED,
         paymentReference: "ref_completed",
@@ -483,7 +481,7 @@ describe("PaymentStatusService", () => {
         paymentProvider: "stripe",
       };
 
-      const result = await service.applyPaymentStatusUpdate({
+      await service.applyPaymentStatusUpdate({
         order,
         status: PaymentWebhookStatus.COMPLETED,
       });

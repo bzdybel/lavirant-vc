@@ -3,30 +3,37 @@ import type { OrderConfirmationData, PaidInvoiceEmailParams, ShipmentEmailParams
 import * as EmailTemplates from '../../utils/emailTemplates';
 import nodemailer from 'nodemailer';
 import path from 'path';
+import { AppConfig } from '../../config/appConfig';
 
 // Mock dependencies
 jest.mock('nodemailer');
 jest.mock('../../utils/emailTemplates');
 
-// Create mock AppConfig
-const mockAppConfig = {
-  isEmailConfigured: jest.fn(() => true),
-  EMAIL_HOST: 'smtp.example.com' as string | undefined,
-  EMAIL_PORT: 587 as number,
-  EMAIL_USER: 'test@example.com' as string | undefined,
-  EMAIL_PASSWORD: 'password123' as string | undefined,
-  EMAIL_FROM: 'noreply@example.com' as string | undefined,
-  EMAIL_SECURE: false as boolean,
-};
-
 jest.mock('../../config/appConfig', () => ({
-  AppConfig: mockAppConfig,
+  AppConfig: {
+    isEmailConfigured: jest.fn(() => true),
+    EMAIL_HOST: 'smtp.example.com',
+    EMAIL_PORT: 587,
+    EMAIL_USER: 'test@example.com',
+    EMAIL_PASSWORD: 'password123',
+    EMAIL_FROM: 'noreply@example.com',
+    EMAIL_SECURE: false,
+  },
 }));
 
 describe('EmailService', () => {
   let service: EmailService;
   let mockTransporter: any;
   let mockEmailTemplates: jest.Mocked<typeof EmailTemplates>;
+  const mockAppConfig = AppConfig as unknown as {
+    isEmailConfigured: jest.Mock;
+    EMAIL_HOST?: string;
+    EMAIL_PORT: number;
+    EMAIL_USER?: string;
+    EMAIL_PASSWORD?: string;
+    EMAIL_FROM?: string;
+    EMAIL_SECURE: boolean;
+  };
 
   beforeEach(() => {
     // Reset mocks
