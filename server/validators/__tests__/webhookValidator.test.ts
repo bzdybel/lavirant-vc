@@ -1,14 +1,5 @@
-import {
-  parseWebhookPayload,
-  ParsedWebhookPayload,
-} from '../webhookValidator';
-import {
-  PaymentWebhookStatus,
-  COMPLETED_STATUSES,
-  PENDING_STATUSES,
-  CANCELED_STATUSES,
-  FAILED_STATUSES,
-} from '../../constants/paymentStatus';
+import { parseWebhookPayload } from '../webhookValidator';
+import { PaymentWebhookStatus } from '../../constants/paymentStatus';
 
 describe('webhookValidator', () => {
   describe('parseWebhookPayload', () => {
@@ -206,7 +197,7 @@ describe('webhookValidator', () => {
           { id: 'id_3' },
         ];
 
-        testCases.forEach((payload, index) => {
+        testCases.forEach((payload,  ) => {
           const result = parseWebhookPayload({
             ...payload,
             status: 'COMPLETED',
