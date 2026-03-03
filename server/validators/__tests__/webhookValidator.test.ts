@@ -215,7 +215,7 @@ describe('webhookValidator', () => {
           { extOrderId: 'ref_5' },
         ];
 
-        testCases.forEach(async (payload) => {
+        testCases.forEach((payload) => {
           const result = parseWebhookPayload({
             ...payload,
             status: 'COMPLETED',

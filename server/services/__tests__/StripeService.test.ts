@@ -40,7 +40,6 @@ describe("StripeService", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
     mockedAppConfig.USE_MOCK_STRIPE = false;
     mockedAppConfig.STRIPE_SECRET_KEY = "sk_test_123";
     mockedAppConfig.STRIPE_WEBHOOK_SECRET = "whsec_test_123";

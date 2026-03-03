@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { GetInPostConfigHandler } from "../InPostHandlers";
 import { AppConfig } from "../../config/appConfig";
+import { makeResponse } from "../../__tests__/helpers/httpMocks";
 
 jest.mock("../../config/appConfig", () => ({
   AppConfig: {
@@ -9,23 +10,15 @@ jest.mock("../../config/appConfig", () => ({
   },
 }));
 
-type MockedAppConfig = typeof AppConfig & {
+type MockedAppConfig = {
   IS_PRODUCTION: boolean;
   getGeowidgetToken: jest.Mock;
 };
 
-function makeResponse() {
-  const res: Partial<Response> = {};
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  return res as Response;
-}
-
 describe("InPostHandlers", () => {
-  const mockedAppConfig = AppConfig as MockedAppConfig;
+  const mockedAppConfig = AppConfig as unknown as MockedAppConfig;
 
   beforeEach(() => {
-    jest.clearAllMocks();
     mockedAppConfig.IS_PRODUCTION = false;
     mockedAppConfig.getGeowidgetToken.mockReturnValue("");
   });
@@ -97,38 +90,6 @@ describe("InPostHandlers", () => {
       });
     });
 
-    it("returns geowidget token when available", () => {
-      mockedAppConfig.getGeowidgetToken.mockReturnValue("my_geowidget_token");
-
-      const handler = GetInPostConfigHandler();
-      const req = {} as Request;
-      const res = makeResponse();
-
-      handler(req, res);
-
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          geowidgetToken: "my_geowidget_token",
-        })
-      );
-    });
-
-    it("returns null token when not available", () => {
-      mockedAppConfig.getGeowidgetToken.mockReturnValue("");
-
-      const handler = GetInPostConfigHandler();
-      const req = {} as Request;
-      const res = makeResponse();
-
-      handler(req, res);
-
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          geowidgetToken: null,
-        })
-      );
-    });
-
     it("returns null token when undefined", () => {
       mockedAppConfig.getGeowidgetToken.mockReturnValue(undefined);
 
@@ -160,34 +121,6 @@ describe("InPostHandlers", () => {
         geowidgetToken: null,
         environment: "sandbox",
       });
-    });
-
-    it("returns all three config fields", () => {
-      mockedAppConfig.getGeowidgetToken.mockReturnValue("token_abc");
-
-      const handler = GetInPostConfigHandler();
-      const req = {} as Request;
-      const res = makeResponse();
-
-      handler(req, res);
-
-      const response = (res.json as jest.Mock).mock.calls[0][0];
-
-      expect(response).toHaveProperty("enabled");
-      expect(response).toHaveProperty("geowidgetToken");
-      expect(response).toHaveProperty("environment");
-    });
-
-    it("does not call res.status", () => {
-      mockedAppConfig.getGeowidgetToken.mockReturnValue("token");
-
-      const handler = GetInPostConfigHandler();
-      const req = {} as Request;
-      const res = makeResponse();
-
-      handler(req, res);
-
-      expect(res.status).not.toHaveBeenCalled();
     });
 
     it("handles whitespace-only token as disabled", () => {

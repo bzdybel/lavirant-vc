@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
 import { CreatePaymentIntentHandler } from "../CreatePaymentIntentHandler";
 import { storage } from "../../storage";
+import { makeResponse, makeRequest } from "../../__tests__/helpers/httpMocks";
+import { makeStripeServiceMock } from "../../__tests__/helpers/serviceMocks";
 
 jest.mock("../../storage", () => ({
   storage: {
@@ -9,28 +11,18 @@ jest.mock("../../storage", () => ({
   },
 }));
 
-type MockedStorage = typeof storage & {
+type MockedStorage = {
   getOrder: jest.Mock;
   updateOrder: jest.Mock;
 };
 
-function makeResponse() {
-  const res: Partial<Response> = {};
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  return res as Response;
-}
-
 describe("CreatePaymentIntentHandler", () => {
-  const mockedStorage = storage as MockedStorage;
+  const mockedStorage = storage as unknown as MockedStorage;
 
-  const stripeService = {
-    isMockMode: jest.fn(),
-    getClient: jest.fn(),
-  };
+  let stripeService: ReturnType<typeof makeStripeServiceMock>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    stripeService = makeStripeServiceMock();
     stripeService.isMockMode.mockReturnValue(false);
     stripeService.getClient.mockReturnValue(null);
     mockedStorage.updateOrder.mockResolvedValue({});

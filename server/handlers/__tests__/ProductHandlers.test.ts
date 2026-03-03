@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { ListProductsHandler, GetProductHandler } from "../ProductHandlers";
 import { storage } from "../../storage";
+import { makeResponse, makeRequest } from "../../__tests__/helpers/httpMocks";
 
 jest.mock("../../storage", () => ({
   storage: {
@@ -9,24 +10,13 @@ jest.mock("../../storage", () => ({
   },
 }));
 
-type MockedStorage = typeof storage & {
+type MockedStorage = {
   getAllProducts: jest.Mock;
   getProduct: jest.Mock;
 };
 
-function makeResponse() {
-  const res: Partial<Response> = {};
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  return res as Response;
-}
-
 describe("ProductHandlers", () => {
-  const mockedStorage = storage as MockedStorage;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  const mockedStorage = storage as unknown as MockedStorage;
 
   describe("ListProductsHandler", () => {
     it("returns all products from storage", async () => {

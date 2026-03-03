@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
 import { MarkOrderShippedHandler } from "../ShipmentHandlers";
 import { storage } from "../../storage";
+import { makeResponse, makeRequest } from "../../__tests__/helpers/httpMocks";
+import { makeEmailServiceMock, makeShippingServiceMock } from "../../__tests__/helpers/serviceMocks";
 
 jest.mock("../../storage", () => ({
   storage: {
@@ -8,32 +10,19 @@ jest.mock("../../storage", () => ({
   },
 }));
 
-type MockedStorage = typeof storage & {
+type MockedStorage = {
   getOrder: jest.Mock;
 };
 
-function makeResponse() {
-  const res: Partial<Response> = {};
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  return res as Response;
-}
-
 describe("ShipmentHandlers", () => {
-  const mockedStorage = storage as MockedStorage;
+  const mockedStorage = storage as unknown as MockedStorage;
 
-  const emailService = {
-    sendShipmentEmail: jest.fn(),
-  };
-
-  const shippingService = {
-    markShipped: jest.fn(),
-  };
+  let emailService: ReturnType<typeof makeEmailServiceMock>;
+  let shippingService: ReturnType<typeof makeShippingServiceMock>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    emailService.sendShipmentEmail.mockResolvedValue(true);
-    shippingService.markShipped.mockResolvedValue(null);
+    emailService = makeEmailServiceMock();
+    shippingService = makeShippingServiceMock();
   });
 
   describe("MarkOrderShippedHandler", () => {

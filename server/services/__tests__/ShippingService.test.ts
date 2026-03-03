@@ -27,31 +27,31 @@ describe("ShippingService", () => {
   let mockShipXClient: any;
 
 const mockOrder: Order = {
-    id: 1,
-    quantity: 1,
-    total: 10000,
-    deliveryCost: 1500,
-    deliveryMethod: "INPOST_PACZKOMAT",
-    deliveryPointId: "KRA001",
-    status: "PAID",
-    shipmentId: "123456",
-    shipmentStatus: "offer_selected",
-    trackingNumber: "12345678901234567890",
-    labelGenerated: false,
-    paymentIntentId: "pi_test123",
-    paymentProvider: "stripe",
-    emailSentAt: null,
-    invoiceNumber: null,
-    invoiceIssuedAt: null,
-    firstName: "John",
-    lastName: "Doe",
-    email: "test@example.com",
-    phone: "+48123456789",
-    address: "Test Street 1",
-    city: "Kraków",
-    postalCode: "30-001",
-    country: "PL",
-    createdAt: "2024-01-01T10:00:00Z",
+  id: 1,
+  quantity: 1,
+  total: 10000,
+  deliveryCost: 1500,
+  deliveryMethod: "INPOST_PACZKOMAT",
+  deliveryPointId: "KRA001",
+  status: "PAID",
+  shipmentId: "123456",
+  shipmentStatus: "offer_selected",
+  trackingNumber: "12345678901234567890",
+  labelGenerated: false,
+  paymentIntentId: "pi_test123",
+  paymentProvider: "stripe",
+  emailSentAt: null,
+  invoiceNumber: null,
+  invoiceIssuedAt: null,
+  firstName: "John",
+  lastName: "Doe",
+  email: "test@example.com",
+  phone: "+48123456789",
+  address: "Test Street 1",
+  city: "Kraków",
+  postalCode: "30-001",
+  country: "PL",
+  createdAt: "2024-01-01T10:00:00Z",
 };
 
   const mockShipment: Shipment = {
@@ -70,8 +70,6 @@ const mockOrder: Order = {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-
     // Mock ShipX client
     mockShipXClient = {
       request: jest.fn(),

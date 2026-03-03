@@ -3,6 +3,12 @@ import { PaymentWebhookHandler } from "../PaymentWebhookHandler";
 import { storage } from "../../storage";
 import { AppConfig } from "../../config/appConfig";
 import crypto from "crypto";
+import { makeResponse } from "../../__tests__/helpers/httpMocks";
+import {
+  makeEmailServiceMock,
+  makeStripeServiceMock,
+  makePaymentStatusServiceMock,
+} from "../../__tests__/helpers/serviceMocks";
 
 jest.mock("../../storage", () => ({
   storage: {
@@ -22,7 +28,7 @@ jest.mock("../../config/appConfig", () => ({
   },
 }));
 
-type MockedStorage = typeof storage & {
+type MockedStorage = {
   getOrder: jest.Mock;
   getOrderByPaymentReference: jest.Mock;
   getProduct: jest.Mock;
@@ -30,13 +36,6 @@ type MockedStorage = typeof storage & {
   recordWebhookEvent: jest.Mock;
   hasProcessedWebhookEvent: jest.Mock;
 };
-
-function makeResponse() {
-  const res: Partial<Response> = {};
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  return res as Response;
-}
 
 function makeStripePayload(status: string = "succeeded", orderId?: number) {
   return {
@@ -64,35 +63,26 @@ function makeGenericPayload(status: string, orderId?: number, paymentRef?: strin
 }
 
 describe("PaymentWebhookHandler", () => {
-  const mockedStorage = storage as MockedStorage;
+  const mockedStorage = storage as unknown as MockedStorage;
 
-  const emailService = {
-    sendPaymentConfirmation: jest.fn(),
-  };
-
-  const stripeService = {
-    isAvailable: jest.fn(),
-    isMockMode: jest.fn(),
-    getClient: jest.fn(),
-  };
-
-  const paymentStatusService = {
-    applyPaymentStatusUpdate: jest.fn(),
-  };
+  let emailService: ReturnType<typeof makeEmailServiceMock>;
+  let stripeService: ReturnType<typeof makeStripeServiceMock>;
+  let paymentStatusService: ReturnType<typeof makePaymentStatusServiceMock>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    emailService.sendPaymentConfirmation.mockResolvedValue(true);
+    emailService = makeEmailServiceMock();
+    stripeService = makeStripeServiceMock();
     stripeService.isAvailable.mockReturnValue(true);
     stripeService.isMockMode.mockReturnValue(false);
     stripeService.getClient.mockReturnValue(null);
-    paymentStatusService.applyPaymentStatusUpdate.mockImplementation(async (params) => ({
+    paymentStatusService = makePaymentStatusServiceMock();
+    paymentStatusService.applyPaymentStatusUpdate.mockImplementation(async (params: any) => ({
       ...params.order,
       status: "PAID",
     }));
     mockedStorage.recordWebhookEvent.mockResolvedValue(undefined);
     mockedStorage.hasProcessedWebhookEvent.mockResolvedValue(false);
-    mockedStorage.updateOrder.mockImplementation(async (id, data) => ({ id, ...data }));
+    mockedStorage.updateOrder.mockImplementation(async (id: number, data: any) => ({ id, ...data }));
   });
 
   describe("Signature Verification", () => {

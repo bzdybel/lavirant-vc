@@ -2,6 +2,7 @@ import { PaymentStatusService } from "../PaymentStatusService";
 import { storage } from "../../storage";
 import { generateInvoiceForOrder } from "../../invoiceService";
 import { PaymentWebhookStatus } from "../../constants/paymentStatus";
+import { makeEmailServiceMock, makeShippingServiceMock } from "../../__tests__/helpers/serviceMocks";
 
 jest.mock("../../storage", () => ({
   storage: {
@@ -13,31 +14,24 @@ jest.mock("../../invoiceService", () => ({
   generateInvoiceForOrder: jest.fn(),
 }));
 
-type MockedStorage = typeof storage & {
+type MockedStorage = {
   updateOrder: jest.Mock;
 };
 
 
 
 describe("PaymentStatusService", () => {
-  const mockedStorage = storage as MockedStorage;
+  const mockedStorage = storage as unknown as MockedStorage;
   const mockedInvoiceService = generateInvoiceForOrder as unknown as jest.Mock;
 
-  const emailService = {
-    sendPaidInvoiceEmail: jest.fn(),
-  };
-
-  const shippingService = {
-    onOrderPaid: jest.fn(),
-  };
-
+  let emailService: ReturnType<typeof makeEmailServiceMock>;
+  let shippingService: ReturnType<typeof makeShippingServiceMock>;
   let service: PaymentStatusService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    emailService = makeEmailServiceMock();
+    shippingService = makeShippingServiceMock();
     service = new PaymentStatusService(emailService as any, shippingService as any);
-    emailService.sendPaidInvoiceEmail.mockResolvedValue(true);
-    shippingService.onOrderPaid.mockResolvedValue({});
     mockedStorage.updateOrder.mockImplementation(async (id, data) => ({ id, ...data }));
     mockedInvoiceService.mockResolvedValue({
       invoiceNumber: "INV-001",

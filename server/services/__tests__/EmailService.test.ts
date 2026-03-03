@@ -1,5 +1,6 @@
 import { EmailService } from '../EmailService';
-import type { OrderConfirmationData, PaidInvoiceEmailParams, ShipmentEmailParams } from '../EmailService';
+import type { PaidInvoiceEmailParams, ShipmentEmailParams } from '../EmailService';
+import { makeOrderConfirmationData } from '../../__tests__/fixtures/emailFixtures';
 import * as EmailTemplates from '../../utils/emailTemplates';
 import nodemailer from 'nodemailer';
 import path from 'path';
@@ -37,8 +38,6 @@ describe('EmailService', () => {
 
   beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
-
     // Mock transporter
     mockTransporter = {
       sendMail: jest.fn().mockResolvedValue({ messageId: 'test-message-id' }),
@@ -107,20 +106,7 @@ describe('EmailService', () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
       // Don't manually initialize
-      const data: OrderConfirmationData = {
-        orderId: 123,
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        productName: 'Test Product',
-        quantity: 1,
-        total: 100,
-        address: '123 Main St',
-        city: 'City',
-        postalCode: '12-345',
-        country: 'PL',
-        orderDate: '2024-01-01',
-      };
+      const data = makeOrderConfirmationData();
 
       await service.sendOrderConfirmation(data);
 
@@ -136,20 +122,7 @@ describe('EmailService', () => {
       service.initialize();
 
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      const data: OrderConfirmationData = {
-        orderId: 123,
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        productName: 'Test Product',
-        quantity: 1,
-        total: 100,
-        address: '123 Main St',
-        city: 'City',
-        postalCode: '12-345',
-        country: 'PL',
-        orderDate: '2024-01-01',
-      };
+      const data = makeOrderConfirmationData();
 
       const result = await service.sendOrderConfirmation(data);
 
@@ -165,20 +138,7 @@ describe('EmailService', () => {
       mockAppConfig.isEmailConfigured.mockReturnValue(true);
       service.initialize();
 
-      const data: OrderConfirmationData = {
-        orderId: 123,
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        productName: 'Test Product',
-        quantity: 1,
-        total: 100,
-        address: '123 Main St',
-        city: 'City',
-        postalCode: '12-345',
-        country: 'PL',
-        orderDate: '2024-01-01',
-      };
+      const data = makeOrderConfirmationData();
 
       const result = await service.sendOrderConfirmation(data);
 
@@ -200,20 +160,7 @@ describe('EmailService', () => {
       mockTransporter.sendMail.mockRejectedValue(new Error('SMTP error'));
 
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      const data: OrderConfirmationData = {
-        orderId: 123,
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        productName: 'Test Product',
-        quantity: 1,
-        total: 100,
-        address: '123 Main St',
-        city: 'City',
-        postalCode: '12-345',
-        country: 'PL',
-        orderDate: '2024-01-01',
-      };
+      const data = makeOrderConfirmationData();
 
       const result = await service.sendOrderConfirmation(data);
 
@@ -230,20 +177,7 @@ describe('EmailService', () => {
       mockAppConfig.EMAIL_FROM = undefined;
       service.initialize();
 
-      const data: OrderConfirmationData = {
-        orderId: 123,
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@example.com',
-        productName: 'Test Product',
-        quantity: 1,
-        total: 100,
-        address: '123 Main St',
-        city: 'City',
-        postalCode: '12-345',
-        country: 'PL',
-        orderDate: '2024-01-01',
-      };
+      const data = makeOrderConfirmationData();
 
       await service.sendOrderConfirmation(data);
 

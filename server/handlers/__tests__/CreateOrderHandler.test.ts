@@ -1,6 +1,9 @@
 import type { Request, Response } from "express";
 import { CreateOrderHandler } from "../CreateOrderHandler";
 import { storage } from "../../storage";
+import { makeResponse, makeRequest } from "../../__tests__/helpers/httpMocks";
+import { makeOrderBody, makeProduct } from "../../__tests__/fixtures/orderFixtures";
+import { makeEmailServiceMock, makeStripeServiceMock, makePaymentStatusServiceMock } from "../../__tests__/helpers/serviceMocks";
 
 jest.mock("../../storage", () => ({
   storage: {
@@ -9,68 +12,37 @@ jest.mock("../../storage", () => ({
   },
 }));
 
-type MockedStorage = typeof storage & {
+type MockedStorage = {
   getProduct: jest.Mock;
   createOrder: jest.Mock;
 };
 
-function makeResponse() {
-  const res: Partial<Response> = {};
-  res.status = jest.fn().mockReturnValue(res);
-  res.json = jest.fn().mockReturnValue(res);
-  return res as Response;
-}
+const mockedStorage = storage as unknown as MockedStorage;
 
-function baseRequestBody() {
-  return {
-    productId: 1,
-    quantity: 2,
-    firstName: "Ada",
-    lastName: "Lovelace",
-    email: "ada@example.com",
-    phone: "123456789",
-    address: "Main 1",
-    city: "Warsaw",
-    postalCode: "00-001",
-    country: "PL",
-  };
-}
+let emailService: ReturnType<typeof makeEmailServiceMock>;
+let stripeService: ReturnType<typeof makeStripeServiceMock>;
+let paymentStatusService: ReturnType<typeof makePaymentStatusServiceMock>;
+let handler: ReturnType<typeof CreateOrderHandler>;
+
+beforeEach(() => {
+  emailService = makeEmailServiceMock();
+  stripeService = makeStripeServiceMock();
+  paymentStatusService = makePaymentStatusServiceMock();
+
+  handler = CreateOrderHandler({
+    emailService: emailService as any,
+    stripeService: stripeService as any,
+    paymentStatusService: paymentStatusService as any,
+  });
+});
 
 describe("CreateOrderHandler", () => {
-  const mockedStorage = storage as MockedStorage;
-
-  const emailService = {
-    sendOrderConfirmation: jest.fn(),
-  };
-
-  const stripeService = {
-    isMockMode: jest.fn(),
-    getClient: jest.fn(),
-  };
-
-  const paymentStatusService = {
-    applyPaymentStatusUpdate: jest.fn(),
-  };
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    emailService.sendOrderConfirmation.mockResolvedValue(true);
-    stripeService.isMockMode.mockReturnValue(true);
-    stripeService.getClient.mockReturnValue(null);
-    paymentStatusService.applyPaymentStatusUpdate.mockResolvedValue({});
-  });
 
   it("returns 400 when required fields are missing", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { quantity: 1 } } as Request;
+    const req = makeRequest({ body: { quantity: 1 } });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: "Invalid order data" });
@@ -78,37 +50,20 @@ describe("CreateOrderHandler", () => {
   });
 
   it("returns 400 for invalid quantity", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), quantity: 0 } } as Request;
+    const req = makeRequest({ body: makeOrderBody({ quantity: 0 }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: "Invalid order data" });
   });
 
   it("returns 400 when InPost locker is selected without delivery point", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = {
-      body: {
-        ...baseRequestBody(),
-        deliveryMethod: "INPOST_PACZKOMAT",
-      },
-    } as Request;
+    const req = makeRequest({ body: makeOrderBody({ deliveryMethod: "INPOST_PACZKOMAT" }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: "Missing InPost delivery point" });
@@ -117,109 +72,66 @@ describe("CreateOrderHandler", () => {
   it("returns 404 when product is not found", async () => {
     mockedStorage.getProduct.mockResolvedValue(undefined);
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: baseRequestBody() } as Request;
+    const req = makeRequest({ body: makeOrderBody() });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({ message: "Product not found" });
   });
 
-  it("calculates total with rounded delivery cost and non-negative shipping", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 100, name: "Game" });
-    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 10, ...data }));
+  it("rounds down fractional delivery cost (floor)", async () => {
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data }));
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = {
-      body: {
-        ...baseRequestBody(),
-        deliveryCost: 10.4,
-      },
-    } as Request;
+    const req = makeRequest({ body: makeOrderBody({ deliveryCost: 10.4 }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(mockedStorage.createOrder).toHaveBeenCalledWith(
-      expect.objectContaining({
-        total: 210,
-        deliveryCost: 10,
-      })
+      expect.objectContaining({ total: 210, deliveryCost: 10 })
     );
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
-  it("uses zero delivery cost when negative or invalid", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 50, name: "Game" });
-    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 11, ...data }));
+  it("uses zero delivery cost when negative", async () => {
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 50 }));
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data }));
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = {
-      body: {
-        ...baseRequestBody(),
-        deliveryCost: -5,
-      },
-    } as Request;
+    const req = makeRequest({ body: makeOrderBody({ deliveryCost: -5 }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(mockedStorage.createOrder).toHaveBeenCalledWith(
-      expect.objectContaining({
-        total: 100,
-        deliveryCost: 0,
-      })
+      expect.objectContaining({ total: 100, deliveryCost: 0 })
     );
   });
 
-  it("sets PAYMENT_PENDING only when payment reference exists", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 100, name: "Game" });
+  it("sets CREATED status when no payment reference is provided", async () => {
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data }));
 
-    mockedStorage.createOrder.mockImplementationOnce(async (data: any) => ({ id: 20, ...data }));
-
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: baseRequestBody() } as Request;
+    const req = makeRequest({ body: makeOrderBody() });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(mockedStorage.createOrder).toHaveBeenCalledWith(
-      expect.objectContaining({
-        status: "CREATED",
-        paymentPendingAt: null,
-      })
+      expect.objectContaining({ status: "CREATED", paymentPendingAt: null })
     );
+  });
 
-    mockedStorage.createOrder.mockImplementationOnce(async (data: any) => ({ id: 21, ...data }));
+  it("sets PAYMENT_PENDING status when payment reference is provided", async () => {
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data }));
 
-    const reqWithPayment = {
-      body: { ...baseRequestBody(), paymentIntentId: "pi_123" },
-    } as Request;
-    const resWithPayment = makeResponse();
+    const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_123" }) });
+    const res = makeResponse();
 
-    await handler(reqWithPayment, resWithPayment);
+    await handler(req as Request, res as Response);
 
     expect(mockedStorage.createOrder).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -231,174 +143,99 @@ describe("CreateOrderHandler", () => {
     );
   });
 
-  it("does not fail when order confirmation email fails", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 100, name: "Game" });
-    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 30, ...data }));
+  it("returns 201 even when order confirmation email fails", async () => {
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data }));
     emailService.sendOrderConfirmation.mockRejectedValue(new Error("email failed"));
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: baseRequestBody() } as Request;
+    const req = makeRequest({ body: makeOrderBody() });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
   it("skips Stripe reconciliation in mock mode", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 100, name: "Game" });
-    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 40, ...data, paymentIntentId: "pi_1" }));
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data, paymentIntentId: "pi_1" }));
     stripeService.isMockMode.mockReturnValue(true);
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), paymentIntentId: "pi_1" } } as Request;
+    const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_1" }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(stripeService.getClient).not.toHaveBeenCalled();
     expect(paymentStatusService.applyPaymentStatusUpdate).not.toHaveBeenCalled();
   });
 
   it("reconciles Stripe payment when succeeded", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 100, name: "Game" });
+    const PAYMENT_INTENT_ID = "pi_50";
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
     mockedStorage.createOrder.mockImplementation(async (data: any) => ({
-      id: 50,
+      id: 1,
       ...data,
-      paymentIntentId: "pi_50",
+      paymentIntentId: PAYMENT_INTENT_ID,
       status: "PAYMENT_PENDING",
     }));
 
     const stripeClient = {
       paymentIntents: {
         update: jest.fn().mockResolvedValue({}),
-        retrieve: jest.fn().mockResolvedValue({ id: "pi_50", status: "succeeded" }),
+        retrieve: jest.fn().mockResolvedValue({ id: PAYMENT_INTENT_ID, status: "succeeded" }),
       },
     };
 
     stripeService.isMockMode.mockReturnValue(false);
     stripeService.getClient.mockReturnValue(stripeClient);
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), paymentIntentId: "pi_50" } } as Request;
+    const req = makeRequest({ body: makeOrderBody({ paymentIntentId: PAYMENT_INTENT_ID }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
-    expect(stripeClient.paymentIntents.update).toHaveBeenCalledWith("pi_50", {
-      metadata: { orderId: "50" },
+    expect(stripeClient.paymentIntents.update).toHaveBeenCalledWith(PAYMENT_INTENT_ID, {
+      metadata: { orderId: "1" },
     });
-    expect(stripeClient.paymentIntents.retrieve).toHaveBeenCalledWith("pi_50");
+    expect(stripeClient.paymentIntents.retrieve).toHaveBeenCalledWith(PAYMENT_INTENT_ID);
     expect(paymentStatusService.applyPaymentStatusUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         status: "COMPLETED",
-        paymentReference: "pi_50",
+        paymentReference: PAYMENT_INTENT_ID,
         paymentProvider: "stripe",
       })
     );
   });
 
-  it("returns 400 when firstName is missing", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
+  it.each([
+    ["firstName"],
+    ["lastName"],
+    ["email"],
+    ["phone"],
+    ["address"],
+    ["city"],
+    ["postalCode"],
+    ["country"],
+  ] as [string][])(
+    "returns 400 when %s is missing",
+    async (field) => {
+      const req = makeRequest({ body: makeOrderBody({ [field]: "" }) });
+      const res = makeResponse();
 
-    const req = { body: { ...baseRequestBody(), firstName: "" } } as Request;
-    const res = makeResponse();
+      await handler(req as Request, res as Response);
 
-    await handler(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ message: "Missing customer information" });
+    }
+  );
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Missing customer information" });
-  });
-
-  it("returns 400 when email is missing", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), email: "" } } as Request;
-    const res = makeResponse();
-
-    await handler(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Missing customer information" });
-  });
-
-  it("returns 400 when phone is missing", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), phone: "" } } as Request;
-    const res = makeResponse();
-
-    await handler(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Missing customer information" });
-  });
-
-  it("returns 400 when address is missing", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), address: "" } } as Request;
-    const res = makeResponse();
-
-    await handler(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Missing customer information" });
-  });
-
-  it("returns 400 when country is missing", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), country: "" } } as Request;
-    const res = makeResponse();
-
-    await handler(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Missing customer information" });
-  });
-
-  it("does not fail when Stripe reconciliation fails", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 100, name: "Game" });
+  it("returns 201 even when Stripe API update throws", async () => {
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
     mockedStorage.createOrder.mockImplementation(async (data: any) => ({
-      id: 60,
+      id: 1,
       ...data,
-      paymentIntentId: "pi_60",
+      paymentIntentId: "pi_stripe_fail",
     }));
 
     const stripeClient = {
@@ -411,33 +248,27 @@ describe("CreateOrderHandler", () => {
     stripeService.isMockMode.mockReturnValue(false);
     stripeService.getClient.mockReturnValue(stripeClient);
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), paymentIntentId: "pi_60" } } as Request;
+    const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_stripe_fail" }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
-  it("does not fail when payment status update fails", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 100, name: "Game" });
+  it("returns 201 even when payment status service throws", async () => {
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
     mockedStorage.createOrder.mockImplementation(async (data: any) => ({
-      id: 70,
+      id: 1,
       ...data,
-      paymentIntentId: "pi_70",
+      paymentIntentId: "pi_update_fail",
       status: "PAYMENT_PENDING",
     }));
 
     const stripeClient = {
       paymentIntents: {
         update: jest.fn().mockResolvedValue({}),
-        retrieve: jest.fn().mockResolvedValue({ id: "pi_70", status: "succeeded" }),
+        retrieve: jest.fn().mockResolvedValue({ id: "pi_update_fail", status: "succeeded" }),
       },
     };
 
@@ -445,99 +276,66 @@ describe("CreateOrderHandler", () => {
     stripeService.getClient.mockReturnValue(stripeClient);
     paymentStatusService.applyPaymentStatusUpdate.mockRejectedValue(new Error("Update failed"));
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), paymentIntentId: "pi_70" } } as Request;
+    const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_update_fail" }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
   it("uses paymentReference over paymentIntentId when both present", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 100, name: "Game" });
-    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 80, ...data }));
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data }));
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
+    const req = makeRequest({
+      body: makeOrderBody({ paymentIntentId: "pi_80", paymentReference: "ref_80", paymentProvider: "stripe" }),
     });
-
-    const req = {
-      body: {
-        ...baseRequestBody(),
-        paymentIntentId: "pi_80",
-        paymentReference: "ref_80",
-        paymentProvider: "stripe",
-      },
-    } as Request;
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(mockedStorage.createOrder).toHaveBeenCalledWith(
-      expect.objectContaining({
-        status: "PAYMENT_PENDING",
-        paymentReference: "ref_80",
-        paymentProvider: "stripe",
-      })
+      expect.objectContaining({ status: "PAYMENT_PENDING", paymentReference: "ref_80", paymentProvider: "stripe" })
     );
   });
 
-  it("does not reconcile payment status for payments with status other than succeeded", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 100, name: "Game" });
+  it("skips reconciliation when Stripe status is not succeeded", async () => {
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
     mockedStorage.createOrder.mockImplementation(async (data: any) => ({
-      id: 90,
+      id: 1,
       ...data,
-      paymentIntentId: "pi_90",
+      paymentIntentId: "pi_processing",
       status: "PAYMENT_PENDING",
     }));
 
     const stripeClient = {
       paymentIntents: {
         update: jest.fn().mockResolvedValue({}),
-        retrieve: jest.fn().mockResolvedValue({ id: "pi_90", status: "processing" }),
+        retrieve: jest.fn().mockResolvedValue({ id: "pi_processing", status: "processing" }),
       },
     };
 
     stripeService.isMockMode.mockReturnValue(false);
     stripeService.getClient.mockReturnValue(stripeClient);
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), paymentIntentId: "pi_90" } } as Request;
+    const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_processing" }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(paymentStatusService.applyPaymentStatusUpdate).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
-  it("returns order with all expected fields", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 99.99, name: "Game" });
-    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 100, ...data }));
+  it("persists all customer fields when creating an order", async () => {
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 99.99 }));
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data }));
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: baseRequestBody() } as Request;
+    const req = makeRequest({ body: makeOrderBody() });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(mockedStorage.createOrder).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -557,50 +355,38 @@ describe("CreateOrderHandler", () => {
   });
 
   it("returns 400 for negative quantity", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), quantity: -5 } } as Request;
+    const req = makeRequest({ body: makeOrderBody({ quantity: -5 }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: "Invalid order data" });
   });
 
-  it("does not update payment status when order is already PAID", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 100, name: "Game" });
+  it("skips applyPaymentStatusUpdate when order is already PAID", async () => {
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
     mockedStorage.createOrder.mockImplementation(async (data: any) => ({
-      id: 110,
+      id: 1,
       ...data,
-      paymentIntentId: "pi_110",
+      paymentIntentId: "pi_paid",
       status: "PAID",
     }));
 
     const stripeClient = {
       paymentIntents: {
         update: jest.fn().mockResolvedValue({}),
-        retrieve: jest.fn().mockResolvedValue({ id: "pi_110", status: "succeeded" }),
+        retrieve: jest.fn().mockResolvedValue({ id: "pi_paid", status: "succeeded" }),
       },
     };
 
     stripeService.isMockMode.mockReturnValue(false);
     stripeService.getClient.mockReturnValue(stripeClient);
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), paymentIntentId: "pi_110" } } as Request;
+    const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_paid" }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(stripeClient.paymentIntents.update).toHaveBeenCalled();
     expect(stripeClient.paymentIntents.retrieve).toHaveBeenCalled();
@@ -608,153 +394,58 @@ describe("CreateOrderHandler", () => {
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
-  it("rounds up delivery cost correctly", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 100, name: "Game" });
-    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 120, ...data }));
+  it("rounds up fractional delivery cost (ceil)", async () => {
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data }));
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = {
-      body: {
-        ...baseRequestBody(),
-        deliveryCost: 10.7,
-      },
-    } as Request;
+    const req = makeRequest({ body: makeOrderBody({ deliveryCost: 10.7 }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(mockedStorage.createOrder).toHaveBeenCalledWith(
-      expect.objectContaining({
-        total: 211,
-        deliveryCost: 11,
-      })
+      expect.objectContaining({ total: 211, deliveryCost: 11 })
     );
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
   it("uses zero delivery cost when undefined", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 50, name: "Game" });
-    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 130, ...data }));
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 50 }));
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data }));
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: baseRequestBody() } as Request;
+    const req = makeRequest({ body: makeOrderBody() });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(mockedStorage.createOrder).toHaveBeenCalledWith(
-      expect.objectContaining({
-        total: 100,
-        deliveryCost: 0,
-      })
+      expect.objectContaining({ total: 100, deliveryCost: 0 })
     );
   });
 
   it("uses zero delivery cost when NaN", async () => {
-    mockedStorage.getProduct.mockResolvedValue({ id: 1, price: 50, name: "Game" });
-    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 140, ...data }));
+    mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 50 }));
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data }));
 
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = {
-      body: {
-        ...baseRequestBody(),
-        deliveryCost: NaN,
-      },
-    } as Request;
+    const req = makeRequest({ body: makeOrderBody({ deliveryCost: NaN }) });
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(mockedStorage.createOrder).toHaveBeenCalledWith(
-      expect.objectContaining({
-        total: 100,
-        deliveryCost: 0,
-      })
+      expect.objectContaining({ total: 100, deliveryCost: 0 })
     );
   });
 
   it("returns 400 when InPost locker selected with empty deliveryPoint.id", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
+    const req = makeRequest({
+      body: makeOrderBody({ deliveryMethod: "INPOST_PACZKOMAT", deliveryPoint: { id: "" } }),
     });
-
-    const req = {
-      body: {
-        ...baseRequestBody(),
-        deliveryMethod: "INPOST_PACZKOMAT",
-        deliveryPoint: { id: "" },
-      },
-    } as Request;
     const res = makeResponse();
 
-    await handler(req, res);
+    await handler(req as Request, res as Response);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: "Missing InPost delivery point" });
-  });
-
-  it("returns 400 when lastName is missing", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), lastName: "" } } as Request;
-    const res = makeResponse();
-
-    await handler(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Missing customer information" });
-  });
-
-  it("returns 400 when city is missing", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), city: "" } } as Request;
-    const res = makeResponse();
-
-    await handler(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Missing customer information" });
-  });
-
-  it("returns 400 when postalCode is missing", async () => {
-    const handler = CreateOrderHandler({
-      emailService: emailService as any,
-      stripeService: stripeService as any,
-      paymentStatusService: paymentStatusService as any,
-    });
-
-    const req = { body: { ...baseRequestBody(), postalCode: "" } } as Request;
-    const res = makeResponse();
-
-    await handler(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Missing customer information" });
   });
 });
