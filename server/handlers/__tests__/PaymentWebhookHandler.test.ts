@@ -1,7 +1,6 @@
-import type { Request, Response } from "express";
+import type { Request } from "express";
 import { PaymentWebhookHandler } from "../PaymentWebhookHandler";
 import { storage } from "../../storage";
-import { AppConfig } from "../../config/appConfig";
 import crypto from "crypto";
 import { makeResponse } from "../../__tests__/helpers/httpMocks";
 import {

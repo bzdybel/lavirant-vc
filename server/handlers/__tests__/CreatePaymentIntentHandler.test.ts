@@ -1,7 +1,7 @@
-import type { Request, Response } from "express";
+import type { Request } from "express";
 import { CreatePaymentIntentHandler } from "../CreatePaymentIntentHandler";
 import { storage } from "../../storage";
-import { makeResponse, makeRequest } from "../../__tests__/helpers/httpMocks";
+import { makeResponse } from "../../__tests__/helpers/httpMocks";
 import { makeStripeServiceMock } from "../../__tests__/helpers/serviceMocks";
 
 jest.mock("../../storage", () => ({

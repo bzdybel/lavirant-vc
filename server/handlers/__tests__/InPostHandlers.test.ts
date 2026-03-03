@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Request } from "express";
 import { GetInPostConfigHandler } from "../InPostHandlers";
 import { AppConfig } from "../../config/appConfig";
 import { makeResponse } from "../../__tests__/helpers/httpMocks";
