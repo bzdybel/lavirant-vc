@@ -1,8 +1,8 @@
 module.exports = {
   preset: "ts-jest/presets/default-esm",
   testEnvironment: "node",
-  extensionsToTreatAsEsm: [".ts"],
-  moduleFileExtensions: ["ts", "js", "json"],
+  extensionsToTreatAsEsm: [".ts", ".tsx"],
+  moduleFileExtensions: ["ts", "tsx", "js", "json"],
 
   // Only run files that end in .test.ts — this prevents helper/fixture files
   // under __tests__/ directories from being mistakenly executed as test suites.
@@ -19,6 +19,6 @@ module.exports = {
     "^@shared/(.*)$": "<rootDir>/shared/$1",
   },
   transform: {
-    "^.+\\.ts$": ["ts-jest", { useESM: true, tsconfig: "<rootDir>/tsconfig.json" }],
+    "^.+\\.tsx?$": ["ts-jest", { useESM: true, tsconfig: "<rootDir>/tsconfig.json" }],
   },
 };

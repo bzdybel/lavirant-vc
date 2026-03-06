@@ -71,7 +71,7 @@ describe("generateInvoiceForOrder", () => {
     expect(result.invoiceNumber).toBe("FV/2024/0003");
     expect(result.invoicePdfPath).toBe("storage/invoices/existing.pdf");
     expect(mockStorage.getNextInvoiceNumber).not.toHaveBeenCalled();
-    expect(launchMock).not.toHaveBeenCalled();
+    expect(mockRenderInvoiceBuffer).not.toHaveBeenCalled();
   });
 
   it("generates invoice number when missing", async () => {
