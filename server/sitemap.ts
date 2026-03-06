@@ -19,12 +19,6 @@ export function setupSitemapRoute(app: express.Application) {
         lastmod: currentDate
       },
       {
-        loc: `${baseUrl}/checkout`,
-        changefreq: 'monthly',
-        priority: '0.8',
-        lastmod: currentDate
-      },
-      {
         loc: `${baseUrl}/Regulamin.pdf`,
         changefreq: 'yearly',
         priority: '0.3',

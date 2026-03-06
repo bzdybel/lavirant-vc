@@ -1,10 +1,9 @@
 import fs from "fs";
 import path from "path";
-import puppeteer from "puppeteer";
 import type { Order } from "@shared/types/order";
 import type { Product } from "@shared/types/product";
 import { storage } from "./storage";
-import { renderInvoiceHtml } from "./invoice/renderInvoiceHtml";
+import { renderInvoiceBuffer } from "./invoice/InvoiceDocument";
 import { AppConfig } from "./config/appConfig";
 
 interface InvoiceGenerationResult {
@@ -22,28 +21,6 @@ function ensureDirectoryExists(dirPath: string) {
 }
 
 
-interface PdfRenderer {
-  render(html: string, outputPath: string): Promise<void>;
-}
-
-class PuppeteerPdfRenderer implements PdfRenderer {
-  async render(html: string, outputPath: string): Promise<void> {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-
-    try {
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "networkidle0" });
-      await page.pdf({ path: outputPath, format: "A4", printBackground: true });
-    } finally {
-      await browser.close();
-    }
-  }
-}
-
-const pdfRenderer: PdfRenderer = new PuppeteerPdfRenderer();
 
 function getInvoiceStorageDir(): string {
   return AppConfig.INVOICE_STORAGE_DIR
@@ -91,8 +68,8 @@ export async function generateInvoiceForOrder(order: Order, product?: Product): 
 
   ensureDirectoryExists(storageDir);
 
-  const html = renderInvoiceHtml(order, product, invoiceNumber, issuedAt);
-  await pdfRenderer.render(html, absolutePath);
+  const buffer = await renderInvoiceBuffer(order, product, invoiceNumber, issuedAt);
+  fs.writeFileSync(absolutePath, buffer);
 
   return {
     invoiceNumber,

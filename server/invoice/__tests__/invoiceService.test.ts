@@ -1,7 +1,7 @@
 import fs from "fs";
 import { generateInvoiceForOrder } from "../../invoiceService";
 import { storage } from "../../storage";
-import { renderInvoiceHtml } from "../renderInvoiceHtml";
+import { renderInvoiceBuffer } from "../InvoiceDocument";
 import { AppConfig } from "../../config/appConfig";
 import type { Order } from "../../../shared/types/order";
 
@@ -16,21 +16,13 @@ jest.mock("../../storage", () => ({
     getNextInvoiceNumber: jest.fn(),
   },
 }));
-jest.mock("../renderInvoiceHtml", () => ({
-  renderInvoiceHtml: jest.fn(),
-}));
-
-const launchMock = jest.fn();
-jest.mock("puppeteer", () => ({
-  __esModule: true,
-  default: {
-    launch: (...args: unknown[]) => launchMock(...args),
-  },
+jest.mock("../InvoiceDocument", () => ({
+  renderInvoiceBuffer: jest.fn(),
 }));
 
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockStorage = storage as jest.Mocked<typeof storage>;
-const mockRenderInvoiceHtml = renderInvoiceHtml as jest.MockedFunction<typeof renderInvoiceHtml>;
+const mockRenderInvoiceBuffer = renderInvoiceBuffer as jest.MockedFunction<typeof renderInvoiceBuffer>;
 
 const baseOrder: Order = {
   id: 1,
@@ -54,18 +46,9 @@ describe("generateInvoiceForOrder", () => {
   beforeEach(() => {
     mockFs.existsSync.mockReturnValue(false);
     mockFs.mkdirSync.mockReturnValue(undefined as never);
+    mockFs.writeFileSync.mockReturnValue(undefined);
     mockStorage.getNextInvoiceNumber.mockResolvedValue("FV/2024/0001");
-    mockRenderInvoiceHtml.mockReturnValue("<html>invoice</html>");
-
-    const page = {
-      setContent: jest.fn().mockResolvedValue(undefined),
-      pdf: jest.fn().mockResolvedValue(undefined),
-    };
-
-    launchMock.mockResolvedValue({
-      newPage: jest.fn().mockResolvedValue(page),
-      close: jest.fn().mockResolvedValue(undefined),
-    });
+    mockRenderInvoiceBuffer.mockResolvedValue(Buffer.from("%PDF-mock"));
   });
 
   afterEach(() => {
@@ -122,20 +105,20 @@ describe("generateInvoiceForOrder", () => {
     expect(mockFs.mkdirSync).not.toHaveBeenCalled();
   });
 
-  it("renders html and creates pdf with expected options", async () => {
+  it("renders pdf with expected arguments", async () => {
     await generateInvoiceForOrder(baseOrder);
 
-    expect(mockRenderInvoiceHtml).toHaveBeenCalledWith(
+    expect(mockRenderInvoiceBuffer).toHaveBeenCalledWith(
       baseOrder,
       undefined,
       "FV/2024/0001",
       expect.any(Date)
     );
 
-    expect(launchMock).toHaveBeenCalledWith({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect.stringContaining(".pdf"),
+      expect.any(Buffer)
+    );
   });
 
   it("uses custom storage directory when configured", async () => {
@@ -155,9 +138,9 @@ describe("generateInvoiceForOrder", () => {
     await expect(generateInvoiceForOrder(baseOrder)).rejects.toThrow("db down");
   });
 
-  it("propagates puppeteer launch errors", async () => {
-    launchMock.mockRejectedValue(new Error("launch failed"));
+  it("propagates pdf render errors", async () => {
+    mockRenderInvoiceBuffer.mockRejectedValue(new Error("render failed"));
 
-    await expect(generateInvoiceForOrder(baseOrder)).rejects.toThrow("launch failed");
+    await expect(generateInvoiceForOrder(baseOrder)).rejects.toThrow("render failed");
   });
 });
