@@ -1,13 +1,9 @@
 import {
-  type User,
-  type InsertUser,
   type Product,
-  type InsertProduct,
   type Order,
   type InsertOrder,
   type Shipment,
   type InsertShipment,
-  users,
   products,
   orders,
   shipments,
@@ -33,14 +29,9 @@ export interface WebhookEventRecord {
 }
 
 export interface IStorage {
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-
   // Products
   getAllProducts(): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
-  createProduct(product: InsertProduct): Promise<Product>;
 
   // Orders
   createOrder(order: InsertOrder): Promise<Order>;
@@ -64,21 +55,6 @@ export class DbStorage implements IStorage {
     return getDb();
   }
 
-  async getUser(id: number): Promise<User | undefined> {
-    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
-    return result[0];
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
-    return result[0];
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await this.db.insert(users).values(insertUser).returning();
-    return result[0];
-  }
-
   async getAllProducts(): Promise<Product[]> {
     return this.db.select().from(products);
   }
@@ -88,15 +64,9 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const result = await this.db.insert(products).values(insertProduct).returning();
-    return result[0];
-  }
-
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
     const values: InsertOrder = {
       ...insertOrder,
-      userId: insertOrder.userId ?? null,
       productId: insertOrder.productId ?? null,
       deliveryCost: insertOrder.deliveryCost ?? 0,
       deliveryMethod: insertOrder.deliveryMethod ?? null,

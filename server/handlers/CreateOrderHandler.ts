@@ -64,7 +64,6 @@ async function createOrderRecord(
   const paymentRef = resolvePaymentReference(request);
 
   return await storage.createOrder({
-    userId: null,
     productId: request.productId,
     quantity: request.quantity,
     total,

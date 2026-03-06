@@ -3,7 +3,7 @@ import type { InpostDeliveryMethod } from "./inpost";
 
 export interface Order {
   id: number;
-  userId?: number | null;
+
   productId?: number | null;
   quantity: number;
   total: number;
