@@ -13,10 +13,14 @@ import { StripeService } from "./services/StripeService";
 import { AppConfig } from "./config/appConfig";
 import { errorHandler } from "./middleware/errorHandler";
 import { requestLogger } from "./middleware/requestLogger";
+import { securityHeaders } from "./middleware/securityHeaders";
 import { getEnvironment } from "./config/environment";
 import { Prerequisites } from "./config/prerequisites";
 
 const app = express();
+
+// Apply security headers to all responses
+app.use(securityHeaders);
 
 app.use((req, res, next) => {
   if (req.path === "/api/payments/webhook") {
