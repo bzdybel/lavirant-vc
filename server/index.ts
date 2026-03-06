@@ -3,7 +3,7 @@ const envPath = process.env.DOTENV_CONFIG_PATH ?? ".env";
 dotenv.config({ path: envPath });
 
 import express from "express";
-import { serveStatic, log } from "./vite";
+import { serveStatic, setupVite, log } from "./vite";
 import { registerRoutes } from "./routes";
 import { setupSitemapRoute } from "./sitemap";
 import { PaymentStatusJob } from "./jobs/PaymentStatusJob";
@@ -76,7 +76,11 @@ app.use(requestLogger);
   // Apply error handling middleware (must be last)
   app.use(errorHandler);
 
-  serveStatic(app);
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
 
   const port = AppConfig.PORT;
   server.listen({
