@@ -1,5 +1,7 @@
+import path from "path";
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { sql } from "drizzle-orm";
 import * as schema from "./db/schema";
 import { products } from "./db/schema";
@@ -30,8 +32,6 @@ export function getDb() {
   return dbInstance;
 }
 
-const REQUIRED_TABLES = ["users", "products", "orders", "shipments", "webhook_events"];
-
 export async function initializeDatabase(): Promise<void> {
   const pool = getPool();
   const db = getDb();
@@ -42,15 +42,9 @@ export async function initializeDatabase(): Promise<void> {
     throw error;
   }
 
-  const result = await pool.query(
-    "select table_name from information_schema.tables where table_schema = 'public'"
-  );
-  const existing = new Set(result.rows.map((row) => String(row.table_name)));
-  const missing = REQUIRED_TABLES.filter((table) => !existing.has(table));
-
-  if (missing.length > 0) {
-    throw new Error(`[DB] Missing tables: ${missing.join(", ")}. Run migrations before starting.`);
-  }
+  const migrationsFolder = path.resolve(process.cwd(), "migrations");
+  await migrate(db, { migrationsFolder });
+  console.log("[DB] Migrations applied");
 
   console.log("[DB] Connected to PostgreSQL");
 

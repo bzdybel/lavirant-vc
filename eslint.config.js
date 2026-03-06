@@ -5,7 +5,18 @@ import tsParser from '@typescript-eslint/parser';
 
 export default [
   {
-    ignores: ['node_modules', 'dist']
+    ignores: [
+      'node_modules',
+      'dist',
+      'build',
+      'coverage',
+      'package-lock.json',
+      'vite.config.ts',
+      'drizzle.config.ts',
+      'tailwind.config.ts',
+      'postcss.config.js',
+      'client/server/**'
+    ]
   },
   js.configs.recommended,
   {
