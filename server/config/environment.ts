@@ -1,13 +1,4 @@
 import { z } from "zod";
-import * as fs from "fs";
-import crypto from "crypto";
-
-/**
- * Environment Schema Definition
- *
- * Centralized Zod schema for all environment variables.
- * Provides type safety and runtime validation.
- */
 
 const Port = z.coerce.number().int().positive().min(1).max(65535);
 const Email = z.string().email();
@@ -84,7 +75,6 @@ class ProcessEnvironmentLoader implements EnvironmentLoader {
 
   load(): Environment {
     try {
-      console.log("Loading environment, DATABASE_PATH:", process.env.DATABASE_PATH);
       this._env = EnvironmentSchema.parse(process.env);
       return this._env;
     } catch (error) {
@@ -95,112 +85,6 @@ class ProcessEnvironmentLoader implements EnvironmentLoader {
         });
       }
       throw new Error("Failed to load environment configuration");
-    }
-  }
-
-  reload(): Environment {
-    this._env = null;
-    return this.load();
-  }
-
-  get<K extends keyof Environment>(key: K): Environment[K] {
-    if (!this._env) {
-      this.load();
-    }
-    return this._env![key];
-  }
-}
-
-class CachedEnvironmentLoader implements EnvironmentLoader {
-  private _env: Environment | null = null;
-  private _hash: string | null = null;
-
-  private computeHash(env: NodeJS.ProcessEnv): string {
-    return crypto
-      .createHash("sha256")
-      .update(JSON.stringify(env))
-      .digest("hex");
-  }
-
-  load(): Environment {
-    const currentHash = this.computeHash(process.env);
-
-    if (this._env && this._hash === currentHash) {
-      return this._env;
-    }
-
-    try {
-      this._env = EnvironmentSchema.parse(process.env);
-      this._hash = currentHash;
-      return this._env;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        console.error("❌ Environment validation failed:");
-        error.errors.forEach((err) => {
-          console.error(`  - ${err.path.join(".")}: ${err.message}`);
-        });
-      }
-      throw new Error("Failed to load environment configuration");
-    }
-  }
-
-  reload(): Environment {
-    this._env = null;
-    this._hash = null;
-    return this.load();
-  }
-
-  get<K extends keyof Environment>(key: K): Environment[K] {
-    if (!this._env) {
-      this.load();
-    }
-    return this._env![key];
-  }
-}
-
-class EncryptedEnvironmentLoader implements EnvironmentLoader {
-  private _env: Environment | null = null;
-
-  constructor(
-    private secretsPath: string,
-    private decryptionKey: string
-  ) {}
-
-  private decrypt(data: string): string {
-    const parts = data.split(":");
-    const iv = Buffer.from(parts[0], "hex");
-    const encrypted = Buffer.from(parts[1], "hex");
-    const decipher = crypto.createDecipheriv(
-      "aes-256-gcm",
-      Buffer.from(this.decryptionKey, "hex"),
-      iv
-    );
-
-    let decrypted = decipher.update(encrypted);
-    decrypted = Buffer.concat([decrypted, decipher.final()]);
-    return decrypted.toString();
-  }
-
-  load(): Environment {
-    if (!fs.existsSync(this.secretsPath)) {
-      throw new Error(`Secrets file not found: ${this.secretsPath}`);
-    }
-
-    try {
-      const encryptedData = fs.readFileSync(this.secretsPath, "utf-8");
-      const decryptedData = this.decrypt(encryptedData);
-      const envData = JSON.parse(decryptedData);
-
-      this._env = EnvironmentSchema.parse(envData);
-      return this._env;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        console.error("❌ Environment validation failed:");
-        error.errors.forEach((err) => {
-          console.error(`  - ${err.path.join(".")}: ${err.message}`);
-        });
-      }
-      throw new Error("Failed to load encrypted environment configuration");
     }
   }
 
@@ -218,30 +102,7 @@ class EncryptedEnvironmentLoader implements EnvironmentLoader {
 }
 
 export function createEnvironmentLoader(): EnvironmentLoader {
-  const nodeEnv = process.env.NODE_ENV || "development";
-
-  switch (nodeEnv) {
-    case "test":
-      return new ProcessEnvironmentLoader();
-
-    case "development":
-    case "staging":
-      return new CachedEnvironmentLoader();
-
-    case "production": {
-      const secretsPath = process.env.SECRETS_PATH;
-      const decryptionKey = process.env.DECRYPTION_KEY;
-
-      if (secretsPath && decryptionKey) {
-        return new EncryptedEnvironmentLoader(secretsPath, decryptionKey);
-      }
-
-      return new CachedEnvironmentLoader();
-    }
-
-    default:
-      return new CachedEnvironmentLoader();
-  }
+  return new ProcessEnvironmentLoader();
 }
 
 let _globalLoader: EnvironmentLoader | null = null;
