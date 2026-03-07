@@ -2,13 +2,9 @@ name: Deploy
 
 on:
   push:
-    branches: [master]
+    branches:
+      - main
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "Branch to deploy from"
-        required: false
-        default: ""
 
 concurrency:
   group: ci-deploy-${{ github.ref }}
