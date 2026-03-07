@@ -23,6 +23,7 @@ export const orders = sqliteTable("orders", {
   status: text("status").notNull(), // 'CREATED', 'PAYMENT_PENDING', 'PAID', 'FAILED'
   shipmentId: text("shipment_id"),
   shipmentStatus: text("shipment_status"),
+  shipmentPollFailures: integer("shipment_poll_failures").notNull().default(0),
   trackingNumber: text("tracking_number"),
   labelGenerated: integer("label_generated", { mode: "boolean" }),
   paymentIntentId: text("payment_intent_id"),

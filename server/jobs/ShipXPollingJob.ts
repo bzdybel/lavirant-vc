@@ -1,4 +1,5 @@
 import { Cron } from "croner";
+import pRetry from "p-retry";
 import type { ShipXShipmentDetails } from "../../lib/inpost/types";
 import { getShipXClient, ShipXError } from "../../lib/inpost/shipxClient";
 import { storage } from "../storage";
@@ -7,48 +8,17 @@ import { AppConfig } from "../config/appConfig";
 import { JobConfig } from "../constants/jobConfig";
 import { LogPrefix } from "../constants/logPrefixes";
 
-/**
- * Retry Utility
- */
-class RetryHelper {
-  static async withRetry<T>(
-    action: () => Promise<T>,
-    maxAttempts: number = JobConfig.SHIPX_RETRY_ATTEMPTS,
-    baseDelayMs: number = JobConfig.SHIPX_RETRY_BASE_DELAY_MS
-  ): Promise<T> {
-    let attempt = 0;
-
-    while (true) {
-      try {
-        return await action();
-      } catch (error) {
-        attempt += 1;
-
-        if (!this.isRetryableError(error) || attempt >= maxAttempts) {
-          throw error;
-        }
-
-        const backoff = baseDelayMs * attempt;
-        await this.delay(backoff);
-      }
-    }
-  }
-
-  private static isRetryableError(error: unknown): boolean {
-    if (error instanceof ShipXError) {
-      return error.status >= 500;
-    }
-
-    if (error instanceof Error) {
-      return error.name === "FetchError" || error.name === "TypeError";
-    }
-
-    return false;
-  }
-
-  private static delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
+function shipxRetry<T>(action: () => Promise<T>): Promise<T> {
+  return pRetry(action, {
+    retries: JobConfig.SHIPX_RETRY_ATTEMPTS - 1,
+    minTimeout: JobConfig.SHIPX_RETRY_BASE_DELAY_MS,
+    factor: 1,
+    shouldRetry: (error) => {
+      if (error instanceof ShipXError) return error.status >= 500;
+      if (error instanceof Error) return error.name === "FetchError" || error.name === "TypeError";
+      return false;
+    },
+  });
 }
 
 /**
@@ -59,6 +29,7 @@ class RetryHelper {
  */
 export class ShipXPollingJob {
   private job: Cron | null = null;
+  private consecutiveFailures = 0;
 
   /**
    * Starts the ShipX polling job
@@ -73,14 +44,42 @@ export class ShipXPollingJob {
     const pattern = `*/${intervalMinutes} * * * *`;
 
     this.job = new Cron(pattern, { protect: true }, () => {
-      this.runJob().catch((error) => {
-        console.error("❌ ShipX polling failed:", error);
-      });
+      this.runJob()
+        .then(() => {
+          this.consecutiveFailures = 0;
+        })
+        .catch((error) => {
+          this.consecutiveFailures++;
+          if (this.consecutiveFailures >= JobConfig.SHIPX_CONSECUTIVE_FAILURE_ALERT_THRESHOLD) {
+            console.error(
+              `❌ [CRITICAL] ShipX polling failed ${this.consecutiveFailures} times consecutively:`,
+              error
+            );
+          } else {
+            console.error("❌ ShipX polling failed:", error);
+          }
+        });
     });
 
-    // Run immediately
-    this.job.trigger().catch((error) => {
-      console.error("❌ ShipX polling initial run failed:", error);
+    // Run immediately; on failure retry once after a short delay (e.g. DB not yet ready at boot)
+    this.job.trigger().catch((initialError) => {
+      console.warn(
+        `⚠️ ShipX polling initial run failed, retrying in ${JobConfig.SHIPX_INITIAL_TRIGGER_RETRY_DELAY_MS / 1000}s:`,
+        initialError
+      );
+      setTimeout(() => {
+        this.runJob()
+          .then(() => {
+            this.consecutiveFailures = 0;
+          })
+          .catch((retryError) => {
+            this.consecutiveFailures++;
+            console.error(
+              `❌ ShipX polling initial retry also failed. Next attempt in ${intervalMinutes}min:`,
+              retryError
+            );
+          });
+      }, JobConfig.SHIPX_INITIAL_TRIGGER_RETRY_DELAY_MS);
     });
   }
 
@@ -137,7 +136,7 @@ export class ShipXPollingJob {
     });
 
     try {
-      const shipment = await RetryHelper.withRetry(() =>
+      const shipment = await shipxRetry(() =>
         client.request<ShipXShipmentDetails>(
           `/v1/shipments/${order.shipmentId}`,
           { method: "GET" }
@@ -145,12 +144,31 @@ export class ShipXPollingJob {
       );
 
       await this.updateShipmentStatus(order, shipment, client);
+      if (order.shipmentPollFailures > 0) {
+        await storage.updateOrder(order.id, { shipmentPollFailures: 0 }).catch(() => {});
+      }
     } catch (error) {
-      console.error("❌ ShipX polling failed for shipment", {
-        orderId: order.id,
-        shipmentId: order.shipmentId,
-        error,
-      });
+      const failures = order.shipmentPollFailures + 1;
+
+      if (failures >= JobConfig.SHIPX_ORDER_MAX_POLL_FAILURES) {
+        console.error(`❌ [CRITICAL] ShipX polling for order ${order.id} exceeded max failures (${failures}/${JobConfig.SHIPX_ORDER_MAX_POLL_FAILURES}), marking as polling_failed`, {
+          orderId: order.id,
+          shipmentId: order.shipmentId,
+          error,
+        });
+        await updateOrderShipmentState(order, { shipmentStatus: "polling_failed" }).catch((markError) => {
+          console.error("❌ Failed to mark order as polling_failed", { orderId: order.id, markError });
+        });
+      } else {
+        console.error("❌ ShipX polling failed for shipment", {
+          orderId: order.id,
+          shipmentId: order.shipmentId,
+          attempt: failures,
+          maxAttempts: JobConfig.SHIPX_ORDER_MAX_POLL_FAILURES,
+          error,
+        });
+        await storage.updateOrder(order.id, { shipmentPollFailures: failures }).catch(() => {});
+      }
     }
   }
 
@@ -194,7 +212,7 @@ export class ShipXPollingJob {
     existingShipment: any
   ): Promise<void> {
     try {
-      await RetryHelper.withRetry(() =>
+      await shipxRetry(() =>
         client.requestBinary(
           `/v1/shipments/${order.shipmentId}/label?format=pdf`,
           { method: "GET" }

@@ -1,0 +1,1 @@
+ALTER TABLE `orders` ADD `shipment_poll_failures` integer DEFAULT 0 NOT NULL;

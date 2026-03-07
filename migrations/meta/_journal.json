@@ -8,6 +8,13 @@
       "when": 1772891990827,
       "tag": "0000_cynical_zaladane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1772909508006,
+      "tag": "0001_perfect_wraith",
+      "breakpoints": true
     }
   ]
 }
