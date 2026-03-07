@@ -2,7 +2,7 @@
 
 set -e
 
-cd "$(dirname "$0")/.."
+cd "$(git rev-parse --show-toplevel)"
 
 OUTPUT_DIRECTORY="dist"
 
@@ -13,7 +13,7 @@ echo "Cleaning build directory"
 rm -rf $OUTPUT_DIRECTORY
 
 echo "Installing dependencies"
-npm install
+npm ci
 
 echo "Building frontend (vite)"
 npx vite build --mode production
