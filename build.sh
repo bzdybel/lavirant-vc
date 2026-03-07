@@ -10,7 +10,7 @@ echo "Cleaning build directory"
 rm -rf $OUTPUT_DIRECTORY
 
 echo "Installing dependencies"
-npm ci
+npm install
 
 echo "Environment: production"
 export NODE_ENV=production
