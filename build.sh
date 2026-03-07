@@ -6,14 +6,14 @@ cd "$(git rev-parse --show-toplevel)"
 
 OUTPUT_DIRECTORY="dist"
 
-echo "Environment: production"
-export NODE_ENV="production"
-
 echo "Cleaning build directory"
 rm -rf $OUTPUT_DIRECTORY
 
 echo "Installing dependencies"
 npm ci
+
+echo "Environment: production"
+export NODE_ENV=production
 
 echo "Building frontend (vite)"
 npx vite build --mode production
