@@ -1,0 +1,15 @@
+# Robots.txt for Lavirant - SEO optimization
+# Allows all search engines to crawl the entire site
+
+User-agent: *
+Allow: /
+
+# Disallow admin/checkout processing pages to avoid duplicate content issues
+Disallow: /order-success
+Disallow: /order-failure
+
+# Sitemap location for search engines
+Sitemap: https://lavirant.pl/sitemap.xml
+
+# Crawl-delay to be polite to search engines
+Crawl-delay: 1

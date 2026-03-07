@@ -1,3 +1,4 @@
+/* eslint-disable react/no-multi-comp */
 import * as React from "react"
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
@@ -16,7 +17,7 @@ type CarouselProps = {
   opts?: CarouselOptions
   plugins?: CarouselPlugin
   orientation?: "horizontal" | "vertical"
-  setApi?: (api: CarouselApi) => void
+  setApi?: (_api: CarouselApi) => void
 }
 
 type CarouselContextProps = {

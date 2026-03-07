@@ -1,69 +1,96 @@
-import express, { type Request, Response, NextFunction } from "express";
+import dotenv from "dotenv";
+const envPath = process.env.DOTENV_CONFIG_PATH ?? ".env";
+dotenv.config({ path: envPath });
+
+import express from "express";
+import { serveStatic, setupVite, log } from "./vite";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupSitemapRoute } from "./sitemap";
+import { PaymentStatusJob } from "./jobs/PaymentStatusJob";
+import { ShipXPollingJob } from "./jobs/ShipXPollingJob";
+import { initializeDatabase } from "./db";
+import { AppConfig } from "./config/appConfig";
+import { errorHandler } from "./middleware/errorHandler";
+import { requestLogger } from "./middleware/requestLogger";
+import { securityHeaders } from "./middleware/securityHeaders";
+import { getEnvironment } from "./config/environment";
+import { Prerequisites } from "./config/prerequisites";
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// Apply security headers in production only.
+// In development, Vite's HMR preamble is an inline <script type="module"> that
+// would be blocked by CSP, breaking React Fast Refresh.
+if (process.env.NODE_ENV === "production") {
+  app.use(securityHeaders);
+}
 
 app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
+  if (req.path === "/api/payments/webhook") {
+    return next();
+  }
+  return express.json()(req, res, next);
 });
 
+app.use((req, res, next) => {
+  if (req.path === "/api/payments/webhook") {
+    return next();
+  }
+  return express.urlencoded({ extended: false })(req, res, next);
+});
+
+// Apply request logging middleware
+app.use(requestLogger);
+
 (async () => {
-  const server = await registerRoutes(app);
+  // Load and validate environment
+  const env = getEnvironment();
+  Prerequisites.validateOrExit(env);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+  // Initialize services after environment is validated
+  const { initializeServices, getEmailService, getStripeService, getPaymentStatusService, getShippingService } = await import("./services/init");
 
-    res.status(status).json({ message });
-    throw err;
+  initializeServices();
+  const emailService = getEmailService();
+  const stripeService = getStripeService();
+  const paymentStatusService = getPaymentStatusService();
+  const shippingService = getShippingService();
+
+  // Validate runtime configuration
+  AppConfig.validateRuntimeConfig();
+
+  await initializeDatabase();
+
+  const server = await registerRoutes(app, {
+    emailService,
+    stripeService,
+    paymentStatusService,
+    shippingService,
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Initialize and start background jobs
+  const paymentStatusJob = new PaymentStatusJob(stripeService, paymentStatusService);
+  const shipXPollingJob = new ShipXPollingJob();
+
+  paymentStatusJob.start();
+  shipXPollingJob.start();
+
+  // Setup SEO sitemap route
+  setupSitemapRoute(app);
+
+  // Apply error handling middleware (must be last)
+  app.use(errorHandler);
+
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = AppConfig.PORT;
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host: AppConfig.HOST,
   }, () => {
     log(`serving on port ${port}`);
   });
