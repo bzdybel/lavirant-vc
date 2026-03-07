@@ -19,8 +19,12 @@ import { Prerequisites } from "./config/prerequisites";
 
 const app = express();
 
-// Apply security headers to all responses
-app.use(securityHeaders);
+// Apply security headers in production only.
+// In development, Vite's HMR preamble is an inline <script type="module"> that
+// would be blocked by CSP, breaking React Fast Refresh.
+if (process.env.NODE_ENV === "production") {
+  app.use(securityHeaders);
+}
 
 app.use((req, res, next) => {
   if (req.path === "/api/payments/webhook") {
