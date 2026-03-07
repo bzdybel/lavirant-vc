@@ -1,12 +1,8 @@
 import Stripe from "stripe";
-import { AppConfig } from "../config/appConfig";
 import { LogPrefix } from "../constants/logPrefixes";
 import { ServiceUnavailableError } from "../errors/AppError";
 import { StripePaymentIntentStatus, PaymentWebhookStatus, type PaymentWebhookStatusType } from "../constants/paymentStatus";
 
-/**
- * Stripe Payment Intent Create Parameters
- */
 export interface CreatePaymentIntentParams {
   amount: number;
   orderId?: number;
@@ -14,83 +10,54 @@ export interface CreatePaymentIntentParams {
   shippingCost?: number;
 }
 
-/**
- * Stripe Payment Intent Response
- */
 export interface PaymentIntentResponse {
   clientSecret: string;
   paymentIntentId: string;
 }
 
-/**
- * Stripe Service
- *
- * Encapsulates all Stripe integration logic.
- * Single Responsibility: Manage Stripe client and payment operations.
- */
-export class StripeService {
-  private readonly client: Stripe | null;
-  private readonly useMockMode: boolean;
+export interface StripeConfig {
+  secretKey: string;
+  webhookSecret: string;
+}
 
-  constructor() {
-    this.useMockMode = AppConfig.USE_MOCK_STRIPE;
-    this.client = this.initializeClient();
+export interface IStripeService {
+  isAvailable(): boolean;
+  createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntentResponse>;
+  retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent>;
+  updatePaymentIntentMetadata(paymentIntentId: string, metadata: Record<string, string>): Promise<Stripe.PaymentIntent>;
+  constructWebhookEvent(rawBody: Buffer, signature: string, webhookSecret: string): any;
+  getWebhookSecret(): string;
+}
+
+export function mapStripeStatus(status: string): PaymentWebhookStatusType {
+  switch (status) {
+    case StripePaymentIntentStatus.SUCCEEDED:
+      return PaymentWebhookStatus.COMPLETED;
+    case StripePaymentIntentStatus.CANCELED:
+    case StripePaymentIntentStatus.REQUIRES_PAYMENT_METHOD:
+      return PaymentWebhookStatus.FAILED;
+    default:
+      return PaymentWebhookStatus.PENDING;
   }
+}
 
-  /**
-   * Initializes Stripe client
-   */
-  private initializeClient(): Stripe | null {
-    if (this.useMockMode || !AppConfig.STRIPE_SECRET_KEY) {
-      return null;
-    }
+export class StripeServiceReal implements IStripeService {
+  private readonly client: Stripe;
 
-    return new Stripe(AppConfig.STRIPE_SECRET_KEY, {
+  constructor(private readonly config: StripeConfig) {
+    this.client = new Stripe(config.secretKey, {
       apiVersion: "2025-08-27.basil",
     });
   }
 
-  /**
-   * Validates Stripe configuration and logs status
-   */
-  static validateConfiguration(): void {
-    if (!AppConfig.STRIPE_SECRET_KEY && !AppConfig.USE_MOCK_STRIPE) {
-      console.warn("Missing STRIPE_SECRET_KEY environment variable. Payment functionality will be disabled.");
-    }
-
-    if (AppConfig.USE_MOCK_STRIPE) {
-      console.log("🔧 Running in MOCK STRIPE mode for development");
-    }
-  }
-
-  /**
-   * Checks if Stripe is available (not in mock mode)
-   */
   isAvailable(): boolean {
-    return !this.useMockMode && this.client !== null;
+    return true;
   }
 
-  /**
-   * Checks if running in mock mode
-   */
-  isMockMode(): boolean {
-    return this.useMockMode;
-  }
-
-  /**
-   * Gets the Stripe client instance
-   * @throws ServiceUnavailableError if Stripe is not configured
-   */
   getClient(): Stripe {
-    if (!this.client) {
-      throw new ServiceUnavailableError("Stripe", "Stripe is not configured");
-    }
     return this.client;
   }
 
-  /**
-   * Creates a payment intent (real or mock)
-   */
   async createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntentResponse> {
     const { amount, orderId, itemsTotal, shippingCost } = params;
 
@@ -98,6 +65,7 @@ export class StripeService {
     const finalShippingCost = Number.isFinite(shippingCost) ? shippingCost! : 0;
     const finalAmount = finalItemsTotal + finalShippingCost || amount;
     const normalizedFinalAmount = Math.round(finalAmount * 100) / 100;
+    const amountInCents = Math.round(normalizedFinalAmount * 100);
 
     console.log(`${LogPrefix.STRIPE} Payment Intent Creation`, {
       itemsTotal: finalItemsTotal,
@@ -105,27 +73,14 @@ export class StripeService {
       finalAmount: normalizedFinalAmount,
       amountFromFrontend: amount,
       orderId,
-      stripeMode: this.client ? "live" : "mock",
     });
-
-    // Mock mode
-    if (this.useMockMode) {
-      return this.createMockPaymentIntent(normalizedFinalAmount, finalItemsTotal, finalShippingCost);
-    }
-
-    // Real Stripe
-    if (!this.client) {
-      throw new ServiceUnavailableError("Stripe", "Stripe is not configured");
-    }
-
-    const amountInCents = Math.round(normalizedFinalAmount * 100);
 
     const paymentIntent = await this.client.paymentIntents.create({
       amount: amountInCents,
       currency: "pln",
       automatic_payment_methods: {
         enabled: true,
-        allow_redirects: 'always',
+        allow_redirects: "always",
       },
       metadata: {
         ...(orderId ? { orderId: String(orderId) } : {}),
@@ -140,9 +95,6 @@ export class StripeService {
       paymentIntentId: paymentIntent.id,
       amountInCents,
       amountInPLN: normalizedFinalAmount,
-      itemsTotal: finalItemsTotal,
-      shippingCost: finalShippingCost,
-      metadata: paymentIntent.metadata,
     });
 
     return {
@@ -151,68 +103,80 @@ export class StripeService {
     };
   }
 
-  /**
-   * Creates a mock payment intent for development
-   */
-  private createMockPaymentIntent(
-    amount: number,
-    itemsTotal: number,
-    shippingCost: number
-  ): PaymentIntentResponse {
+  async retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
+    return this.client.paymentIntents.retrieve(paymentIntentId);
+  }
+
+  async updatePaymentIntentMetadata(
+    paymentIntentId: string,
+    metadata: Record<string, string>
+  ): Promise<Stripe.PaymentIntent> {
+    return this.client.paymentIntents.update(paymentIntentId, { metadata });
+  }
+
+  constructWebhookEvent(rawBody: Buffer, signature: string, webhookSecret: string): any {
+    return this.client.webhooks.constructEvent(rawBody, signature, webhookSecret);
+  }
+
+  getWebhookSecret(): string {
+    return this.config.webhookSecret;
+  }
+
+  static mapStripeStatus(status: string): PaymentWebhookStatusType {
+    return mapStripeStatus(status);
+  }
+}
+
+export class StripeServiceNoop implements IStripeService {
+  isAvailable(): boolean {
+    return false;
+  }
+
+  async createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntentResponse> {
+    const { amount, orderId, itemsTotal, shippingCost } = params;
+
+    const finalItemsTotal = Number.isFinite(itemsTotal) ? itemsTotal! : 0;
+    const finalShippingCost = Number.isFinite(shippingCost) ? shippingCost! : 0;
+    const finalAmount = finalItemsTotal + finalShippingCost || amount;
+    const normalizedFinalAmount = Math.round(finalAmount * 100) / 100;
+
     const mockId = `mock_pi_${Date.now()}`;
     const mockClientSecret = `${mockId}_secret_${Math.random().toString(36).substring(7)}`;
 
     console.log("🧪 Mock payment intent created", {
       mockId,
-      amount,
-      itemsTotal,
-      shippingCost,
+      amount: normalizedFinalAmount,
+      itemsTotal: finalItemsTotal,
+      shippingCost: finalShippingCost,
+      orderId,
     });
 
-    return {
-      clientSecret: mockClientSecret,
-      paymentIntentId: mockId,
-    };
+    return { clientSecret: mockClientSecret, paymentIntentId: mockId };
   }
 
-  /**
-   * Retrieves an existing payment intent
-   */
-  async retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
-    const client = this.getClient();
-    return client.paymentIntents.retrieve(paymentIntentId);
+  async retrievePaymentIntent(_paymentIntentId: string): Promise<Stripe.PaymentIntent> {
+    throw new ServiceUnavailableError("Stripe", "Stripe is not configured");
   }
 
-  /**
-   * Updates payment intent metadata
-   */
   async updatePaymentIntentMetadata(
-    paymentIntentId: string,
-    metadata: Record<string, string>
+    _paymentIntentId: string,
+    _metadata: Record<string, string>
   ): Promise<Stripe.PaymentIntent> {
-    const client = this.getClient();
-    return client.paymentIntents.update(paymentIntentId, { metadata });
+    throw new ServiceUnavailableError("Stripe", "Stripe is not configured");
   }
 
-  /**
-   * Maps Stripe payment intent status to webhook status
-   */
-  static mapStripeStatus(status: string): PaymentWebhookStatusType {
-    switch (status) {
-      case StripePaymentIntentStatus.SUCCEEDED:
-        return PaymentWebhookStatus.COMPLETED;
-      case StripePaymentIntentStatus.CANCELED:
-      case StripePaymentIntentStatus.REQUIRES_PAYMENT_METHOD:
-        return PaymentWebhookStatus.FAILED;
-      default:
-        return PaymentWebhookStatus.PENDING;
+  constructWebhookEvent(rawBody: Buffer, _signature: string, _webhookSecret: string): any {
+    try {
+      return JSON.parse(rawBody.toString("utf8"));
+    } catch {
+      throw new ServiceUnavailableError("Stripe", "Failed to parse webhook payload");
     }
   }
 
-  /**
-   * Gets webhook secret
-   */
   getWebhookSecret(): string {
-    return AppConfig.STRIPE_WEBHOOK_SECRET || "";
+    return "";
   }
 }
+
+// Backward-compatible alias used by PaymentStatusJob and tests
+export { StripeServiceReal as StripeService };

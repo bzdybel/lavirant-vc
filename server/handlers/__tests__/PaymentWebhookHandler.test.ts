@@ -72,8 +72,6 @@ describe("PaymentWebhookHandler", () => {
     emailService = makeEmailServiceMock();
     stripeService = makeStripeServiceMock();
     stripeService.isAvailable.mockReturnValue(true);
-    stripeService.isMockMode.mockReturnValue(false);
-    stripeService.getClient.mockReturnValue(null);
     paymentStatusService = makePaymentStatusServiceMock();
     paymentStatusService.applyPaymentStatusUpdate.mockImplementation(async (params: any) => ({
       ...params.order,
@@ -86,15 +84,7 @@ describe("PaymentWebhookHandler", () => {
 
   describe("Signature Verification", () => {
     it("returns 401 when Stripe signature is invalid", async () => {
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockImplementation(() => {
-            throw new Error("Invalid signature");
-          }),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockImplementation(() => { throw new Error("Invalid signature"); });
 
       const handler = PaymentWebhookHandler({
         emailService: emailService as any,
@@ -128,13 +118,7 @@ describe("PaymentWebhookHandler", () => {
     it("processes webhook when Stripe signature is valid", async () => {
       const payload = makeStripePayload("succeeded", 1);
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -165,13 +149,13 @@ describe("PaymentWebhookHandler", () => {
 
       await handler(req, res);
 
-      expect(stripeClient.webhooks.constructEvent).toHaveBeenCalled();
+      expect(stripeService.constructWebhookEvent).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ received: true });
     });
 
     it("bypasses Stripe signature verification in mock mode", async () => {
-      stripeService.isMockMode.mockReturnValue(true);
+      stripeService.isAvailable.mockReturnValue(false);
 
       const payload = makeStripePayload("succeeded", 1);
 
@@ -348,13 +332,7 @@ describe("PaymentWebhookHandler", () => {
         },
       };
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       const handler = PaymentWebhookHandler({
         emailService: emailService as any,
@@ -382,13 +360,7 @@ describe("PaymentWebhookHandler", () => {
     it("processes payment_intent.succeeded events", async () => {
       const payload = makeStripePayload("succeeded", 1);
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -429,13 +401,7 @@ describe("PaymentWebhookHandler", () => {
     it("returns 200 with duplicate flag for already processed events", async () => {
       const payload = makeStripePayload("succeeded", 1);
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
       mockedStorage.hasProcessedWebhookEvent.mockResolvedValue(true);
 
       const handler = PaymentWebhookHandler({
@@ -465,13 +431,7 @@ describe("PaymentWebhookHandler", () => {
     it("processes new events normally", async () => {
       const payload = makeStripePayload("succeeded", 1);
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
       mockedStorage.hasProcessedWebhookEvent.mockResolvedValue(false);
 
       mockedStorage.getOrder.mockResolvedValue({
@@ -513,13 +473,7 @@ describe("PaymentWebhookHandler", () => {
     it("finds order by orderId from metadata", async () => {
       const payload = makeStripePayload("succeeded", 42);
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 42,
@@ -557,13 +511,7 @@ describe("PaymentWebhookHandler", () => {
     it("finds order by payment reference when orderId not in metadata", async () => {
       const payload = makeStripePayload("succeeded");
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue(undefined);
       mockedStorage.getOrderByPaymentReference.mockResolvedValue({
@@ -603,13 +551,7 @@ describe("PaymentWebhookHandler", () => {
     it("returns 202 when order not found", async () => {
       const payload = makeStripePayload("succeeded");
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue(undefined);
       mockedStorage.getOrderByPaymentReference.mockResolvedValue(undefined);
@@ -640,13 +582,7 @@ describe("PaymentWebhookHandler", () => {
     it("returns 200 with already_paid when order is already PAID", async () => {
       const payload = makeStripePayload("succeeded", 1);
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -686,13 +622,7 @@ describe("PaymentWebhookHandler", () => {
       const payload = makeStripePayload("succeeded", 1);
       payload.data.object.amount = 15000;
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -737,13 +667,7 @@ describe("PaymentWebhookHandler", () => {
       payload.data.object.amount = 12000;
       (payload.data.object.metadata as any).shippingCost = 2000;
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -788,13 +712,7 @@ describe("PaymentWebhookHandler", () => {
       payload.data.object.amount = 12500;
       (payload.data.object.metadata as any).shippingCost = 2500.7;
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -837,13 +755,7 @@ describe("PaymentWebhookHandler", () => {
       const payload = makeStripePayload("succeeded", 1);
       payload.data.object.amount = 10000;
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -881,13 +793,7 @@ describe("PaymentWebhookHandler", () => {
       const payload = makeStripePayload("succeeded", 1);
       payload.data.object.amount = 15000;
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -932,13 +838,7 @@ describe("PaymentWebhookHandler", () => {
     it("calls paymentStatusService with correct parameters", async () => {
       const payload = makeStripePayload("succeeded", 1);
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -981,13 +881,7 @@ describe("PaymentWebhookHandler", () => {
     it("records successful webhook event when payment status is PAID", async () => {
       const payload = makeStripePayload("succeeded", 1);
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -1033,13 +927,7 @@ describe("PaymentWebhookHandler", () => {
     it("returns 200 after successful processing", async () => {
       const payload = makeStripePayload("succeeded", 1);
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -1130,13 +1018,7 @@ describe("PaymentWebhookHandler", () => {
     it("handles non-Buffer request body", async () => {
       const payload = makeStripePayload("succeeded", 1);
 
-      const stripeClient = {
-        webhooks: {
-          constructEvent: jest.fn().mockReturnValue(payload),
-        },
-      };
-
-      stripeService.getClient.mockReturnValue(stripeClient);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,

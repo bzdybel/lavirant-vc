@@ -1,13 +1,13 @@
 import type { Request, Response } from "express";
-import type { EmailService } from "../services/EmailService";
-import type { StripeService } from "../services/StripeService";
+import type { IEmailService } from "../services/EmailService";
+import type { IStripeService } from "../services/StripeService";
 import type { PaymentStatusService } from "../services/PaymentStatusService";
 import type { Order } from "@shared/types/order";
 import { storage } from "../storage";
 
 interface CreateOrderDependencies {
-  emailService: EmailService;
-  stripeService: StripeService;
+  emailService: IEmailService;
+  stripeService: IStripeService;
   paymentStatusService: PaymentStatusService;
 }
 
@@ -87,7 +87,7 @@ async function createOrderRecord(
   });
 }
 
-function sendOrderConfirmationEmail(order: any, product: any, emailService: EmailService): Promise<any> {
+function sendOrderConfirmationEmail(order: any, product: any, emailService: IEmailService): Promise<any> {
   return emailService.sendOrderConfirmation({
     orderId: order.id,
     firstName: order.firstName,
@@ -105,20 +105,15 @@ function sendOrderConfirmationEmail(order: any, product: any, emailService: Emai
 }
 
 async function reconcileStripePayment(order: any, product: any, deps: CreateOrderDependencies): Promise<void> {
-  if (!order.paymentIntentId || deps.stripeService.isMockMode()) {
+  if (!order.paymentIntentId || !deps.stripeService.isAvailable()) {
     return;
   }
 
-  const stripe = deps.stripeService.getClient();
-  if (!stripe) {
-    return;
-  }
-
-  await stripe.paymentIntents.update(order.paymentIntentId, {
-    metadata: { orderId: String(order.id) },
+  await deps.stripeService.updatePaymentIntentMetadata(order.paymentIntentId, {
+    orderId: String(order.id),
   });
 
-  const paymentIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
+  const paymentIntent = await deps.stripeService.retrievePaymentIntent(order.paymentIntentId);
 
   if (paymentIntent.status === "succeeded" && order.status !== "PAID") {
     await deps.paymentStatusService.applyPaymentStatusUpdate({

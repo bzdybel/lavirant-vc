@@ -156,17 +156,17 @@ describe("CreateOrderHandler", () => {
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
-  it("skips Stripe reconciliation in mock mode", async () => {
+  it("skips Stripe reconciliation when service is not available", async () => {
     mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
     mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data, paymentIntentId: "pi_1" }));
-    stripeService.isMockMode.mockReturnValue(true);
+    stripeService.isAvailable.mockReturnValue(false);
 
     const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_1" }) });
     const res = makeResponse();
 
     await handler(req as Request, res as Response);
 
-    expect(stripeService.getClient).not.toHaveBeenCalled();
+    expect(stripeService.updatePaymentIntentMetadata).not.toHaveBeenCalled();
     expect(paymentStatusService.applyPaymentStatusUpdate).not.toHaveBeenCalled();
   });
 
@@ -180,25 +180,17 @@ describe("CreateOrderHandler", () => {
       status: "PAYMENT_PENDING",
     }));
 
-    const stripeClient = {
-      paymentIntents: {
-        update: jest.fn().mockResolvedValue({}),
-        retrieve: jest.fn().mockResolvedValue({ id: PAYMENT_INTENT_ID, status: "succeeded" }),
-      },
-    };
-
-    stripeService.isMockMode.mockReturnValue(false);
-    stripeService.getClient.mockReturnValue(stripeClient);
+    stripeService.isAvailable.mockReturnValue(true);
+    stripeService.updatePaymentIntentMetadata.mockResolvedValue({});
+    stripeService.retrievePaymentIntent.mockResolvedValue({ id: PAYMENT_INTENT_ID, status: "succeeded" } as any);
 
     const req = makeRequest({ body: makeOrderBody({ paymentIntentId: PAYMENT_INTENT_ID }) });
     const res = makeResponse();
 
     await handler(req as Request, res as Response);
 
-    expect(stripeClient.paymentIntents.update).toHaveBeenCalledWith(PAYMENT_INTENT_ID, {
-      metadata: { orderId: "1" },
-    });
-    expect(stripeClient.paymentIntents.retrieve).toHaveBeenCalledWith(PAYMENT_INTENT_ID);
+    expect(stripeService.updatePaymentIntentMetadata).toHaveBeenCalledWith(PAYMENT_INTENT_ID, { orderId: "1" });
+    expect(stripeService.retrievePaymentIntent).toHaveBeenCalledWith(PAYMENT_INTENT_ID);
     expect(paymentStatusService.applyPaymentStatusUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         status: "COMPLETED",
@@ -238,15 +230,8 @@ describe("CreateOrderHandler", () => {
       paymentIntentId: "pi_stripe_fail",
     }));
 
-    const stripeClient = {
-      paymentIntents: {
-        update: jest.fn().mockRejectedValue(new Error("Stripe API error")),
-        retrieve: jest.fn(),
-      },
-    };
-
-    stripeService.isMockMode.mockReturnValue(false);
-    stripeService.getClient.mockReturnValue(stripeClient);
+    stripeService.isAvailable.mockReturnValue(true);
+    stripeService.updatePaymentIntentMetadata.mockRejectedValue(new Error("Stripe API error"));
 
     const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_stripe_fail" }) });
     const res = makeResponse();
@@ -265,15 +250,9 @@ describe("CreateOrderHandler", () => {
       status: "PAYMENT_PENDING",
     }));
 
-    const stripeClient = {
-      paymentIntents: {
-        update: jest.fn().mockResolvedValue({}),
-        retrieve: jest.fn().mockResolvedValue({ id: "pi_update_fail", status: "succeeded" }),
-      },
-    };
-
-    stripeService.isMockMode.mockReturnValue(false);
-    stripeService.getClient.mockReturnValue(stripeClient);
+    stripeService.isAvailable.mockReturnValue(true);
+    stripeService.updatePaymentIntentMetadata.mockResolvedValue({});
+    stripeService.retrievePaymentIntent.mockResolvedValue({ id: "pi_update_fail", status: "succeeded" } as any);
     paymentStatusService.applyPaymentStatusUpdate.mockRejectedValue(new Error("Update failed"));
 
     const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_update_fail" }) });
@@ -309,15 +288,9 @@ describe("CreateOrderHandler", () => {
       status: "PAYMENT_PENDING",
     }));
 
-    const stripeClient = {
-      paymentIntents: {
-        update: jest.fn().mockResolvedValue({}),
-        retrieve: jest.fn().mockResolvedValue({ id: "pi_processing", status: "processing" }),
-      },
-    };
-
-    stripeService.isMockMode.mockReturnValue(false);
-    stripeService.getClient.mockReturnValue(stripeClient);
+    stripeService.isAvailable.mockReturnValue(true);
+    stripeService.updatePaymentIntentMetadata.mockResolvedValue({});
+    stripeService.retrievePaymentIntent.mockResolvedValue({ id: "pi_processing", status: "processing" } as any);
 
     const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_processing" }) });
     const res = makeResponse();
@@ -373,23 +346,17 @@ describe("CreateOrderHandler", () => {
       status: "PAID",
     }));
 
-    const stripeClient = {
-      paymentIntents: {
-        update: jest.fn().mockResolvedValue({}),
-        retrieve: jest.fn().mockResolvedValue({ id: "pi_paid", status: "succeeded" }),
-      },
-    };
-
-    stripeService.isMockMode.mockReturnValue(false);
-    stripeService.getClient.mockReturnValue(stripeClient);
+    stripeService.isAvailable.mockReturnValue(true);
+    stripeService.updatePaymentIntentMetadata.mockResolvedValue({});
+    stripeService.retrievePaymentIntent.mockResolvedValue({ id: "pi_paid", status: "succeeded" } as any);
 
     const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_paid" }) });
     const res = makeResponse();
 
     await handler(req as Request, res as Response);
 
-    expect(stripeClient.paymentIntents.update).toHaveBeenCalled();
-    expect(stripeClient.paymentIntents.retrieve).toHaveBeenCalled();
+    expect(stripeService.updatePaymentIntentMetadata).toHaveBeenCalled();
+    expect(stripeService.retrievePaymentIntent).toHaveBeenCalled();
     expect(paymentStatusService.applyPaymentStatusUpdate).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(201);
   });

@@ -1,12 +1,15 @@
 import { PaymentStatusJob } from '../PaymentStatusJob';
-import { StripeService } from '../../services/StripeService';
+import { mapStripeStatus } from '../../services/StripeService';
+import type { IStripeService } from '../../services/StripeService';
 import type { PaymentStatusService } from '../../services/PaymentStatusService';
 import { storage } from '../../storage';
 import { AppConfig } from '../../config/appConfig';
 
 // Mock dependencies
 jest.mock('../../storage');
-jest.mock('../../services/StripeService');
+jest.mock('../../services/StripeService', () => ({
+  mapStripeStatus: jest.fn().mockReturnValue('COMPLETED'),
+}));
 jest.mock('../../config/appConfig', () => ({
   AppConfig: {
     PAYMENT_STATUS_JOB_INTERVAL_MINUTES: 5,
@@ -17,7 +20,7 @@ jest.mock('../../config/appConfig', () => ({
 
 describe('PaymentStatusJob', () => {
   let job: PaymentStatusJob;
-  let mockStripeService: jest.Mocked<StripeService>;
+  let mockStripeService: jest.Mocked<IStripeService>;
   let mockPaymentStatusService: jest.Mocked<PaymentStatusService>;
   let consoleSpy: jest.SpyInstance;
 
@@ -48,7 +51,7 @@ describe('PaymentStatusJob', () => {
       applyPaymentStatusUpdate: jest.fn().mockResolvedValue(undefined),
     } as any;
 
-    (StripeService.mapStripeStatus as jest.Mock) = jest.fn().mockReturnValue('COMPLETED');
+    (mapStripeStatus as jest.Mock).mockReturnValue('COMPLETED');
     (storage.listOrdersByStatus as jest.Mock) = jest.fn().mockResolvedValue([mockOrder]);
     (storage.getProduct as jest.Mock) = jest.fn().mockResolvedValue({ id: 'prod_123', name: 'Test Product' });
 

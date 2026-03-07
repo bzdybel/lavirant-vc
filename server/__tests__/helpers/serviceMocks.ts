@@ -16,9 +16,18 @@ export function makeEmailServiceMock() {
 
 export function makeStripeServiceMock() {
   return {
-    isMockMode: jest.fn().mockReturnValue(true),
     isAvailable: jest.fn().mockReturnValue(true),
-    getClient: jest.fn().mockReturnValue(null),
+    createPaymentIntent: jest.fn().mockResolvedValue({
+      clientSecret: 'mock_secret',
+      paymentIntentId: 'mock_pi_123',
+    }),
+    retrievePaymentIntent: jest.fn().mockResolvedValue({
+      id: 'mock_pi_123',
+      client_secret: 'mock_secret',
+    }),
+    updatePaymentIntentMetadata: jest.fn().mockResolvedValue({}),
+    constructWebhookEvent: jest.fn().mockReturnValue(null),
+    getWebhookSecret: jest.fn().mockReturnValue(''),
   };
 }
 

@@ -9,7 +9,6 @@ import { setupSitemapRoute } from "./sitemap";
 import { PaymentStatusJob } from "./jobs/PaymentStatusJob";
 import { ShipXPollingJob } from "./jobs/ShipXPollingJob";
 import { initializeDatabase } from "./db";
-import { StripeService } from "./services/StripeService";
 import { AppConfig } from "./config/appConfig";
 import { errorHandler } from "./middleware/errorHandler";
 import { requestLogger } from "./middleware/requestLogger";
@@ -60,8 +59,6 @@ app.use(requestLogger);
   // Validate runtime configuration
   AppConfig.validateRuntimeConfig();
 
-  StripeService.validateConfiguration();
-  emailService.initialize();
   await initializeDatabase();
 
   const server = await registerRoutes(app, {

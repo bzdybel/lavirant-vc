@@ -1,5 +1,5 @@
 import { storage } from "../storage";
-import { StripeService } from "../services/StripeService";
+import { type IStripeService, mapStripeStatus } from "../services/StripeService";
 import type { PaymentStatusService } from "../services/PaymentStatusService";
 import { AppConfig } from "../config/appConfig";
 import { LogPrefix } from "../constants/logPrefixes";
@@ -14,7 +14,7 @@ export class PaymentStatusJob {
   private intervalId: NodeJS.Timeout | null = null;
 
   constructor(
-    private readonly stripeService: StripeService,
+    private readonly stripeService: IStripeService,
     private readonly paymentStatusService: PaymentStatusService
   ) {}
 
@@ -98,7 +98,7 @@ export class PaymentStatusJob {
 
     try {
       const paymentIntent = await this.stripeService.retrievePaymentIntent(order.paymentIntentId);
-      const mappedStatus = StripeService.mapStripeStatus(paymentIntent.status);
+      const mappedStatus = mapStripeStatus(paymentIntent.status);
 
       console.log(`${LogPrefix.PAYMENT} Payment intent retrieved`, {
         orderId: order.id,

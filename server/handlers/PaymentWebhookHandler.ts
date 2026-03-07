@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import crypto from "crypto";
 import type { PaymentWebhookStatusType } from "../constants/paymentStatus";
-import type { EmailService } from "../services/EmailService";
-import type { StripeService } from "../services/StripeService";
+import type { IEmailService } from "../services/EmailService";
+import type { IStripeService } from "../services/StripeService";
 import type { PaymentStatusService } from "../services/PaymentStatusService";
 import type { Order } from "@shared/types/order";
 import { storage } from "../storage";
@@ -17,8 +17,8 @@ interface ParsedWebhookData {
 }
 
 interface WebhookDependencies {
-  emailService: EmailService;
-  stripeService: StripeService;
+  emailService: IEmailService;
+  stripeService: IStripeService;
   paymentStatusService: PaymentStatusService;
 }
 
@@ -134,13 +134,11 @@ async function verifyWebhookSignature(
   hmacSignature: string | undefined,
   deps: WebhookDependencies
 ): Promise<any | null> {
-  const stripe = deps.stripeService.isAvailable() ? deps.stripeService.getClient() : null;
-  const useMockStripe = deps.stripeService.isMockMode();
   const webhookSecret = AppConfig.PAYMENT_WEBHOOK_SECRET;
   const stripeWebhookSecret = AppConfig.STRIPE_WEBHOOK_SECRET;
 
   if (stripeSignature) {
-    if (useMockStripe) {
+    if (!deps.stripeService.isAvailable()) {
       try {
         return JSON.parse(rawBody.toString("utf8"));
       } catch {
@@ -149,7 +147,7 @@ async function verifyWebhookSignature(
     }
 
     try {
-      return stripe!.webhooks.constructEvent(rawBody, stripeSignature, stripeWebhookSecret!);
+      return deps.stripeService.constructWebhookEvent(rawBody, stripeSignature, stripeWebhookSecret!);
     } catch {
       return null;
     }

@@ -4,41 +4,22 @@ import { getShipXClient, ShipXError } from "../../lib/inpost/shipxClient";
 import type { ShipXShipmentDetails } from "../../lib/inpost/types";
 import type { ShipmentOutput } from "../shipping/ShippingProvider";
 import { InPostProvider } from "../shipping/InPostProvider";
-import { AppConfig } from "../config/appConfig";
+import { MockInPostProvider } from "../shipping/MockInPostProvider";
 import { LogPrefix } from "../constants/logPrefixes";
-import { ConfigurationError } from "../errors/AppError";
 
-/**
- * Shipping Service
- *
- * Manages shipment creation, purchasing, and status updates.
- * Single Responsibility: Orchestrate shipping workflows with providers.
- */
-export class ShippingService {
+export interface IShippingService {
+  onOrderPaid(order: Order): Promise<ShipmentOutput | null>;
+  createShipment(order: Order): Promise<ShipmentOutput | null>;
+  markShipped(orderId: number): Promise<{ shipmentId: number; trackingNumber: string; trackingUrl: string } | null>;
+}
+
+export class ShippingServiceReal implements IShippingService {
   private readonly provider: InPostProvider;
 
   constructor() {
-    this.provider = this.initializeProvider();
+    this.provider = new InPostProvider();
   }
 
-  /**
-   * Initializes the shipping provider
-   */
-  private initializeProvider(): InPostProvider {
-    if (AppConfig.MOCK_INPOST) {
-      throw new ConfigurationError("MOCK_INPOST cannot be used in runtime or E2E mode");
-    }
-
-    if (AppConfig.SHIPPING_PROVIDER !== "INPOST") {
-      throw new ConfigurationError("Only INPOST provider is allowed in runtime");
-    }
-
-    return new InPostProvider();
-  }
-
-  /**
-   * Handles post-payment shipment workflow
-   */
   async onOrderPaid(order: Order): Promise<ShipmentOutput | null> {
     console.log(`${LogPrefix.ORDER_PAID} orderId=${order.id}`);
 
@@ -69,9 +50,6 @@ export class ShippingService {
     return shipmentOutput;
   }
 
-  /**
-   * Ensures shipment exists for order, creating if necessary
-   */
   private async ensureShipmentExists(order: Order): Promise<ShipmentOutput | null> {
     const existing = await storage.getShipmentByOrderId(order.id);
 
@@ -88,9 +66,6 @@ export class ShippingService {
     return this.createShipment(order);
   }
 
-  /**
-   * Ensures shipment has a selected offer ID, fetching if necessary
-   */
   private async ensureSelectedOfferId(
     order: Order,
     shipmentRecord: { id: number; providerShipmentId: string | null; selectedOfferId: string | null; status: string | null }
@@ -134,9 +109,6 @@ export class ShippingService {
     }
   }
 
-  /**
-   * Purchases a shipment with InPost
-   */
   private async buyShipment(
     order: Order,
     providerShipmentId: string,
@@ -155,30 +127,17 @@ export class ShippingService {
 
       const boughtAt = new Date().toISOString();
 
-      await storage.updateShipment(shipmentId, {
-        boughtAt,
-        status: "buy_pending",
-      });
-
-      await storage.updateOrder(order.id, {
-        shipmentStatus: "buy_pending",
-      });
+      await storage.updateShipment(shipmentId, { boughtAt, status: "buy_pending" });
+      await storage.updateOrder(order.id, { shipmentStatus: "buy_pending" });
 
       console.log(`${LogPrefix.SHIPX} Shipment buy initiated shipmentId=${providerShipmentId}`);
     } catch (error) {
       const message = error instanceof ShipXError ? error.message : (error as Error).message;
-
-      await storage.updateShipment(shipmentId, {
-        buyError: message || "ShipX buy failed",
-      });
-
+      await storage.updateShipment(shipmentId, { buyError: message || "ShipX buy failed" });
       console.error(`${LogPrefix.SHIPX} Shipment buy failed shipmentId=${providerShipmentId}`);
     }
   }
 
-  /**
-   * Creates a new shipment for an order
-   */
   async createShipment(order: Order): Promise<ShipmentOutput | null> {
     const existing = await storage.getShipmentByOrderId(order.id);
 
@@ -192,8 +151,7 @@ export class ShippingService {
       };
     }
 
-    const environment = AppConfig.INPOST_SHIPX_ENV;
-    console.log(`${LogPrefix.SHIPX} Creating shipment via REAL ShipX sandbox orderId=${order.id} environment=${environment}`);
+    console.log(`${LogPrefix.SHIPX} Creating shipment via ShipX orderId=${order.id}`);
 
     const shipment = await this.provider.createShipment({ order });
     const normalizedStatus = shipment.status === "SHIPPED" ? "SHIPPED" : "CREATED";
@@ -222,35 +180,92 @@ export class ShippingService {
       labelGenerated: false,
     });
 
-    return {
-      ...shipment,
-      status: normalizedStatus,
-    };
+    return { ...shipment, status: normalizedStatus };
   }
 
-  /**
-   * Marks a shipment as shipped
-   */
   async markShipped(orderId: number): Promise<{ shipmentId: number; trackingNumber: string; trackingUrl: string } | null> {
     const existing = await storage.getShipmentByOrderId(orderId);
-
-    if (!existing) {
-      return null;
-    }
+    if (!existing) return null;
 
     const updated = await storage.updateShipment(existing.id, {
       status: "SHIPPED",
       shippedAt: new Date().toISOString(),
     });
 
-    if (!updated) {
-      return null;
-    }
+    if (!updated) return null;
 
-    return {
-      shipmentId: updated.id,
-      trackingNumber: updated.trackingNumber,
-      trackingUrl: updated.trackingUrl,
-    };
+    return { shipmentId: updated.id, trackingNumber: updated.trackingNumber, trackingUrl: updated.trackingUrl };
   }
 }
+
+export class ShippingServiceNoop implements IShippingService {
+  private readonly provider: MockInPostProvider;
+
+  constructor() {
+    this.provider = new MockInPostProvider();
+    console.log("🧪 ShippingServiceNoop: using mock InPost provider");
+  }
+
+  async onOrderPaid(order: Order): Promise<ShipmentOutput | null> {
+    console.log(`${LogPrefix.ORDER_PAID} [Noop] orderId=${order.id}`);
+    return this.createShipment(order);
+  }
+
+  async createShipment(order: Order): Promise<ShipmentOutput | null> {
+    const existing = await storage.getShipmentByOrderId(order.id);
+
+    if (existing) {
+      return {
+        provider: existing.provider,
+        trackingNumber: existing.trackingNumber,
+        trackingUrl: existing.trackingUrl,
+        status: existing.status === "SHIPPED" ? "SHIPPED" : "CREATED",
+        shipmentId: existing.providerShipmentId ?? undefined,
+      };
+    }
+
+    const shipment = await this.provider.createShipment({ order });
+
+    console.log(`${LogPrefix.SHIPX} [Noop] Mock shipment created orderId=${order.id} shipmentId=${shipment.shipmentId ?? ""}`);
+
+    await storage.createShipment({
+      orderId: order.id,
+      provider: shipment.provider,
+      providerShipmentId: shipment.shipmentId ?? null,
+      selectedOfferId: null,
+      trackingNumber: shipment.trackingNumber,
+      trackingUrl: shipment.trackingUrl,
+      status: "CREATED",
+      boughtAt: null,
+      buyError: null,
+      createdAt: new Date().toISOString(),
+      shippedAt: null,
+    });
+
+    await storage.updateOrder(order.id, {
+      shipmentId: shipment.shipmentId ?? null,
+      shipmentStatus: "CREATED",
+      trackingNumber: shipment.trackingNumber,
+      labelGenerated: false,
+    });
+
+    return { ...shipment, status: "CREATED" };
+  }
+
+  async markShipped(orderId: number): Promise<{ shipmentId: number; trackingNumber: string; trackingUrl: string } | null> {
+    const existing = await storage.getShipmentByOrderId(orderId);
+    if (!existing) return null;
+
+    const updated = await storage.updateShipment(existing.id, {
+      status: "SHIPPED",
+      shippedAt: new Date().toISOString(),
+    });
+
+    if (!updated) return null;
+
+    return { shipmentId: updated.id, trackingNumber: updated.trackingNumber, trackingUrl: updated.trackingUrl };
+  }
+}
+
+// Backward-compatible alias
+export { ShippingServiceReal as ShippingService };

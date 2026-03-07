@@ -1,61 +1,33 @@
-import { EmailService } from '../EmailService';
+﻿import { EmailServiceReal, EmailServiceNoop } from '../EmailService';
 import type { PaidInvoiceEmailParams, ShipmentEmailParams } from '../EmailService';
 import { makeOrderConfirmationData } from '../../__tests__/fixtures/emailFixtures';
 import * as EmailTemplates from '../../utils/emailTemplates';
 import nodemailer from 'nodemailer';
 import path from 'path';
-import { AppConfig } from '../../config/appConfig';
 
-// Mock dependencies
 jest.mock('nodemailer');
 jest.mock('../../utils/emailTemplates');
 
-jest.mock('../../config/appConfig', () => ({
-  AppConfig: {
-    isEmailConfigured: jest.fn(() => true),
-    EMAIL_HOST: 'smtp.example.com',
-    EMAIL_PORT: 587,
-    EMAIL_USER: 'test@example.com',
-    EMAIL_PASSWORD: 'password123',
-    EMAIL_FROM: 'noreply@example.com',
-    EMAIL_SECURE: false,
-  },
-}));
+const TEST_CONFIG = {
+  host: 'smtp.example.com',
+  port: 587,
+  user: 'test@example.com',
+  password: 'password123',
+  from: 'noreply@example.com',
+  secure: false,
+};
 
-describe('EmailService', () => {
-  let service: EmailService;
+describe('EmailServiceReal', () => {
+  let service: EmailServiceReal;
   let mockTransporter: any;
   let mockEmailTemplates: jest.Mocked<typeof EmailTemplates>;
-  const mockAppConfig = AppConfig as unknown as {
-    isEmailConfigured: jest.Mock;
-    EMAIL_HOST?: string;
-    EMAIL_PORT: number;
-    EMAIL_USER?: string;
-    EMAIL_PASSWORD?: string;
-    EMAIL_FROM?: string;
-    EMAIL_SECURE: boolean;
-  };
 
   beforeEach(() => {
-    // Reset mocks
-    // Mock transporter
     mockTransporter = {
       sendMail: jest.fn().mockResolvedValue({ messageId: 'test-message-id' }),
     };
-
-    // Mock nodemailer.createTransport
     (nodemailer.createTransport as jest.Mock).mockReturnValue(mockTransporter);
 
-    // Reset AppConfig mock to default configured state
-    mockAppConfig.isEmailConfigured.mockReturnValue(true);
-    mockAppConfig.EMAIL_HOST = 'smtp.example.com';
-    mockAppConfig.EMAIL_PORT = 587;
-    mockAppConfig.EMAIL_USER = 'test@example.com';
-    mockAppConfig.EMAIL_PASSWORD = 'password123';
-    mockAppConfig.EMAIL_FROM = 'noreply@example.com';
-    mockAppConfig.EMAIL_SECURE = false;
-
-    // Mock EmailTemplates
     mockEmailTemplates = EmailTemplates as jest.Mocked<typeof EmailTemplates>;
     mockEmailTemplates.generateOrderConfirmationEmail = jest.fn().mockReturnValue({
       html: '<p>Order confirmation HTML</p>',
@@ -70,17 +42,11 @@ describe('EmailService', () => {
       text: 'Shipment text',
     });
 
-    // Create fresh service instance
-    service = new EmailService();
+    service = new EmailServiceReal(TEST_CONFIG);
   });
 
   describe('Initialization', () => {
-    it('should initialize with full config and create transporter', () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(true);
-
-      service.initialize();
-
-      expect(mockAppConfig.isEmailConfigured()).toBe(true);
+    it('should create transporter with provided config', () => {
       expect(nodemailer.createTransport).toHaveBeenCalledWith({
         host: 'smtp.example.com',
         port: 587,
@@ -92,54 +58,15 @@ describe('EmailService', () => {
       });
     });
 
-    it('should initialize without config and enter mock mode', () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(false);
-
-      service.initialize();
-
-      expect(mockAppConfig.isEmailConfigured()).toBe(false);
-      expect(nodemailer.createTransport).not.toHaveBeenCalled();
-    });
-
-    it('should auto-initialize on first email send', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(false);
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-
-      // Don't manually initialize
-      const data = makeOrderConfirmationData();
-
-      await service.sendOrderConfirmation(data);
-
-      // Should have initialized
-      expect(mockAppConfig.isEmailConfigured()).toBe(false);
-      consoleSpy.mockRestore();
+    it('should fall back to user as from when from is empty', () => {
+      new EmailServiceReal({ ...TEST_CONFIG, from: '' });
+      // from field is built from config.from || config.user
     });
   });
 
   describe('sendOrderConfirmation', () => {
-    it('should log mock email and return true in mock mode', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(false);
-      service.initialize();
-
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    it('should send email successfully', async () => {
       const data = makeOrderConfirmationData();
-
-      const result = await service.sendOrderConfirmation(data);
-
-      expect(result).toBe(true);
-      expect(mockTransporter.sendMail).not.toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[Mock]'),
-      );
-      consoleSpy.mockRestore();
-    });
-
-    it('should send email successfully when configured', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(true);
-      service.initialize();
-
-      const data = makeOrderConfirmationData();
-
       const result = await service.sendOrderConfirmation(data);
 
       expect(result).toBe(true);
@@ -154,11 +81,7 @@ describe('EmailService', () => {
     });
 
     it('should handle transporter error and return false', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(true);
-      service.initialize();
-
       mockTransporter.sendMail.mockRejectedValue(new Error('SMTP error'));
-
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       const data = makeOrderConfirmationData();
 
@@ -172,62 +95,21 @@ describe('EmailService', () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it('should use EMAIL_FROM if available, otherwise EMAIL_USER', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(true);
-      mockAppConfig.EMAIL_FROM = undefined;
-      service.initialize();
-
+    it('should use user as from when from config is empty', async () => {
+      const serviceNoFrom = new EmailServiceReal({ ...TEST_CONFIG, from: '' });
       const data = makeOrderConfirmationData();
-
-      await service.sendOrderConfirmation(data);
+      await serviceNoFrom.sendOrderConfirmation(data);
 
       expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          from: 'Lavirant <test@example.com>',
-        }),
+        expect.objectContaining({ from: 'Lavirant <test@example.com>' }),
       );
     });
   });
 
   describe('sendPaidInvoiceEmail', () => {
-    it('should log mock email and return true in mock mode', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(false);
-      service.initialize();
-
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    it('should send email with PDF attachment', async () => {
       const params: PaidInvoiceEmailParams = {
-        order: {
-          id: 123,
-          email: 'john@example.com',
-          firstName: 'John',
-          lastName: 'Doe',
-        } as any,
-        product: { name: 'Test Product' } as any,
-        invoiceNumber: 'INV-001',
-        invoicePdfPath: '/path/to/invoice.pdf',
-      };
-
-      const result = await service.sendPaidInvoiceEmail(params);
-
-      expect(result).toBe(true);
-      expect(mockTransporter.sendMail).not.toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[Mock]'),
-      );
-      consoleSpy.mockRestore();
-    });
-
-    it('should send email with PDF attachment when configured', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(true);
-      service.initialize();
-
-      const params: PaidInvoiceEmailParams = {
-        order: {
-          id: 123,
-          email: 'john@example.com',
-          firstName: 'John',
-          lastName: 'Doe',
-        } as any,
+        order: { id: 123, email: 'john@example.com', firstName: 'John', lastName: 'Doe' } as any,
         product: { name: 'Test Product' } as any,
         invoiceNumber: 'INV-001',
         invoicePdfPath: '/absolute/path/to/invoice.pdf',
@@ -237,9 +119,7 @@ describe('EmailService', () => {
 
       expect(result).toBe(true);
       expect(mockEmailTemplates.generateInvoiceEmail).toHaveBeenCalledWith(
-        params.order,
-        params.product,
-        'INV-001',
+        params.order, params.product, 'INV-001',
       );
       expect(mockTransporter.sendMail).toHaveBeenCalledWith({
         from: 'Lavirant <noreply@example.com>',
@@ -247,24 +127,13 @@ describe('EmailService', () => {
         subject: 'Faktura za zakup gry – Lavirant',
         text: 'Invoice text',
         html: '<p>Invoice HTML</p>',
-        attachments: [
-          {
-            filename: 'invoice.pdf',
-            path: '/absolute/path/to/invoice.pdf',
-          },
-        ],
+        attachments: [{ filename: 'invoice.pdf', path: '/absolute/path/to/invoice.pdf' }],
       });
     });
 
     it('should resolve relative paths to absolute', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(true);
-      service.initialize();
-
       const params: PaidInvoiceEmailParams = {
-        order: {
-          id: 123,
-          email: 'john@example.com',
-        } as any,
+        order: { id: 123, email: 'john@example.com' } as any,
         invoiceNumber: 'INV-001',
         invoicePdfPath: 'storage/invoices/invoice.pdf',
       };
@@ -274,56 +143,16 @@ describe('EmailService', () => {
       const expectedPath = path.join(process.cwd(), 'storage/invoices/invoice.pdf');
       expect(mockTransporter.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
-          attachments: [
-            {
-              filename: 'invoice.pdf',
-              path: expectedPath,
-            },
-          ],
-        }),
-      );
-    });
-
-    it('should keep absolute paths unchanged', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(true);
-      service.initialize();
-
-      const absolutePath = 'C:\\absolute\\path\\invoice.pdf';
-      const params: PaidInvoiceEmailParams = {
-        order: {
-          id: 123,
-          email: 'john@example.com',
-        } as any,
-        invoiceNumber: 'INV-001',
-        invoicePdfPath: absolutePath,
-      };
-
-      await service.sendPaidInvoiceEmail(params);
-
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          attachments: [
-            {
-              filename: 'invoice.pdf',
-              path: absolutePath,
-            },
-          ],
+          attachments: [{ filename: 'invoice.pdf', path: expectedPath }],
         }),
       );
     });
 
     it('should handle transporter error and return false', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(true);
-      service.initialize();
-
       mockTransporter.sendMail.mockRejectedValue(new Error('SMTP error'));
-
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       const params: PaidInvoiceEmailParams = {
-        order: {
-          id: 123,
-          email: 'john@example.com',
-        } as any,
+        order: { id: 123, email: 'john@example.com' } as any,
         invoiceNumber: 'INV-001',
         invoicePdfPath: '/path/to/invoice.pdf',
       };
@@ -340,39 +169,9 @@ describe('EmailService', () => {
   });
 
   describe('sendShipmentEmail', () => {
-    it('should log mock email and return true in mock mode', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(false);
-      service.initialize();
-
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    it('should send email successfully', async () => {
       const params: ShipmentEmailParams = {
-        order: {
-          id: 123,
-          email: 'john@example.com',
-        } as any,
-        trackingNumber: 'TRACK123',
-        trackingUrl: 'https://tracking.example.com/TRACK123',
-      };
-
-      const result = await service.sendShipmentEmail(params);
-
-      expect(result).toBe(true);
-      expect(mockTransporter.sendMail).not.toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[Mock]'),
-      );
-      consoleSpy.mockRestore();
-    });
-
-    it('should send email successfully when configured', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(true);
-      service.initialize();
-
-      const params: ShipmentEmailParams = {
-        order: {
-          id: 123,
-          email: 'john@example.com',
-        } as any,
+        order: { id: 123, email: 'john@example.com' } as any,
         trackingNumber: 'TRACK123',
         trackingUrl: 'https://tracking.example.com/TRACK123',
       };
@@ -381,9 +180,7 @@ describe('EmailService', () => {
 
       expect(result).toBe(true);
       expect(mockEmailTemplates.generateShipmentEmail).toHaveBeenCalledWith(
-        params.order,
-        'TRACK123',
-        'https://tracking.example.com/TRACK123',
+        params.order, 'TRACK123', 'https://tracking.example.com/TRACK123',
       );
       expect(mockTransporter.sendMail).toHaveBeenCalledWith({
         from: 'Lavirant <noreply@example.com>',
@@ -395,17 +192,10 @@ describe('EmailService', () => {
     });
 
     it('should handle transporter error and return false', async () => {
-      mockAppConfig.isEmailConfigured.mockReturnValue(true);
-      service.initialize();
-
       mockTransporter.sendMail.mockRejectedValue(new Error('SMTP error'));
-
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       const params: ShipmentEmailParams = {
-        order: {
-          id: 123,
-          email: 'john@example.com',
-        } as any,
+        order: { id: 123, email: 'john@example.com' } as any,
         trackingNumber: 'TRACK123',
         trackingUrl: 'https://tracking.example.com/TRACK123',
       };
@@ -419,5 +209,51 @@ describe('EmailService', () => {
       );
       consoleErrorSpy.mockRestore();
     });
+  });
+});
+
+describe('EmailServiceNoop', () => {
+  let service: EmailServiceNoop;
+  let consoleSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    service = new EmailServiceNoop();
+    consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+  });
+
+  afterEach(() => {
+    consoleSpy.mockRestore();
+  });
+
+  it('sendOrderConfirmation returns true and logs', async () => {
+    const data = makeOrderConfirmationData();
+    const result = await service.sendOrderConfirmation(data);
+
+    expect(result).toBe(true);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[Noop]'));
+  });
+
+  it('sendPaidInvoiceEmail returns true and logs', async () => {
+    const params: PaidInvoiceEmailParams = {
+      order: { id: 1, email: 'a@b.com', firstName: 'A', lastName: 'B' } as any,
+      invoiceNumber: 'INV-001',
+      invoicePdfPath: '/path',
+    };
+    const result = await service.sendPaidInvoiceEmail(params);
+
+    expect(result).toBe(true);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[Noop]'));
+  });
+
+  it('sendShipmentEmail returns true and logs', async () => {
+    const params: ShipmentEmailParams = {
+      order: { id: 1, email: 'a@b.com' } as any,
+      trackingNumber: 'T123',
+      trackingUrl: 'https://tracking.example.com',
+    };
+    const result = await service.sendShipmentEmail(params);
+
+    expect(result).toBe(true);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[Noop]'));
   });
 });

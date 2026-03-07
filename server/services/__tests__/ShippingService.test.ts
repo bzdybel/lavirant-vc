@@ -1,4 +1,4 @@
-import { ShippingService } from "../ShippingService";
+import { ShippingServiceReal } from "../ShippingService";
 import { storage } from "../../storage";
 import { getShipXClient } from "../../../lib/inpost/shipxClient";
 import { InPostProvider } from "../../shipping/InPostProvider";
@@ -9,20 +9,13 @@ import type { Shipment } from "../../db/schema";
 jest.mock("../../storage");
 jest.mock("../../../lib/inpost/shipxClient");
 jest.mock("../../shipping/InPostProvider");
-jest.mock("../../config/appConfig", () => ({
-  AppConfig: {
-    INPOST_SHIPX_ENV: "sandbox",
-    SHIPPING_PROVIDER: "INPOST",
-    MOCK_INPOST: false,
-  },
-}));
 
 const mockStorage = storage as jest.Mocked<typeof storage>;
 const mockGetShipXClient = getShipXClient as jest.MockedFunction<typeof getShipXClient>;
 const MockInPostProvider = InPostProvider as jest.MockedClass<typeof InPostProvider>;
 
-describe("ShippingService", () => {
-  let service: ShippingService;
+describe("ShippingServiceReal", () => {
+  let service: ShippingServiceReal;
   let mockProvider: jest.Mocked<InPostProvider>;
   let mockShipXClient: any;
 
@@ -82,7 +75,7 @@ const mockOrder: Order = {
     } as any;
     MockInPostProvider.mockImplementation(() => mockProvider);
 
-    service = new ShippingService();
+    service = new ShippingServiceReal();
   });
 
   describe("onOrderPaid", () => {

@@ -4,20 +4,8 @@ import { storage, type OrderStatus } from "../storage";
 import { generateInvoiceForOrder } from "../invoiceService";
 import { PaymentWebhookStatus, type PaymentWebhookStatusType } from "../constants/paymentStatus";
 import { LogPrefix } from "../constants/logPrefixes";
-
-// Forward declarations to avoid circular dependencies
-export interface IEmailService {
-  sendPaidInvoiceEmail(params: {
-    order: Order;
-    product?: Product;
-    invoiceNumber: string;
-    invoicePdfPath: string;
-  }): Promise<boolean>;
-}
-
-export interface IShippingService {
-  onOrderPaid(order: Order): Promise<any>;
-}
+import type { IEmailService } from "./EmailService";
+import type { IShippingService } from "./ShippingService";
 /**
  * Payment Update Parameters
  */

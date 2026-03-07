@@ -2,15 +2,7 @@ import { z } from "zod";
 import { ValidationError } from "../errors/AppError";
 import { DeliveryMethod } from "../constants/deliveryMethods";
 
-// ---------------------------------------------------------------------------
-// Branded Zod schemas — "Parse, don't validate" (Alexis King)
-//
-// Each schema is the single source of truth for both the parsing logic AND
-// the resulting type. Callers receive a narrow branded type (e.g. `Email`)
-// instead of a raw `string`, so the type system prevents accidentally
-// passing unvalidated input where validated data is expected.
-// ---------------------------------------------------------------------------
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const NonEmptyStringSchema = z.string().trim().min(1).brand<"NonEmptyString">();
 export type NonEmptyString = z.infer<typeof NonEmptyStringSchema>;
 
@@ -37,9 +29,6 @@ const PostalCodeSchema = z
   .brand<"PostalCode">();
 export type PostalCode = z.infer<typeof PostalCodeSchema>;
 
-// ---------------------------------------------------------------------------
-// Internal helper — maps Zod failures to domain ValidationError
-// ---------------------------------------------------------------------------
 
 function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
@@ -48,10 +37,6 @@ function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown): T {
   }
   return result.data;
 }
-
-// ---------------------------------------------------------------------------
-// Public parsing functions
-// ---------------------------------------------------------------------------
 
 export function validatePositiveInteger(value: unknown, fieldName: string): number {
   const num = Number(value);

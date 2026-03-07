@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
-import type { StripeService } from "../services/StripeService";
+import type { IStripeService } from "../services/StripeService";
 import { storage } from "../storage";
 
 interface PaymentIntentDependencies {
-  stripeService: StripeService;
+  stripeService: IStripeService;
 }
 
 interface PaymentIntentRequest {
@@ -13,51 +13,23 @@ interface PaymentIntentRequest {
   shippingCost?: number;
 }
 
-interface PaymentAmounts {
-  itemsAmount: number;
-  shippingAmount: number;
-  finalAmount: number;
-}
-
 interface PaymentIntentResult {
   clientSecret: string | null;
   paymentIntentId: string;
 }
 
-function calculateAmounts(request: PaymentIntentRequest): PaymentAmounts {
-  const itemsAmount = Number.isFinite(request.itemsTotal) ? request.itemsTotal! : 0;
-  const shippingAmount = Number.isFinite(request.shippingCost) ? request.shippingCost! : 0;
-  const finalAmount = itemsAmount + shippingAmount || request.amount;
+async function findExistingIntent(orderId: number, stripeService: IStripeService): Promise<PaymentIntentResult | null> {
+  if (!stripeService.isAvailable()) {
+    return null;
+  }
 
-  return { itemsAmount, shippingAmount, finalAmount };
-}
-
-function createPaymentMetadata(amounts: PaymentAmounts, orderId?: number) {
-  return {
-    ...(orderId ? { orderId: String(orderId) } : {}),
-    itemsTotal: String(amounts.itemsAmount),
-    shippingCost: String(amounts.shippingAmount),
-    finalAmount: String(amounts.finalAmount),
-  };
-}
-
-async function findExistingIntent(orderId: number, stripeService: StripeService): Promise<PaymentIntentResult | null> {
   const order = await storage.getOrder(orderId);
-
   if (!order?.paymentIntentId) {
     return null;
   }
 
-  const stripe = stripeService.getClient();
-  if (!stripe) {
-    return null;
-  }
-
-  const intent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
-  return {
-    clientSecret: intent.client_secret,
-    paymentIntentId: intent.id,
-  };
+  const intent = await stripeService.retrievePaymentIntent(order.paymentIntentId);
+  return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
 }
 
 async function markOrderPaymentPending(orderId: number | undefined, paymentIntentId: string): Promise<void> {
@@ -70,42 +42,6 @@ async function markOrderPaymentPending(orderId: number | undefined, paymentInten
     paymentIntentId,
     paymentReference: paymentIntentId,
   });
-}
-
-async function createMockIntent(amounts: PaymentAmounts, orderId?: number): Promise<PaymentIntentResult> {
-  const mockId = `mock_pi_${Date.now()}`;
-  const mockSecret = `${mockId}_secret_${Math.random().toString(36).substring(7)}`;
-
-  await markOrderPaymentPending(orderId, mockId);
-
-  return { clientSecret: mockSecret, paymentIntentId: mockId };
-}
-
-async function createRealIntent(
-  stripeService: StripeService,
-  amounts: PaymentAmounts,
-  orderId?: number
-): Promise<PaymentIntentResult> {
-  const stripe = stripeService.getClient()!;
-  const amountInCents = Math.round(amounts.finalAmount * 100);
-
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: amountInCents,
-    currency: "pln",
-    automatic_payment_methods: {
-      enabled: true,
-      allow_redirects: 'always',
-    },
-    metadata: createPaymentMetadata(amounts, orderId),
-    description: orderId ? `Order #${orderId}` : undefined,
-  });
-
-  await markOrderPaymentPending(orderId, paymentIntent.id);
-
-  return {
-    clientSecret: paymentIntent.client_secret,
-    paymentIntentId: paymentIntent.id,
-  };
 }
 
 export function CreatePaymentIntentHandler(deps: PaymentIntentDependencies) {
@@ -123,11 +59,8 @@ export function CreatePaymentIntentHandler(deps: PaymentIntentDependencies) {
       }
     }
 
-    const amounts = calculateAmounts({ amount, orderId, itemsTotal, shippingCost });
-
-    const result = deps.stripeService.isMockMode()
-      ? await createMockIntent(amounts, orderId)
-      : await createRealIntent(deps.stripeService, amounts, orderId);
+    const result = await deps.stripeService.createPaymentIntent({ amount, orderId, itemsTotal, shippingCost });
+    await markOrderPaymentPending(orderId, result.paymentIntentId);
 
     return res.json(result);
   };
