@@ -28,7 +28,7 @@ export class Prerequisites {
     this.warnings = [];
 
     // Always required
-    this.checkRequired("DATABASE_URL", env.DATABASE_URL, "Database connection is required");
+    this.checkRequired("DATABASE_PATH", env.DATABASE_PATH, "Database path is required");
 
     // Stripe Configuration (required if not in mock mode)
     if (!env.USE_MOCK_STRIPE) {

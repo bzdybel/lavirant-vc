@@ -23,7 +23,7 @@ export const EnvironmentSchema = z
     HOST: z.string().default("0.0.0.0"),
     BASE_URL: Url.optional(),
     DOTENV_CONFIG_PATH: z.string().optional(),
-    DATABASE_URL: z.string().min(1),
+    DATABASE_PATH: z.string().default("./data.db"),
 
     // Email Configuration (SMTP)
     EMAIL_HOST: z.string().optional(),
@@ -84,7 +84,7 @@ class ProcessEnvironmentLoader implements EnvironmentLoader {
 
   load(): Environment {
     try {
-      console.log("Loading environment, DATABASE_URL:", process.env.DATABASE_URL);
+      console.log("Loading environment, DATABASE_PATH:", process.env.DATABASE_PATH);
       this._env = EnvironmentSchema.parse(process.env);
       return this._env;
     } catch (error) {

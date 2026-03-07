@@ -134,13 +134,12 @@ export class DbStorage implements IStorage {
     const month = `${issuedAt.getMonth() + 1}`.padStart(2, "0");
     const prefix = `FV/${year}/${month}/`;
 
-    const result = await this.db.execute<{ max: number | null }>(sql`
-      select max(cast(substring(${orders.invoiceNumber} from '.*/(\\d+)$') as int)) as max
-      from ${orders}
-      where ${orders.invoiceNumber} like ${prefix + "%"}
-    `);
+    const result = await this.db
+      .select({ max: sql<number | null>`MAX(CAST(SUBSTR(${orders.invoiceNumber}, ${prefix.length + 1}) AS INTEGER))` })
+      .from(orders)
+      .where(sql`${orders.invoiceNumber} LIKE ${prefix + "%"}`);
 
-    const current = result.rows?.[0]?.max ?? 0;
+    const current = result[0]?.max ?? 0;
     const next = current + 1;
     const sequence = `${next}`.padStart(4, "0");
     return `FV/${year}/${month}/${sequence}`;

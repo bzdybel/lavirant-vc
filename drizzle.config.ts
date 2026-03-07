@@ -1,14 +1,10 @@
 import { defineConfig } from "drizzle-kit";
 
-const getDatabaseUrl = () => process.env.DATABASE_URL ?? "";
-
 export default defineConfig({
   out: "./migrations",
   schema: "./server/db/schema.ts",
-  dialect: "postgresql",
+  dialect: "sqlite",
   dbCredentials: {
-    get url() {
-      return getDatabaseUrl();
-    },
+    url: process.env.DATABASE_PATH ?? "./data.db",
   },
 });

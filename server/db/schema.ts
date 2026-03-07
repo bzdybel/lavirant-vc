@@ -1,10 +1,10 @@
-import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 // Note: 'users' table removed – orders are anonymous (customer data stored inline)
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const products = pgTable("products", {
-  id: serial("id").primaryKey(),
+export const products = sqliteTable("products", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   description: text("description").notNull(),
   price: integer("price").notNull(), // Price in cents
@@ -12,8 +12,8 @@ export const products = pgTable("products", {
   category: text("category").notNull(),
 });
 
-export const orders = pgTable("orders", {
-  id: serial("id").primaryKey(),
+export const orders = sqliteTable("orders", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   productId: integer("product_id").references(() => products.id),
   quantity: integer("quantity").notNull(),
   total: integer("total").notNull(), // Total in cents
@@ -24,7 +24,7 @@ export const orders = pgTable("orders", {
   shipmentId: text("shipment_id"),
   shipmentStatus: text("shipment_status"),
   trackingNumber: text("tracking_number"),
-  labelGenerated: boolean("label_generated"),
+  labelGenerated: integer("label_generated", { mode: "boolean" }),
   paymentIntentId: text("payment_intent_id"),
   paymentProvider: text("payment_provider"),
   paymentReference: text("payment_reference"),
@@ -46,8 +46,8 @@ export const orders = pgTable("orders", {
   createdAt: text("created_at").notNull(),
 });
 
-export const shipments = pgTable("shipments", {
-  id: serial("id").primaryKey(),
+export const shipments = sqliteTable("shipments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   orderId: integer("order_id").notNull().references(() => orders.id),
   provider: text("provider").notNull(),
   providerShipmentId: text("provider_shipment_id"),
@@ -61,14 +61,14 @@ export const shipments = pgTable("shipments", {
   shippedAt: text("shipped_at"),
 });
 
-export const webhookEvents = pgTable("webhook_events", {
+export const webhookEvents = sqliteTable("webhook_events", {
   id: text("id").primaryKey(),
   receivedAt: text("received_at").notNull(),
   provider: text("provider").notNull(),
   status: text("status").notNull(),
   paymentReference: text("payment_reference"),
   orderId: integer("order_id"),
-  signatureValid: boolean("signature_valid").notNull().default(false),
+  signatureValid: integer("signature_valid", { mode: "boolean" }).notNull().default(false),
   rawPayload: text("raw_payload").notNull(),
 });
 

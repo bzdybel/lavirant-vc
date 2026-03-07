@@ -1,55 +1,31 @@
 import path from "path";
-import { Pool } from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { sql } from "drizzle-orm";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import * as schema from "./db/schema";
 import { products } from "./db/schema";
 import { getEnv } from "./config/environment";
+import { sql } from "drizzle-orm";
 
-let pool: Pool | null = null;
 let dbInstance: ReturnType<typeof drizzle> | null = null;
-
-function getDatabaseUrl(): string {
-  const url = getEnv("DATABASE_URL");
-  if (!url) {
-    throw new Error("[DB] DATABASE_URL is not set. Database connection is required.");
-  }
-  return url;
-}
-
-function getPool(): Pool {
-  if (!pool) {
-    pool = new Pool({ connectionString: getDatabaseUrl() });
-  }
-  return pool;
-}
 
 export function getDb() {
   if (!dbInstance) {
-    dbInstance = drizzle(getPool(), { schema });
+    const databasePath = getEnv("DATABASE_PATH");
+    const sqlite = new Database(databasePath);
+    dbInstance = drizzle(sqlite, { schema });
   }
   return dbInstance;
 }
 
 export async function initializeDatabase(): Promise<void> {
-  const pool = getPool();
   const db = getDb();
-  try {
-    await pool.query("select 1");
-  } catch (error) {
-    console.error("[DB] Failed to connect to PostgreSQL", error);
-    throw error;
-  }
 
   const migrationsFolder = path.resolve(process.cwd(), "migrations");
-  await migrate(db, { migrationsFolder });
+  migrate(db, { migrationsFolder });
   console.log("[DB] Migrations applied");
 
-  console.log("[DB] Connected to PostgreSQL");
-
-  // Light-weight schema sanity check
-  await db.execute(sql`select 1`);
+  console.log("[DB] Connected to SQLite");
 
   const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(products);
   if (Number(count) === 0) {
