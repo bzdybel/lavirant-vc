@@ -13,7 +13,6 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-24.04
-    environment: production
 
     env:
       PROJECT_PATH: ${{ secrets.PROJECT_PATH }}
@@ -28,6 +27,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
 
       - name: Build app
         run: bash build.sh
@@ -45,12 +50,6 @@ jobs:
             IdentityFile ~/.ssh/production.key
             StrictHostKeyChecking no
           EOF
-
-      - name: Test SSH connection
-        run: ssh production "echo Connected to VPS"
-
-      - name: Check server directory
-        run: ssh production "ls -la $PROJECT_PATH"
 
       - name: Sync build
         run: rsync -az --delete dist/ production:$PROJECT_PATH/dist/
