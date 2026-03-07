@@ -1,9 +1,58 @@
+import { z } from "zod";
 import { ValidationError } from "../errors/AppError";
 import { DeliveryMethod } from "../constants/deliveryMethods";
 
-/**
- * Validates a positive integer
- */
+// ---------------------------------------------------------------------------
+// Branded Zod schemas — "Parse, don't validate" (Alexis King)
+//
+// Each schema is the single source of truth for both the parsing logic AND
+// the resulting type. Callers receive a narrow branded type (e.g. `Email`)
+// instead of a raw `string`, so the type system prevents accidentally
+// passing unvalidated input where validated data is expected.
+// ---------------------------------------------------------------------------
+
+const NonEmptyStringSchema = z.string().trim().min(1).brand<"NonEmptyString">();
+export type NonEmptyString = z.infer<typeof NonEmptyStringSchema>;
+
+const EmailSchema = z
+  .string()
+  .trim()
+  .min(1, "Email is required")
+  .refine((val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), "Invalid email format")
+  .brand<"Email">();
+export type Email = z.infer<typeof EmailSchema>;
+
+const PhoneSchema = z
+  .string()
+  .trim()
+  .min(1, "Phone is required")
+  .refine((val) => /\d{9,}/.test(val.replace(/[\s-]/g, "")), "Invalid phone number")
+  .brand<"Phone">();
+export type Phone = z.infer<typeof PhoneSchema>;
+
+const PostalCodeSchema = z
+  .string()
+  .trim()
+  .min(1, "Postal code is required")
+  .brand<"PostalCode">();
+export type PostalCode = z.infer<typeof PostalCodeSchema>;
+
+// ---------------------------------------------------------------------------
+// Internal helper — maps Zod failures to domain ValidationError
+// ---------------------------------------------------------------------------
+
+function parseOrThrow<T>(schema: z.ZodType<T>, value: unknown): T {
+  const result = schema.safeParse(value);
+  if (!result.success) {
+    throw new ValidationError(result.error.issues[0].message);
+  }
+  return result.data;
+}
+
+// ---------------------------------------------------------------------------
+// Public parsing functions
+// ---------------------------------------------------------------------------
+
 export function validatePositiveInteger(value: unknown, fieldName: string): number {
   const num = Number(value);
   if (!Number.isFinite(num) || num <= 0 || !Number.isInteger(num)) {
@@ -12,91 +61,69 @@ export function validatePositiveInteger(value: unknown, fieldName: string): numb
   return num;
 }
 
-/**
- * Validates a required string field
- */
-export function validateRequiredString(value: unknown, fieldName: string): string {
-  if (typeof value !== 'string' || !value.trim()) {
-    throw new ValidationError(`${fieldName} is required`);
+export function validateRequiredString(value: unknown, fieldName: string): NonEmptyString {
+  const result = z.string().trim().min(1, `${fieldName} is required`).safeParse(value);
+  if (!result.success) {
+    throw new ValidationError(result.error.issues[0].message);
   }
-  return value.trim();
+  return result.data as NonEmptyString;
 }
 
-/**
- * Validates email format
- */
-export function validateEmail(email: unknown): string {
-  const emailStr = validateRequiredString(email, 'Email');
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(emailStr)) {
-    throw new ValidationError('Invalid email format');
-  }
-  return emailStr;
+export function validateEmail(email: unknown): Email {
+  return parseOrThrow(EmailSchema, email);
 }
 
-/**
- * Validates phone number (basic validation)
- */
-export function validatePhone(phone: unknown): string {
-  const phoneStr = validateRequiredString(phone, 'Phone');
-  // Basic validation - at least 9 digits
-  if (!/\d{9,}/.test(phoneStr.replace(/\s|-/g, ''))) {
-    throw new ValidationError('Invalid phone number');
-  }
-  return phoneStr;
+export function validatePhone(phone: unknown): Phone {
+  return parseOrThrow(PhoneSchema, phone);
 }
 
-/**
- * Validates postal code
- */
-export function validatePostalCode(postalCode: unknown): string {
-  return validateRequiredString(postalCode, 'Postal code');
+export function validatePostalCode(postalCode: unknown): PostalCode {
+  return parseOrThrow(PostalCodeSchema, postalCode);
 }
 
-/**
- * Validates delivery method and point consistency
- */
 export function validateDeliveryMethod(
   deliveryMethod: unknown,
   deliveryPoint: unknown
 ): { method: string; isValid: boolean } {
-  const method = typeof deliveryMethod === 'string' ? deliveryMethod : '';
+  const method = typeof deliveryMethod === "string" ? deliveryMethod : "";
 
   if (method === DeliveryMethod.INPOST_PACZKOMAT) {
-    const point = deliveryPoint as any;
+    const point = deliveryPoint as { id?: unknown } | null | undefined;
     if (!point?.id) {
-      throw new ValidationError('InPost delivery point is required for parcel locker delivery');
+      throw new ValidationError("InPost delivery point is required for parcel locker delivery");
     }
   }
 
   return { method, isValid: true };
 }
 
-/**
- * Validates customer information object
- */
+// ---------------------------------------------------------------------------
+// CustomerInfo — all fields carry their precise branded types, making it
+// impossible at the type level to put unvalidated strings into this struct.
+// ---------------------------------------------------------------------------
+
 export interface CustomerInfo {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  postalCode: string;
-  country: string;
+  firstName: NonEmptyString;
+  lastName: NonEmptyString;
+  email: Email;
+  phone: Phone;
+  address: NonEmptyString;
+  city: NonEmptyString;
+  postalCode: PostalCode;
+  country: NonEmptyString;
 }
 
 export function validateCustomerInfo(data: unknown): CustomerInfo {
-  const obj = data as any;
+  const obj = data as Record<string, unknown>;
 
   return {
-    firstName: validateRequiredString(obj.firstName, 'First name'),
-    lastName: validateRequiredString(obj.lastName, 'Last name'),
+    firstName: validateRequiredString(obj.firstName, "First name"),
+    lastName: validateRequiredString(obj.lastName, "Last name"),
     email: validateEmail(obj.email),
     phone: validatePhone(obj.phone),
-    address: validateRequiredString(obj.address, 'Address'),
-    city: validateRequiredString(obj.city, 'City'),
+    address: validateRequiredString(obj.address, "Address"),
+    city: validateRequiredString(obj.city, "City"),
     postalCode: validatePostalCode(obj.postalCode),
-    country: validateRequiredString(obj.country, 'Country'),
+    country: validateRequiredString(obj.country, "Country"),
   };
 }
