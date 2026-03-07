@@ -1,3 +1,4 @@
+import { Cron } from "croner";
 import type { ShipXShipmentDetails } from "../../lib/inpost/types";
 import { getShipXClient, ShipXError } from "../../lib/inpost/shipxClient";
 import { storage } from "../storage";
@@ -57,7 +58,7 @@ class RetryHelper {
  * Single Responsibility: Synchronize shipment statuses with ShipX.
  */
 export class ShipXPollingJob {
-  private intervalId: NodeJS.Timeout | null = null;
+  private job: Cron | null = null;
 
   /**
    * Starts the ShipX polling job
@@ -68,29 +69,27 @@ export class ShipXPollingJob {
       return;
     }
 
-    const intervalMs = JobConfig.SHIPX_POLL_INTERVAL_MINUTES * 60 * 1000;
+    const intervalMinutes = JobConfig.SHIPX_POLL_INTERVAL_MINUTES;
+    const pattern = `*/${intervalMinutes} * * * *`;
 
-    // Run immediately
-    this.runJob().catch((error) => {
-      console.error("❌ ShipX polling initial run failed:", error);
-    });
-
-    // Schedule periodic runs
-    this.intervalId = setInterval(() => {
+    this.job = new Cron(pattern, { protect: true }, () => {
       this.runJob().catch((error) => {
         console.error("❌ ShipX polling failed:", error);
       });
-    }, intervalMs);
+    });
+
+    // Run immediately
+    this.job.trigger().catch((error) => {
+      console.error("❌ ShipX polling initial run failed:", error);
+    });
   }
 
   /**
    * Stops the polling job
    */
   stop(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
+    this.job?.stop();
+    this.job = null;
   }
 
   /**

@@ -1,3 +1,4 @@
+import { Cron } from "croner";
 import { storage } from "../storage";
 import { type IStripeService, mapStripeStatus } from "../services/StripeService";
 import type { PaymentStatusService } from "../services/PaymentStatusService";
@@ -11,7 +12,7 @@ import { LogPrefix } from "../constants/logPrefixes";
  * Single Responsibility: Periodic payment status synchronization.
  */
 export class PaymentStatusJob {
-  private intervalId: NodeJS.Timeout | null = null;
+  private job: Cron | null = null;
 
   constructor(
     private readonly stripeService: IStripeService,
@@ -27,29 +28,27 @@ export class PaymentStatusJob {
       return;
     }
 
-    const intervalMs = AppConfig.PAYMENT_STATUS_JOB_INTERVAL_MINUTES * 60 * 1000;
+    const intervalMinutes = AppConfig.PAYMENT_STATUS_JOB_INTERVAL_MINUTES;
+    const pattern = `*/${intervalMinutes} * * * *`;
 
-    // Run immediately
-    this.runJob().catch((error) => {
-      console.error("❌ Payment status job initial run failed:", error);
-    });
-
-    // Schedule periodic runs
-    this.intervalId = setInterval(() => {
+    this.job = new Cron(pattern, { protect: true }, () => {
       this.runJob().catch((error) => {
         console.error("❌ Payment status job failed:", error);
       });
-    }, intervalMs);
+    });
+
+    // Run immediately
+    this.job.trigger().catch((error) => {
+      console.error("❌ Payment status job initial run failed:", error);
+    });
   }
 
   /**
    * Stops the payment status job
    */
   stop(): void {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
+    this.job?.stop();
+    this.job = null;
   }
 
   /**
