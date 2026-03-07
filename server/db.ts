@@ -6,6 +6,7 @@ import * as schema from "./db/schema";
 import { products } from "./db/schema";
 import { getEnv } from "./config/environment";
 import { sql } from "drizzle-orm";
+import { logger } from "./utils/logger";
 
 let dbInstance: ReturnType<typeof drizzle> | null = null;
 
@@ -23,9 +24,9 @@ export async function initializeDatabase(): Promise<void> {
 
   const migrationsFolder = path.resolve(process.cwd(), "migrations");
   migrate(db, { migrationsFolder });
-  console.log("[DB] Migrations applied");
+  logger.info({ message: "[DB] Migrations applied" });
 
-  console.log("[DB] Connected to SQLite");
+  logger.info({ message: "[DB] Connected to SQLite" });
 
   const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(products);
   if (Number(count) === 0) {
@@ -36,6 +37,6 @@ export async function initializeDatabase(): Promise<void> {
       image: "/image.png",
       category: "Gry planszowe",
     });
-    console.log("[DB] Seeded default product");
+    logger.info({ message: "[DB] Seeded default product" });
   }
 }

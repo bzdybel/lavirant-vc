@@ -4,6 +4,7 @@ import { type IStripeService, mapStripeStatus } from "../services/StripeService"
 import type { PaymentStatusService } from "../services/PaymentStatusService";
 import { AppConfig } from "../config/appConfig";
 import { LogPrefix } from "../constants/logPrefixes";
+import { logger } from "../utils/logger";
 
 /**
  * Payment Status Job
@@ -24,7 +25,7 @@ export class PaymentStatusJob {
    */
   start(): void {
     if (!this.stripeService.isAvailable()) {
-      console.log("ℹ️ Payment status job skipped: Stripe not configured or mock mode enabled.");
+      logger.info({ message: "Payment status job skipped: Stripe not configured or mock mode enabled." });
       return;
     }
 
@@ -33,13 +34,13 @@ export class PaymentStatusJob {
 
     this.job = new Cron(pattern, { protect: true }, () => {
       this.runJob().catch((error) => {
-        console.error("❌ Payment status job failed:", error);
+        logger.error({ message: "Payment status job failed", error });
       });
     });
 
     // Run immediately
     this.job.trigger().catch((error) => {
-      console.error("❌ Payment status job initial run failed:", error);
+      logger.error({ message: "Payment status job initial run failed", error });
     });
   }
 
@@ -60,7 +61,8 @@ export class PaymentStatusJob {
     const cutoffTime = Date.now() - AppConfig.PAYMENT_PENDING_THRESHOLD_MINUTES * 60 * 1000;
     const dryRun = AppConfig.PAYMENT_STATUS_JOB_DRY_RUN;
 
-    console.log("🔎 Payment status job run", {
+    logger.info({
+      message: "Payment status job run",
       startedAt,
       dryRun,
       pendingOrders: pendingOrders.length,
@@ -83,7 +85,8 @@ export class PaymentStatusJob {
     const createdAt = new Date(order.paymentPendingAt || order.createdAt).getTime();
     const isEligible = createdAt <= cutoffTime && Boolean(order.paymentIntentId);
 
-    console.log("📦 Checking order", {
+    logger.info({
+      message: "Checking order",
       orderId: order.id,
       paymentIntentId: order.paymentIntentId,
       paymentPendingAt: order.paymentPendingAt,
@@ -99,7 +102,8 @@ export class PaymentStatusJob {
       const paymentIntent = await this.stripeService.retrievePaymentIntent(order.paymentIntentId);
       const mappedStatus = mapStripeStatus(paymentIntent.status);
 
-      console.log(`${LogPrefix.PAYMENT} Payment intent retrieved`, {
+      logger.info({
+        message: `${LogPrefix.PAYMENT} Payment intent retrieved`,
         orderId: order.id,
         paymentIntentId: paymentIntent.id,
         stripeStatus: paymentIntent.status,
@@ -121,7 +125,7 @@ export class PaymentStatusJob {
         product,
       });
     } catch (error) {
-      console.error(`❌ Payment status job failed for order ${order.id}:`, error);
+      logger.error({ message: `Payment status job failed for order ${order.id}`, orderId: order.id, error });
     }
   }
 }

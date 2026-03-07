@@ -14,6 +14,7 @@ import { PaymentStatus } from "@shared/enums/paymentStatus";
 import { and, eq, or, sql, isNull, isNotNull, notInArray } from "drizzle-orm";
 import { TERMINAL_SHIPMENT_STATUSES } from "./constants/shipmentStatus";
 import { LogPrefix } from "./constants/logPrefixes";
+import { logger } from "./utils/logger";
 
 export type OrderStatus = PaymentStatus;
 
@@ -87,7 +88,7 @@ export class DbStorage implements IStorage {
     };
 
     const result = await this.db.insert(orders).values(values).returning();
-    console.log(`${LogPrefix.DATABASE} Order persisted`, { id: result[0].id });
+    logger.info({ message: `${LogPrefix.DATABASE} Order persisted`, id: result[0].id });
     return result[0];
   }
 
@@ -175,7 +176,8 @@ export class DbStorage implements IStorage {
       })
       .returning();
 
-    console.log("[DB] Shipment persisted", {
+    logger.info({
+      message: "[DB] Shipment persisted",
       id: result[0].id,
       orderId: result[0].orderId,
       providerShipmentId: result[0].providerShipmentId,

@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { LogPrefix } from "../constants/logPrefixes";
 import { ServiceUnavailableError } from "../errors/AppError";
 import { StripePaymentIntentStatus, PaymentWebhookStatus, type PaymentWebhookStatusType } from "../constants/paymentStatus";
+import { logger } from "../utils/logger";
 
 export interface CreatePaymentIntentParams {
   amount: number;
@@ -67,7 +68,8 @@ export class StripeServiceReal implements IStripeService {
     const normalizedFinalAmount = Math.round(finalAmount * 100) / 100;
     const amountInCents = Math.round(normalizedFinalAmount * 100);
 
-    console.log(`${LogPrefix.STRIPE} Payment Intent Creation`, {
+    logger.info({
+      message: `${LogPrefix.STRIPE} Payment Intent Creation`,
       itemsTotal: finalItemsTotal,
       shippingCost: finalShippingCost,
       finalAmount: normalizedFinalAmount,
@@ -91,7 +93,8 @@ export class StripeServiceReal implements IStripeService {
       description: orderId ? `Order #${orderId}` : undefined,
     });
 
-    console.log("✅ Stripe payment intent created (LIVE)", {
+    logger.info({
+      message: "Stripe payment intent created",
       paymentIntentId: paymentIntent.id,
       amountInCents,
       amountInPLN: normalizedFinalAmount,
@@ -143,7 +146,8 @@ export class StripeServiceNoop implements IStripeService {
     const mockId = `mock_pi_${Date.now()}`;
     const mockClientSecret = `${mockId}_secret_${Math.random().toString(36).substring(7)}`;
 
-    console.log("🧪 Mock payment intent created", {
+    logger.info({
+      message: "Mock payment intent created",
       mockId,
       amount: normalizedFinalAmount,
       itemsTotal: finalItemsTotal,

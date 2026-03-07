@@ -1,5 +1,6 @@
 import { AppConfig } from "./appConfig";
 import type { Environment } from "./environment";
+import { logger } from "../utils/logger";
 
 /**
  * Prerequisite Check Result
@@ -114,17 +115,14 @@ export class Prerequisites {
    */
   static logResults(result: PrerequisiteCheckResult): void {
     if (result.warnings.length > 0) {
-      console.log("\n⚠️  Configuration Warnings:");
-      result.warnings.forEach(warning => console.log(`   ${warning}`));
+      logger.warn({ message: "Configuration warnings", warnings: result.warnings });
     }
 
     if (result.errors.length > 0) {
-      console.error("\n❌ Configuration Errors:");
-      result.errors.forEach(error => console.error(`   ${error}`));
-      console.error("\nServer cannot start with missing required configuration.");
-      console.error("Please check your .env file or environment variables.\n");
+      logger.error({ message: "Configuration errors", errors: result.errors });
+      logger.error({ message: "Server cannot start with missing required configuration. Please check your .env file or environment variables." });
     } else if (result.warnings.length === 0) {
-      console.log("✅ All prerequisites checked successfully");
+      logger.info({ message: "All prerequisites checked successfully" });
     }
   }
 

@@ -5,6 +5,7 @@ import type { Order } from "@shared/types/order";
 import type { Product } from "@shared/types/product";
 import { LogPrefix } from "../constants/logPrefixes";
 import * as EmailTemplates from "../utils/emailTemplates";
+import { logger } from "../utils/logger";
 
 export interface OrderConfirmationData {
   orderId: number;
@@ -64,7 +65,7 @@ export class EmailServiceReal implements IEmailService {
       },
     });
     this.from = `Lavirant <${config.from || config.user}>`;
-    console.log('✅ Email service initialized successfully');
+    logger.info({ message: "Email service initialized successfully" });
   }
 
   async sendOrderConfirmation(data: OrderConfirmationData): Promise<boolean> {
@@ -79,10 +80,10 @@ export class EmailServiceReal implements IEmailService {
         html,
       });
 
-      console.log(`✅ Email potwierdzający zamówienie wysłany do ${data.email} (ID: ${info.messageId})`);
+      logger.info({ message: "Order confirmation email sent", to: data.email, messageId: info.messageId, orderId: data.orderId });
       return true;
     } catch (error) {
-      console.error('❌ Błąd podczas wysyłania emaila z potwierdzeniem zamówienia:', error);
+      logger.error({ message: "Failed to send order confirmation email", to: data.email, error });
       return false;
     }
   }
@@ -104,10 +105,10 @@ export class EmailServiceReal implements IEmailService {
         attachments: [{ filename: path.basename(attachmentPath), path: attachmentPath }],
       });
 
-      console.log(`✅ Email z fakturą wysłany do ${order.email} (ID: ${info.messageId})`);
+      logger.info({ message: "Invoice email sent", to: order.email, messageId: info.messageId, orderId: order.id, invoiceNumber });
       return true;
     } catch (error) {
-      console.error('❌ Błąd podczas wysyłania emaila z fakturą:', error);
+      logger.error({ message: "Failed to send invoice email", to: order.email, orderId: order.id, error });
       return false;
     }
   }
@@ -126,10 +127,10 @@ export class EmailServiceReal implements IEmailService {
         html,
       });
 
-      console.log(`✅ Email o wysyłce wysłany do ${order.email} (ID: ${info.messageId})`);
+      logger.info({ message: "Shipment email sent", to: order.email, messageId: info.messageId, orderId: order.id });
       return true;
     } catch (error) {
-      console.error("❌ Błąd podczas wysyłania emaila o wysyłce:", error);
+      logger.error({ message: "Failed to send shipment email", to: order.email, orderId: order.id, error });
       return false;
     }
   }
@@ -137,17 +138,17 @@ export class EmailServiceReal implements IEmailService {
 
 export class EmailServiceNoop implements IEmailService {
   async sendOrderConfirmation(data: OrderConfirmationData): Promise<boolean> {
-    console.log(`${LogPrefix.EMAIL} [Noop] Order confirmation to ${data.email} (Order #${data.orderId})`);
+    logger.info({ message: `${LogPrefix.EMAIL} [Noop] Order confirmation`, to: data.email, orderId: data.orderId });
     return true;
   }
 
   async sendPaidInvoiceEmail(params: PaidInvoiceEmailParams): Promise<boolean> {
-    console.log(`${LogPrefix.EMAIL} [Noop] Invoice to ${params.order.email} (Order #${params.order.id} - ${params.invoiceNumber})`);
+    logger.info({ message: `${LogPrefix.EMAIL} [Noop] Invoice email`, to: params.order.email, orderId: params.order.id, invoiceNumber: params.invoiceNumber });
     return true;
   }
 
   async sendShipmentEmail(params: ShipmentEmailParams): Promise<boolean> {
-    console.log(`${LogPrefix.EMAIL} [Noop] Shipment to ${params.order.email} (#${params.trackingNumber})`);
+    logger.info({ message: `${LogPrefix.EMAIL} [Noop] Shipment email`, to: params.order.email, trackingNumber: params.trackingNumber });
     return true;
   }
 }

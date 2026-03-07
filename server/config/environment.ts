@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { logger } from "../utils/logger";
 
 const Port = z.coerce.number().int().positive().min(1).max(65535);
 const Email = z.string().email();
@@ -79,9 +80,9 @@ class ProcessEnvironmentLoader implements EnvironmentLoader {
       return this._env;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error("❌ Environment validation failed:");
-        error.errors.forEach((err) => {
-          console.error(`  - ${err.path.join(".")}: ${err.message}`);
+        logger.error({
+          message: "Environment validation failed",
+          issues: error.errors.map((err) => ({ path: err.path.join("."), message: err.message })),
         });
       }
       throw new Error("Failed to load environment configuration");

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import type Stripe from "stripe";
 import { WebhookHeaders } from "../constants/webhookHeaders";
+import { logger } from "./logger";
 
 /**
  * Webhook Signature Verification Result
@@ -64,7 +65,7 @@ function verifyStripeSignature(
       provider: 'stripe',
     };
   } catch (error) {
-    console.error("❌ Stripe webhook signature verification failed:", error);
+    logger.error({ message: "Stripe webhook signature verification failed", error });
     return {
       isValid: false,
       payload: null,
@@ -99,7 +100,7 @@ function verifyGenericSignature(
       provider: 'generic',
     };
   } catch (error) {
-    console.error("❌ Failed to parse webhook payload:", error);
+    logger.error({ message: "Failed to parse webhook payload", error });
     return {
       isValid: false,
       payload: null,

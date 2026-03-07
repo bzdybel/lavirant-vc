@@ -3,10 +3,18 @@ import { errorHandler, asyncHandler } from "../errorHandler";
 import { ValidationError, NotFoundError, UnauthorizedError } from "../../errors/AppError";
 import { HttpStatus } from "../../constants/httpStatus";
 import * as AppConfigModule from "../../config/appConfig";
+import { logger } from "../../utils/logger";
 
 jest.mock("../../config/appConfig", () => ({
   AppConfig: {
     IS_DEVELOPMENT: false,
+  },
+}));
+jest.mock("../../utils/logger", () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -36,17 +44,8 @@ function setIsDevelopment(value: boolean) {
 }
 
 describe("errorHandler Middleware", () => {
-  let consoleSpy: jest.SpyInstance;
-  let consoleErrorSpy: jest.SpyInstance;
-
   beforeEach(() => {
-    consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
-    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    consoleSpy.mockRestore();
-    consoleErrorSpy.mockRestore();
+    jest.clearAllMocks();
   });
 
   describe("Operational Errors (AppError instances)", () => {
@@ -62,7 +61,7 @@ describe("errorHandler Middleware", () => {
       expect(res.json).toHaveBeenCalledWith({
         message: "Email is invalid",
       });
-      expect(consoleSpy).toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalled();
     });
 
     it("should handle NotFoundError with 404 status", () => {
@@ -101,8 +100,7 @@ describe("errorHandler Middleware", () => {
 
       errorHandler(error, req, res, next);
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Operational error:",
+      expect(logger.warn).toHaveBeenCalledWith(
         expect.objectContaining({
           message: "Invalid input",
           statusCode: HttpStatus.BAD_REQUEST,
@@ -132,7 +130,7 @@ describe("errorHandler Middleware", () => {
 
       errorHandler(error, req, res, next);
 
-      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     });
 
@@ -148,7 +146,7 @@ describe("errorHandler Middleware", () => {
       expect(res.json).toHaveBeenCalledWith({
         message: "Unexpected error",
       });
-      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(logger.error).toHaveBeenCalled();
     });
 
     it("should re-throw non-operational errors", () => {
@@ -160,8 +158,7 @@ describe("errorHandler Middleware", () => {
       errorHandler(error, req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Unexpected error:",
+      expect(logger.error).toHaveBeenCalledWith(
         expect.any(Object)
       );
     });
@@ -258,8 +255,7 @@ describe("errorHandler Middleware", () => {
 
       errorHandler(error, req, res, next);
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Operational error:",
+      expect(logger.warn).toHaveBeenCalledWith(
         expect.any(Object)
       );
     });
@@ -277,8 +273,7 @@ describe("errorHandler Middleware", () => {
         // Expected to throw
       }
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Unexpected error:",
+      expect(logger.error).toHaveBeenCalledWith(
         expect.any(Object)
       );
     });
@@ -291,8 +286,7 @@ describe("errorHandler Middleware", () => {
 
       errorHandler(error, req, res, next);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Unexpected error:",
+      expect(logger.error).toHaveBeenCalledWith(
         expect.any(Object)
       );
     });
@@ -526,17 +520,11 @@ describe("Edge Cases", () => {
 });
 
 describe("Error Handler Integration", () => {
-  let consoleSpy: jest.SpyInstance;
-  let consoleErrorSpy: jest.SpyInstance;
-
   beforeEach(() => {
-    consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
-    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
-    consoleSpy.mockRestore();
-    consoleErrorSpy.mockRestore();
     setIsDevelopment(false);
   });
 

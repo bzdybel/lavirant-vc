@@ -7,6 +7,7 @@ import { updateOrderShipmentState } from "../inpost/shipxOrderUpdater";
 import { AppConfig } from "../config/appConfig";
 import { JobConfig } from "../constants/jobConfig";
 import { LogPrefix } from "../constants/logPrefixes";
+import { logger } from "../utils/logger";
 
 function shipxRetry<T>(action: () => Promise<T>): Promise<T> {
   return pRetry(action, {
@@ -36,7 +37,7 @@ export class ShipXPollingJob {
    */
   start(): void {
     if (!AppConfig.INPOST_API_SHIPX) {
-      console.log("ℹ️ ShipX polling skipped: INPOST_API_SHIPX not configured.");
+      logger.info({ message: "ShipX polling skipped: INPOST_API_SHIPX not configured." });
       return;
     }
 
@@ -51,22 +52,23 @@ export class ShipXPollingJob {
         .catch((error) => {
           this.consecutiveFailures++;
           if (this.consecutiveFailures >= JobConfig.SHIPX_CONSECUTIVE_FAILURE_ALERT_THRESHOLD) {
-            console.error(
-              `❌ [CRITICAL] ShipX polling failed ${this.consecutiveFailures} times consecutively:`,
-              error
-            );
+            logger.error({
+              message: `[CRITICAL] ShipX polling failed ${this.consecutiveFailures} times consecutively`,
+              consecutiveFailures: this.consecutiveFailures,
+              error,
+            });
           } else {
-            console.error("❌ ShipX polling failed:", error);
+            logger.error({ message: "ShipX polling failed", error });
           }
         });
     });
 
     // Run immediately; on failure retry once after a short delay (e.g. DB not yet ready at boot)
     this.job.trigger().catch((initialError) => {
-      console.warn(
-        `⚠️ ShipX polling initial run failed, retrying in ${JobConfig.SHIPX_INITIAL_TRIGGER_RETRY_DELAY_MS / 1000}s:`,
-        initialError
-      );
+      logger.warn({
+        message: `ShipX polling initial run failed, retrying in ${JobConfig.SHIPX_INITIAL_TRIGGER_RETRY_DELAY_MS / 1000}s`,
+        error: initialError,
+      });
       setTimeout(() => {
         this.runJob()
           .then(() => {
@@ -74,10 +76,10 @@ export class ShipXPollingJob {
           })
           .catch((retryError) => {
             this.consecutiveFailures++;
-            console.error(
-              `❌ ShipX polling initial retry also failed. Next attempt in ${intervalMinutes}min:`,
-              retryError
-            );
+            logger.error({
+              message: `ShipX polling initial retry also failed. Next attempt in ${intervalMinutes}min`,
+              error: retryError,
+            });
           });
       }, JobConfig.SHIPX_INITIAL_TRIGGER_RETRY_DELAY_MS);
     });
@@ -122,14 +124,16 @@ export class ShipXPollingJob {
     }
 
     if (order.shipmentId.startsWith("MOCK-")) {
-      console.warn(`${LogPrefix.SHIPX_POLLING} Skipping mock shipment id`, {
+      logger.warn({
+        message: `${LogPrefix.SHIPX_POLLING} Skipping mock shipment id`,
         orderId: order.id,
         shipmentId: order.shipmentId,
       });
       return;
     }
 
-    console.log(`${LogPrefix.SHIPX_POLLING} Fetching shipment from sandbox`, {
+    logger.info({
+      message: `${LogPrefix.SHIPX_POLLING} Fetching shipment from sandbox`,
       orderId: order.id,
       providerShipmentId: order.shipmentId,
       environment,
@@ -151,16 +155,20 @@ export class ShipXPollingJob {
       const failures = order.shipmentPollFailures + 1;
 
       if (failures >= JobConfig.SHIPX_ORDER_MAX_POLL_FAILURES) {
-        console.error(`❌ [CRITICAL] ShipX polling for order ${order.id} exceeded max failures (${failures}/${JobConfig.SHIPX_ORDER_MAX_POLL_FAILURES}), marking as polling_failed`, {
+        logger.error({
+          message: `[CRITICAL] ShipX polling for order ${order.id} exceeded max failures, marking as polling_failed`,
           orderId: order.id,
           shipmentId: order.shipmentId,
+          failures,
+          maxFailures: JobConfig.SHIPX_ORDER_MAX_POLL_FAILURES,
           error,
         });
         await updateOrderShipmentState(order, { shipmentStatus: "polling_failed" }).catch((markError) => {
-          console.error("❌ Failed to mark order as polling_failed", { orderId: order.id, markError });
+          logger.error({ message: "Failed to mark order as polling_failed", orderId: order.id, error: markError });
         });
       } else {
-        console.error("❌ ShipX polling failed for shipment", {
+        logger.error({
+          message: "ShipX polling failed for shipment",
           orderId: order.id,
           shipmentId: order.shipmentId,
           attempt: failures,
@@ -229,7 +237,8 @@ export class ShipXPollingJob {
         });
       }
     } catch (error) {
-      console.error("❌ Failed to generate label for shipment", {
+      logger.error({
+        message: "Failed to generate label for shipment",
         orderId: order.id,
         shipmentId: order.shipmentId,
         error,

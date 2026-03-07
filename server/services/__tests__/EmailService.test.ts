@@ -4,9 +4,17 @@ import { makeOrderConfirmationData } from '../../__tests__/fixtures/emailFixture
 import * as EmailTemplates from '../../utils/emailTemplates';
 import nodemailer from 'nodemailer';
 import path from 'path';
+import { logger } from '../../utils/logger';
 
 jest.mock('nodemailer');
 jest.mock('../../utils/emailTemplates');
+jest.mock('../../utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
 
 const TEST_CONFIG = {
   host: 'smtp.example.com',
@@ -82,17 +90,14 @@ describe('EmailServiceReal', () => {
 
     it('should handle transporter error and return false', async () => {
       mockTransporter.sendMail.mockRejectedValue(new Error('SMTP error'));
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       const data = makeOrderConfirmationData();
 
       const result = await service.sendOrderConfirmation(data);
 
       expect(result).toBe(false);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Błąd podczas wysyłania emaila z potwierdzeniem zamówienia'),
-        expect.any(Error),
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Failed to send order confirmation email' }),
       );
-      consoleErrorSpy.mockRestore();
     });
 
     it('should use user as from when from config is empty', async () => {
@@ -150,7 +155,6 @@ describe('EmailServiceReal', () => {
 
     it('should handle transporter error and return false', async () => {
       mockTransporter.sendMail.mockRejectedValue(new Error('SMTP error'));
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       const params: PaidInvoiceEmailParams = {
         order: { id: 123, email: 'john@example.com' } as any,
         invoiceNumber: 'INV-001',
@@ -160,11 +164,9 @@ describe('EmailServiceReal', () => {
       const result = await service.sendPaidInvoiceEmail(params);
 
       expect(result).toBe(false);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Błąd podczas wysyłania emaila z fakturą'),
-        expect.any(Error),
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Failed to send invoice email' }),
       );
-      consoleErrorSpy.mockRestore();
     });
   });
 
@@ -193,7 +195,6 @@ describe('EmailServiceReal', () => {
 
     it('should handle transporter error and return false', async () => {
       mockTransporter.sendMail.mockRejectedValue(new Error('SMTP error'));
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       const params: ShipmentEmailParams = {
         order: { id: 123, email: 'john@example.com' } as any,
         trackingNumber: 'TRACK123',
@@ -203,26 +204,18 @@ describe('EmailServiceReal', () => {
       const result = await service.sendShipmentEmail(params);
 
       expect(result).toBe(false);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Błąd podczas wysyłania emaila o wysyłce'),
-        expect.any(Error),
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Failed to send shipment email' }),
       );
-      consoleErrorSpy.mockRestore();
     });
   });
 });
 
 describe('EmailServiceNoop', () => {
   let service: EmailServiceNoop;
-  let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
     service = new EmailServiceNoop();
-    consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-  });
-
-  afterEach(() => {
-    consoleSpy.mockRestore();
   });
 
   it('sendOrderConfirmation returns true and logs', async () => {
@@ -230,7 +223,9 @@ describe('EmailServiceNoop', () => {
     const result = await service.sendOrderConfirmation(data);
 
     expect(result).toBe(true);
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[Noop]'));
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('[Noop]') }),
+    );
   });
 
   it('sendPaidInvoiceEmail returns true and logs', async () => {
@@ -242,7 +237,9 @@ describe('EmailServiceNoop', () => {
     const result = await service.sendPaidInvoiceEmail(params);
 
     expect(result).toBe(true);
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[Noop]'));
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('[Noop]') }),
+    );
   });
 
   it('sendShipmentEmail returns true and logs', async () => {
@@ -254,6 +251,8 @@ describe('EmailServiceNoop', () => {
     const result = await service.sendShipmentEmail(params);
 
     expect(result).toBe(true);
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[Noop]'));
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining('[Noop]') }),
+    );
   });
 });

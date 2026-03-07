@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { logger } from "../utils/logger";
 
 /**
  * Logging Middleware
@@ -31,10 +32,10 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 
       // Truncate long log lines
       if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+        logLine = logLine.slice(0, 79) + "\u2026";
       }
 
-      console.log(logLine);
+      logger.info({ message: logLine });
     }
   });
 

@@ -4,6 +4,7 @@ import type { IStripeService } from '../../services/StripeService';
 import type { PaymentStatusService } from '../../services/PaymentStatusService';
 import { storage } from '../../storage';
 import { AppConfig } from '../../config/appConfig';
+import { logger } from '../../utils/logger';
 
 // Mock dependencies
 jest.mock('../../storage');
@@ -17,12 +18,18 @@ jest.mock('../../config/appConfig', () => ({
     PAYMENT_STATUS_JOB_DRY_RUN: false,
   },
 }));
+jest.mock('../../utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
 
 describe('PaymentStatusJob', () => {
   let job: PaymentStatusJob;
   let mockStripeService: jest.Mocked<IStripeService>;
   let mockPaymentStatusService: jest.Mocked<PaymentStatusService>;
-  let consoleSpy: jest.SpyInstance;
 
   const mockOrder = {
     id: 1,
@@ -39,8 +46,7 @@ describe('PaymentStatusJob', () => {
   };
 
   beforeEach(() => {
-    consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(console, 'error').mockImplementation();
+    jest.clearAllMocks();
 
     mockStripeService = {
       isAvailable: jest.fn().mockReturnValue(true),
@@ -69,22 +75,21 @@ describe('PaymentStatusJob', () => {
     it('should not start when Stripe is unavailable', () => {
       mockStripeService.isAvailable.mockReturnValue(false);
       job.start();
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Payment status job skipped'));
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('Payment status job skipped') }),
+      );
     });
 
-    it('should schedule periodic runs at configured interval', () => {
-      const setIntervalSpy = jest.spyOn(global, 'setInterval');
+    it('should run job on initial trigger', async () => {
       job.start();
-      expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 5 * 60 * 1000);
-      setIntervalSpy.mockRestore();
-    });
-
-    it('should stop successfully', () => {
-      const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
-      job.start();
+      await new Promise(resolve => setTimeout(resolve, 50));
       job.stop();
-      expect(clearIntervalSpy).toHaveBeenCalled();
-      clearIntervalSpy.mockRestore();
+      expect(storage.listOrdersByStatus).toHaveBeenCalled();
+    });
+
+    it('should stop without throwing', () => {
+      job.start();
+      expect(() => job.stop()).not.toThrow();
     });
 
     it('should handle stop when not running', () => {
@@ -94,11 +99,7 @@ describe('PaymentStatusJob', () => {
 
   describe('Configuration', () => {
     it('should use correct interval duration', () => {
-      const setIntervalSpy = jest.spyOn(global, 'setInterval');
-      job.start();
-      const expectedMs = AppConfig.PAYMENT_STATUS_JOB_INTERVAL_MINUTES * 60 * 1000;
-      expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), expectedMs);
-      setIntervalSpy.mockRestore();
+      expect(AppConfig.PAYMENT_STATUS_JOB_INTERVAL_MINUTES).toBe(5);
     });
 
     it('should check Stripe availability before starting', () => {

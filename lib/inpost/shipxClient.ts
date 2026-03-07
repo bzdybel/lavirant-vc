@@ -43,14 +43,6 @@ export class ShipXClient {
 
     if (!response.ok) {
       const payload = await this.safeParseErrorPayload(response);
-      console.error("ShipX API error", {
-        status: response.status,
-        path,
-        payload,
-      });
-      if (payload?.details) {
-        console.error("ShipX API error details", JSON.stringify(payload.details));
-      }
       const message =
         payload?.error?.message ||
         payload?.message ||
@@ -76,14 +68,6 @@ export class ShipXClient {
 
     if (!response.ok) {
       const payload = await this.safeParseErrorPayload(response);
-      console.error("ShipX API error", {
-        status: response.status,
-        path,
-        payload,
-      });
-      if (payload?.details) {
-        console.error("ShipX API error details", JSON.stringify(payload.details));
-      }
       const message =
         payload?.error?.message ||
         payload?.message ||

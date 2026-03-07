@@ -6,6 +6,7 @@ import type { ShipmentOutput } from "../shipping/ShippingProvider";
 import { InPostProvider } from "../shipping/InPostProvider";
 import { MockInPostProvider } from "../shipping/MockInPostProvider";
 import { LogPrefix } from "../constants/logPrefixes";
+import { logger } from "../utils/logger";
 
 export interface IShippingService {
   onOrderPaid(order: Order): Promise<ShipmentOutput | null>;
@@ -21,7 +22,7 @@ export class ShippingServiceReal implements IShippingService {
   }
 
   async onOrderPaid(order: Order): Promise<ShipmentOutput | null> {
-    console.log(`${LogPrefix.ORDER_PAID} orderId=${order.id}`);
+    logger.info({ message: `${LogPrefix.ORDER_PAID} orderId=${order.id}`, orderId: order.id });
 
     const shipmentOutput = await this.ensureShipmentExists(order);
     const shipmentRecord = await storage.getShipmentByOrderId(order.id);
@@ -33,16 +34,20 @@ export class ShippingServiceReal implements IShippingService {
     const resolvedOfferId = await this.ensureSelectedOfferId(order, shipmentRecord);
 
     if (!resolvedOfferId) {
-      console.warn(
-        `${LogPrefix.SHIPX} Shipment missing selected offer id orderId=${order.id} shipmentId=${shipmentRecord.providerShipmentId}`
-      );
+      logger.warn({
+        message: `${LogPrefix.SHIPX} Shipment missing selected offer id`,
+        orderId: order.id,
+        shipmentId: shipmentRecord.providerShipmentId,
+      });
       return shipmentOutput;
     }
 
     if (shipmentRecord.buyError) {
-      console.warn(
-        `${LogPrefix.SHIPX} Shipment buy previously failed orderId=${order.id} shipmentId=${shipmentRecord.providerShipmentId}`
-      );
+      logger.warn({
+        message: `${LogPrefix.SHIPX} Shipment buy previously failed`,
+        orderId: order.id,
+        shipmentId: shipmentRecord.providerShipmentId,
+      });
       return shipmentOutput;
     }
 
@@ -102,9 +107,11 @@ export class ShippingServiceReal implements IShippingService {
 
       return selectedOfferId;
     } catch (_error) {
-      console.warn(
-        `${LogPrefix.SHIPX} Failed to refresh shipment offer for orderId=${order.id} shipmentId=${shipmentRecord.providerShipmentId ?? "unknown"}`
-      );
+      logger.warn({
+        message: `${LogPrefix.SHIPX} Failed to refresh shipment offer`,
+        orderId: order.id,
+        shipmentId: shipmentRecord.providerShipmentId ?? "unknown",
+      });
       return null;
     }
   }
@@ -115,7 +122,11 @@ export class ShippingServiceReal implements IShippingService {
     offerId: string,
     shipmentId: number
   ): Promise<void> {
-    console.log(`${LogPrefix.SHIPX} Buying shipment shipmentId=${providerShipmentId} offerId=${offerId}`);
+    logger.info({
+      message: `${LogPrefix.SHIPX} Buying shipment`,
+      providerShipmentId,
+      offerId,
+    });
 
     const client = getShipXClient();
 
@@ -130,11 +141,18 @@ export class ShippingServiceReal implements IShippingService {
       await storage.updateShipment(shipmentId, { boughtAt, status: "buy_pending" });
       await storage.updateOrder(order.id, { shipmentStatus: "buy_pending" });
 
-      console.log(`${LogPrefix.SHIPX} Shipment buy initiated shipmentId=${providerShipmentId}`);
+      logger.info({
+        message: `${LogPrefix.SHIPX} Shipment buy initiated`,
+        providerShipmentId,
+      });
     } catch (error) {
       const message = error instanceof ShipXError ? error.message : (error as Error).message;
       await storage.updateShipment(shipmentId, { buyError: message || "ShipX buy failed" });
-      console.error(`${LogPrefix.SHIPX} Shipment buy failed shipmentId=${providerShipmentId}`);
+      logger.error({
+        message: `${LogPrefix.SHIPX} Shipment buy failed`,
+        providerShipmentId,
+        error,
+      });
     }
   }
 
@@ -151,13 +169,20 @@ export class ShippingServiceReal implements IShippingService {
       };
     }
 
-    console.log(`${LogPrefix.SHIPX} Creating shipment via ShipX orderId=${order.id}`);
+    logger.info({
+      message: `${LogPrefix.SHIPX} Creating shipment via ShipX`,
+      orderId: order.id,
+    });
 
     const shipment = await this.provider.createShipment({ order });
     const normalizedStatus = shipment.status === "SHIPPED" ? "SHIPPED" : "CREATED";
     const shipxStatus = shipment.shipxStatus ?? shipment.status ?? "offer_selected";
 
-    console.log(`${LogPrefix.SHIPX} Shipment created orderId=${order.id} providerShipmentId=${shipment.shipmentId ?? ""}`);
+    logger.info({
+      message: `${LogPrefix.SHIPX} Shipment created`,
+      orderId: order.id,
+      providerShipmentId: shipment.shipmentId ?? "",
+    });
 
     await storage.createShipment({
       orderId: order.id,
@@ -203,11 +228,11 @@ export class ShippingServiceNoop implements IShippingService {
 
   constructor() {
     this.provider = new MockInPostProvider();
-    console.log("🧪 ShippingServiceNoop: using mock InPost provider");
+    logger.info({ message: "ShippingServiceNoop: using mock InPost provider" });
   }
 
   async onOrderPaid(order: Order): Promise<ShipmentOutput | null> {
-    console.log(`${LogPrefix.ORDER_PAID} [Noop] orderId=${order.id}`);
+    logger.info({ message: `${LogPrefix.ORDER_PAID} [Noop]`, orderId: order.id });
     return this.createShipment(order);
   }
 
@@ -226,7 +251,11 @@ export class ShippingServiceNoop implements IShippingService {
 
     const shipment = await this.provider.createShipment({ order });
 
-    console.log(`${LogPrefix.SHIPX} [Noop] Mock shipment created orderId=${order.id} shipmentId=${shipment.shipmentId ?? ""}`);
+    logger.info({
+      message: `${LogPrefix.SHIPX} [Noop] Mock shipment created`,
+      orderId: order.id,
+      shipmentId: shipment.shipmentId ?? "",
+    });
 
     await storage.createShipment({
       orderId: order.id,

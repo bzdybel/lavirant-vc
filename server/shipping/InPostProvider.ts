@@ -1,6 +1,7 @@
 import type { ShippingProvider, ShipmentInput, ShipmentOutput } from "./ShippingProvider";
 import { getShipXClient } from "../../lib/inpost/shipxClient";
 import { getInpostConfig, type InPostConfig } from "./inpostConfig";
+import { logger } from "../utils/logger";
 
 interface ShipXShipmentResponse {
   id?: string;
@@ -97,7 +98,11 @@ export class InPostProvider implements ShippingProvider {
     }
 
     assertValidPayload(shipmentPayload as Record<string, unknown>);
-    console.log(`[ShipX] Creating shipment with validated sender orderId=${order.id} service=${shipmentPayload.service}`);
+    logger.info({
+      message: "[ShipX] Creating shipment with validated sender",
+      orderId: order.id,
+      service: shipmentPayload.service,
+    });
 
     const client = getShipXClient();
     const responseJson = await client.request<ShipXShipmentResponse>(`/v1/organizations/${this.organizationId}/shipments`, {
@@ -115,7 +120,7 @@ export class InPostProvider implements ShippingProvider {
       throw new Error("InPost ShipX response missing tracking number");
     }
 
-    console.log("[ShipX] Shipment created providerShipmentId=", shipmentId);
+    logger.info({ message: "[ShipX] Shipment created", providerShipmentId: shipmentId });
 
     return {
       provider: "INPOST",

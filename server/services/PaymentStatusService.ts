@@ -4,6 +4,7 @@ import { storage, type OrderStatus } from "../storage";
 import { generateInvoiceForOrder } from "../invoiceService";
 import { PaymentWebhookStatus, type PaymentWebhookStatusType } from "../constants/paymentStatus";
 import { LogPrefix } from "../constants/logPrefixes";
+import { logger } from "../utils/logger";
 import type { IEmailService } from "./EmailService";
 import type { IShippingService } from "./ShippingService";
 /**
@@ -156,7 +157,8 @@ export class PaymentStatusService {
     const updated = (await storage.updateOrder(order.id, { ...updates, status } as any)) as Order | undefined;
 
     if (updated) {
-      console.log(`${LogPrefix.DATABASE} Payment updated`, {
+      logger.info({
+        message: `${LogPrefix.DATABASE} Payment updated`,
         orderId: updated.id,
         status,
       });

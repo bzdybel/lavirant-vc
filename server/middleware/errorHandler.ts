@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
 import { HttpStatus } from "../constants/httpStatus";
 import { AppConfig } from "../config/appConfig";
+import { logger } from "../utils/logger";
 
 /**
  * Error Response Interface
@@ -81,9 +82,9 @@ export function errorHandler(
 
   // Log error details
   if (isOperationalError(err)) {
-    console.warn("Operational error:", errorResponse);
+    logger.warn(errorResponse);
   } else {
-    console.error("Unexpected error:", errorResponse);
+    logger.error(errorResponse);
   }
 
   res.status(statusCode).json({

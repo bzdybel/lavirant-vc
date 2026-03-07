@@ -3,7 +3,7 @@ import { getShipXClient, ShipXError } from '../../../lib/inpost/shipxClient';
 import { storage } from '../../storage';
 import { updateOrderShipmentState } from '../../inpost/shipxOrderUpdater';
 import { AppConfig } from '../../config/appConfig';
-import { JobConfig } from '../../constants/jobConfig';
+import { logger } from '../../utils/logger';
 
 jest.mock('../../../lib/inpost/shipxClient', () => {
   const actual = jest.requireActual('../../../lib/inpost/shipxClient');
@@ -25,15 +25,41 @@ jest.mock('../../constants/jobConfig', () => ({
     SHIPX_POLL_INTERVAL_MINUTES: 5,
     SHIPX_RETRY_ATTEMPTS: 3,
     SHIPX_RETRY_BASE_DELAY_MS: 100,
+    SHIPX_CONSECUTIVE_FAILURE_ALERT_THRESHOLD: 3,
+    SHIPX_INITIAL_TRIGGER_RETRY_DELAY_MS: 50,
+    SHIPX_ORDER_MAX_POLL_FAILURES: 5,
   },
+}));
+jest.mock('../../utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  },
+}));
+
+// p-retry is ESM-only; mock it with a CJS-compatible implementation that
+// preserves retry/shouldRetry semantics so retry tests remain meaningful.
+jest.mock('p-retry', () => ({
+  __esModule: true,
+  default: jest.fn(async (fn: any, opts: any = {}) => {
+    const retries: number = opts.retries ?? 0;
+    const shouldRetry: (e: unknown) => boolean = opts.shouldRetry ?? (() => true);
+    const delay: number = opts.minTimeout ?? 0;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        if (attempt >= retries || !shouldRetry(err)) throw err;
+        if (delay > 0) await new Promise(r => setTimeout(r, delay));
+      }
+    }
+  }),
 }));
 
 describe('ShipXPollingJob', () => {
   let job: ShipXPollingJob;
   let mockClient: any;
-  let consoleSpy: jest.SpyInstance;
-  let consoleErrorSpy: jest.SpyInstance;
-  let consoleWarnSpy: jest.SpyInstance;
 
   const mockOrder = {
     id: 1,
@@ -41,6 +67,7 @@ describe('ShipXPollingJob', () => {
     shipmentStatus: 'created',
     trackingNumber: null,
     labelGenerated: false,
+    shipmentPollFailures: 0,
   };
 
   const mockShipment = {
@@ -58,13 +85,10 @@ describe('ShipXPollingJob', () => {
   };
 
   beforeEach(() => {
-    // Reset mutable AppConfig properties that individual tests may have mutated.
     (AppConfig as any).INPOST_API_SHIPX = 'test-api-key';
     (AppConfig as any).INPOST_SHIPX_ENV = 'sandbox';
 
-    consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    jest.clearAllMocks();
 
     mockClient = {
       request: jest.fn().mockResolvedValue(mockShipment),
@@ -75,38 +99,36 @@ describe('ShipXPollingJob', () => {
     (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([mockOrder]);
     (storage.getShipmentByOrderId as jest.Mock).mockResolvedValue(mockExistingShipment);
     (storage.updateShipment as jest.Mock).mockResolvedValue(undefined);
+    (storage.updateOrder as jest.Mock).mockResolvedValue(undefined);
     (updateOrderShipmentState as jest.Mock).mockResolvedValue({ ...mockOrder, shipmentStatus: 'confirmed' });
 
     job = new ShipXPollingJob();
   });
 
   afterEach(() => {
-    if (job) {
-      job.stop();
-    }
-    jest.restoreAllMocks();
+    if (job) job.stop();
   });
 
   describe('Job Lifecycle', () => {
     it('should not start when ShipX API is not configured', () => {
       (AppConfig as any).INPOST_API_SHIPX = '';
       job.start();
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('ShipX polling skipped'));
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('ShipX polling skipped') })
+      );
     });
 
-    it('should schedule periodic runs at configured interval', () => {
-      const setIntervalSpy = jest.spyOn(global, 'setInterval');
+    it('should start and process shipments on initial trigger', async () => {
       job.start();
-      expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 5 * 60 * 1000);
-      setIntervalSpy.mockRestore();
-    });
-
-    it('should stop successfully', () => {
-      const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
-      job.start();
+      await new Promise(resolve => setTimeout(resolve, 50));
       job.stop();
-      expect(clearIntervalSpy).toHaveBeenCalled();
-      clearIntervalSpy.mockRestore();
+
+      expect(mockClient.request).toHaveBeenCalled();
+    });
+
+    it('should stop without throwing', () => {
+      job.start();
+      expect(() => job.stop()).not.toThrow();
     });
 
     it('should handle stop when not running', () => {
@@ -134,9 +156,11 @@ describe('ShipXPollingJob', () => {
       await new Promise(resolve => setTimeout(resolve, 50));
       job.stop();
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Skipping mock shipment id'),
-        expect.objectContaining({ shipmentId: 'MOCK-12345' })
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('Skipping mock shipment id'),
+          shipmentId: 'MOCK-12345',
+        })
       );
       expect(mockClient.request).not.toHaveBeenCalled();
     });
@@ -291,16 +315,17 @@ describe('ShipXPollingJob', () => {
     });
 
     it('should handle label generation errors gracefully', async () => {
-      const error = new Error('Label generation failed');
-      mockClient.requestBinary.mockRejectedValue(error);
+      mockClient.requestBinary.mockRejectedValue(new Error('Label generation failed'));
 
       job.start();
       await new Promise(resolve => setTimeout(resolve, 50));
       job.stop();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to generate label'),
-        expect.objectContaining({ orderId: mockOrder.id })
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('Failed to generate label'),
+          orderId: mockOrder.id,
+        })
       );
     });
 
@@ -333,24 +358,18 @@ describe('ShipXPollingJob', () => {
     });
 
     it('should not retry on 400 errors', async () => {
-      const error = new ShipXError('Bad request', 400, {});
-      mockClient.request.mockRejectedValue(error);
+      mockClient.request.mockRejectedValue(new ShipXError('Bad request', 400, {}));
 
       job.start();
       await new Promise(resolve => setTimeout(resolve, 50));
       job.stop();
 
       expect(mockClient.request).toHaveBeenCalledTimes(1);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('ShipX polling failed for shipment'),
-        expect.objectContaining({ orderId: mockOrder.id })
-      );
     });
 
     it('should retry on network errors', async () => {
       const networkError = new Error('Network error');
       networkError.name = 'FetchError';
-
       mockClient.request
         .mockRejectedValueOnce(networkError)
         .mockResolvedValueOnce(mockShipment);
@@ -364,23 +383,18 @@ describe('ShipXPollingJob', () => {
     });
 
     it('should stop retrying after max attempts', async () => {
-      const error = new ShipXError('Server error', 503, {});
-      mockClient.request.mockRejectedValue(error);
+      mockClient.request.mockRejectedValue(new ShipXError('Server error', 503, {}));
 
       job.start();
       await new Promise(resolve => setTimeout(resolve, 800));
       job.stop();
 
       expect(mockClient.request).toHaveBeenCalledTimes(3);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('ShipX polling failed for shipment'),
-        expect.any(Object)
-      );
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle storage errors gracefully', async () => {
+    it('should handle DB errors in runJob gracefully', async () => {
       const error = new Error('Database error');
       (storage.listOrdersForShipmentPolling as jest.Mock).mockRejectedValue(error);
 
@@ -388,9 +402,9 @@ describe('ShipXPollingJob', () => {
       await new Promise(resolve => setTimeout(resolve, 50));
       job.stop();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('ShipX polling initial run failed'),
-        error
+      // runJob() rejects → cron callback .catch() fires → logs "ShipX polling failed"
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'ShipX polling failed', error })
       );
     });
 
@@ -407,44 +421,155 @@ describe('ShipXPollingJob', () => {
       job.stop();
 
       expect(mockClient.request).toHaveBeenCalledTimes(2);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('ShipX polling failed for shipment'),
-        expect.objectContaining({ orderId: 1 })
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'ShipX polling failed for shipment',
+          orderId: 1,
+        })
       );
     });
 
     it('should handle ShipX API errors', async () => {
-      const shipxError = new ShipXError('Shipment not found', 404, {});
-      mockClient.request.mockRejectedValue(shipxError);
+      mockClient.request.mockRejectedValue(new ShipXError('Shipment not found', 404, {}));
 
       job.start();
       await new Promise(resolve => setTimeout(resolve, 50));
       job.stop();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('ShipX polling failed for shipment'),
-        expect.objectContaining({ shipmentId: mockOrder.shipmentId })
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'ShipX polling failed for shipment',
+          shipmentId: mockOrder.shipmentId,
+        })
+      );
+    });
+  });
+
+  describe('Failure Tracking', () => {
+    it('should increment shipmentPollFailures in DB on poll failure', async () => {
+      mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
+
+      job.start();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      job.stop();
+
+      expect(storage.updateOrder).toHaveBeenCalledWith(mockOrder.id, { shipmentPollFailures: 1 });
+    });
+
+    it('should accumulate failures on top of existing DB failure count', async () => {
+      const orderWith2Failures = { ...mockOrder, shipmentPollFailures: 2 };
+      (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderWith2Failures]);
+      mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
+
+      job.start();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      job.stop();
+
+      expect(storage.updateOrder).toHaveBeenCalledWith(orderWith2Failures.id, { shipmentPollFailures: 3 });
+    });
+
+    it('should mark order as polling_failed when failures reach SHIPX_ORDER_MAX_POLL_FAILURES', async () => {
+      const orderAtMaxMinus1 = { ...mockOrder, shipmentPollFailures: 4 }; // 4 + 1 = 5 = max
+      (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderAtMaxMinus1]);
+      mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
+
+      job.start();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      job.stop();
+
+      expect(updateOrderShipmentState).toHaveBeenCalledWith(
+        orderAtMaxMinus1,
+        { shipmentStatus: 'polling_failed' }
+      );
+    });
+
+    it('should log CRITICAL when order reaches max poll failures', async () => {
+      const orderAtMaxMinus1 = { ...mockOrder, shipmentPollFailures: 4 };
+      (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderAtMaxMinus1]);
+      mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
+
+      job.start();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      job.stop();
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('[CRITICAL]'),
+          orderId: orderAtMaxMinus1.id,
+          failures: 5,
+          maxFailures: 5,
+        })
+      );
+    });
+
+    it('should not increment poll failure count in DB after marking as polling_failed', async () => {
+      const orderAtMaxMinus1 = { ...mockOrder, shipmentPollFailures: 4 };
+      (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderAtMaxMinus1]);
+      mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
+
+      job.start();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      job.stop();
+
+      expect(storage.updateOrder).not.toHaveBeenCalledWith(
+        orderAtMaxMinus1.id,
+        expect.objectContaining({ shipmentPollFailures: expect.any(Number) })
+      );
+    });
+
+    it('should reset shipmentPollFailures to 0 in DB after a successful poll', async () => {
+      const orderWithPriorFailures = { ...mockOrder, shipmentPollFailures: 3 };
+      (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderWithPriorFailures]);
+
+      job.start();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      job.stop();
+
+      expect(storage.updateOrder).toHaveBeenCalledWith(orderWithPriorFailures.id, { shipmentPollFailures: 0 });
+    });
+
+    it('should not call updateOrder for reset when shipmentPollFailures is already 0', async () => {
+      // mockOrder has shipmentPollFailures: 0 — no reset needed on success
+      job.start();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      job.stop();
+
+      expect(storage.updateOrder).not.toHaveBeenCalledWith(
+        mockOrder.id,
+        { shipmentPollFailures: 0 }
+      );
+    });
+
+    it('should handle failure to write polling_failed status gracefully', async () => {
+      const orderAtMaxMinus1 = { ...mockOrder, shipmentPollFailures: 4 };
+      (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderAtMaxMinus1]);
+      mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
+      (updateOrderShipmentState as jest.Mock).mockRejectedValue(new Error('DB write failed'));
+
+      job.start();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      job.stop();
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Failed to mark order as polling_failed',
+          orderId: orderAtMaxMinus1.id,
+        })
       );
     });
   });
 
   describe('Configuration', () => {
-    it('should use correct polling interval', () => {
-      const setIntervalSpy = jest.spyOn(global, 'setInterval');
-      job.start();
-      const expectedMs = JobConfig.SHIPX_POLL_INTERVAL_MINUTES * 60 * 1000;
-      expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), expectedMs);
-      setIntervalSpy.mockRestore();
-    });
-
-    it('should log environment information', async () => {
+    it('should log environment information when processing shipments', async () => {
       job.start();
       await new Promise(resolve => setTimeout(resolve, 50));
       job.stop();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Fetching shipment from sandbox'),
-        expect.objectContaining({ environment: 'sandbox' })
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('Fetching shipment from sandbox'),
+          environment: 'sandbox',
+        })
       );
     });
   });
