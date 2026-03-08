@@ -6,8 +6,8 @@ import express from "express";
 import { serveStatic, setupVite, log } from "./vite";
 import { registerRoutes } from "./routes";
 import { setupSitemapRoute } from "./sitemap";
-import { PaymentStatusJob } from "./jobs/PaymentStatusJob";
-import { ShipXPollingJob } from "./jobs/ShipXPollingJob";
+import { PaymentStatusService } from "./services/PaymentStatusService";
+import { initJobs } from "./jobs/jobs";
 import { initializeDatabase } from "./db";
 import { AppConfig } from "./config/appConfig";
 import { errorHandler } from "./middleware/errorHandler";
@@ -48,13 +48,14 @@ app.use(requestLogger);
   Prerequisites.validateOrExit(env);
 
   // Initialize services after environment is validated
-  const { initializeServices, getEmailService, getStripeService, getPaymentStatusService, getShippingService } = await import("./services/init");
+  const { init } = await import("./services/init");
 
-  initializeServices();
-  const emailService = getEmailService();
-  const stripeService = getStripeService();
-  const paymentStatusService = getPaymentStatusService();
-  const shippingService = getShippingService();
+  const Env = AppConfig.IS_PRODUCTION ? "production" : "local";
+  const services = init(Env);
+  const emailService = services.EmailService;
+  const stripeService = services.StripeService;
+  const shippingService = services.ShippingService;
+  const paymentStatusService = new PaymentStatusService(emailService, shippingService);
 
   // Validate runtime configuration
   AppConfig.validateRuntimeConfig();
@@ -69,11 +70,7 @@ app.use(requestLogger);
   });
 
   // Initialize and start background jobs
-  const paymentStatusJob = new PaymentStatusJob(stripeService, paymentStatusService);
-  const shipXPollingJob = new ShipXPollingJob();
-
-  paymentStatusJob.start();
-  shipXPollingJob.start();
+  initJobs(stripeService, paymentStatusService);
 
   // Setup SEO sitemap route
   setupSitemapRoute(app);

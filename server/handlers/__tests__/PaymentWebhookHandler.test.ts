@@ -71,7 +71,7 @@ describe("PaymentWebhookHandler", () => {
   beforeEach(() => {
     emailService = makeEmailServiceMock();
     stripeService = makeStripeServiceMock();
-    stripeService.isAvailable.mockReturnValue(true);
+    stripeService.constructWebhookEvent.mockReturnValue(null);
     paymentStatusService = makePaymentStatusServiceMock();
     paymentStatusService.applyPaymentStatusUpdate.mockImplementation(async (params: any) => ({
       ...params.order,
@@ -154,10 +154,9 @@ describe("PaymentWebhookHandler", () => {
       expect(res.json).toHaveBeenCalledWith({ received: true });
     });
 
-    it("bypasses Stripe signature verification in mock mode", async () => {
-      stripeService.isAvailable.mockReturnValue(false);
-
+    it("processes stripe webhook via constructWebhookEvent", async () => {
       const payload = makeStripePayload("succeeded", 1);
+      stripeService.constructWebhookEvent.mockReturnValue(payload);
 
       mockedStorage.getOrder.mockResolvedValue({
         id: 1,
@@ -181,13 +180,14 @@ describe("PaymentWebhookHandler", () => {
       const req = {
         body: rawBody,
         headers: {
-          "stripe-signature": "mock_signature",
+          "stripe-signature": "any_signature",
         },
       } as unknown as Request;
       const res = makeResponse();
 
       await handler(req, res);
 
+      expect(stripeService.constructWebhookEvent).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({ received: true });
     });

@@ -128,11 +128,11 @@ export default function Checkout() {
 
             {/* 🧪 MOCK MODE – bez Stripe */}
             {STRIPE_CONFIG.isMockMode && (
-              <CheckoutForm
-                amount={product.price}
-                productId={product.id}
-              />
-            )}
+                 <CheckoutForm
+                  amount={product.price}
+                  productId={product.id}
+                />
+             )}
 
              {!STRIPE_CONFIG.isMockMode && clientSecret && stripePromise && (
               <Elements

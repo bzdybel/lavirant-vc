@@ -105,7 +105,7 @@ function sendOrderConfirmationEmail(order: any, product: any, emailService: IEma
 }
 
 async function reconcileStripePayment(order: any, product: any, deps: CreateOrderDependencies): Promise<void> {
-  if (!order.paymentIntentId || !deps.stripeService.isAvailable()) {
+  if (!order.paymentIntentId) {
     return;
   }
 

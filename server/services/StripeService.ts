@@ -22,7 +22,6 @@ export interface StripeConfig {
 }
 
 export interface IStripeService {
-  isAvailable(): boolean;
   createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntentResponse>;
   retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent>;
   updatePaymentIntentMetadata(paymentIntentId: string, metadata: Record<string, string>): Promise<Stripe.PaymentIntent>;
@@ -49,10 +48,6 @@ export class StripeServiceReal implements IStripeService {
     this.client = new Stripe(config.secretKey, {
       apiVersion: "2025-08-27.basil",
     });
-  }
-
-  isAvailable(): boolean {
-    return true;
   }
 
   getClient(): Stripe {
@@ -131,10 +126,6 @@ export class StripeServiceReal implements IStripeService {
 }
 
 export class StripeServiceNoop implements IStripeService {
-  isAvailable(): boolean {
-    return false;
-  }
-
   async createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntentResponse> {
     const { amount, orderId, itemsTotal, shippingCost } = params;
 

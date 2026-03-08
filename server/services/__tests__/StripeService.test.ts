@@ -39,7 +39,6 @@ describe("StripeServiceReal", () => {
       const service = new StripeServiceReal(TEST_CONFIG);
 
       expect(mockedStripe).toHaveBeenCalledWith("sk_test_123", { apiVersion: "2025-08-27.basil" });
-      expect(service.isAvailable()).toBe(true);
     });
   });
 
@@ -146,12 +145,6 @@ describe("StripeServiceReal", () => {
 });
 
 describe("StripeServiceNoop", () => {
-  describe("isAvailable", () => {
-    it("returns false", () => {
-      expect(new StripeServiceNoop().isAvailable()).toBe(false);
-    });
-  });
-
   describe("createPaymentIntent", () => {
     it("creates mock payment intent without calling Stripe", async () => {
       const nowSpy = jest.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);

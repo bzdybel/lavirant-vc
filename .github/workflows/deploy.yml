@@ -26,33 +26,30 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 25
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
 
       - name: Build app
-        run: ./scripts/production-build.sh
+        run: bash build.sh
 
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/production.key
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/production.key
           chmod 600 ~/.ssh/production.key
-          cat >> ~/.ssh/config <<END
+
+          cat > ~/.ssh/config <<EOF
           Host production
-            HostName $SSH_HOST
-            User $SSH_USER
+            HostName ${{ secrets.SSH_HOST }}
+            User ${{ secrets.SSH_USER }}
             IdentityFile ~/.ssh/production.key
             StrictHostKeyChecking no
-          END
-        env:
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-
-      - name: Test SSH connection
-        run: ssh production "echo Connected to VPS"
-
-      - name: Check server directory
-        run: ssh production "ls -la $PROJECT_PATH"
+          EOF
 
       - name: Sync build
         run: rsync -az --delete dist/ production:$PROJECT_PATH/dist/

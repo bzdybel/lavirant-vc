@@ -16,7 +16,6 @@ export function makeEmailServiceMock() {
 
 export function makeStripeServiceMock() {
   return {
-    isAvailable: jest.fn().mockReturnValue(true),
     createPaymentIntent: jest.fn().mockResolvedValue({
       clientSecret: 'mock_secret',
       paymentIntentId: 'mock_pi_123',

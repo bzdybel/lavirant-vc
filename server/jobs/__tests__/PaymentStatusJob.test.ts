@@ -1,4 +1,4 @@
-import { PaymentStatusJob } from '../PaymentStatusJob';
+import { newPaymentStatusJob } from '../PaymentStatusJob';
 import { mapStripeStatus } from '../../services/StripeService';
 import type { IStripeService } from '../../services/StripeService';
 import type { PaymentStatusService } from '../../services/PaymentStatusService';
@@ -27,7 +27,7 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 describe('PaymentStatusJob', () => {
-  let job: PaymentStatusJob;
+  let handle: () => Promise<void>;
   let mockStripeService: jest.Mocked<IStripeService>;
   let mockPaymentStatusService: jest.Mocked<PaymentStatusService>;
 
@@ -49,8 +49,11 @@ describe('PaymentStatusJob', () => {
     jest.clearAllMocks();
 
     mockStripeService = {
-      isAvailable: jest.fn().mockReturnValue(true),
       retrievePaymentIntent: jest.fn().mockResolvedValue(mockPaymentIntent),
+      createPaymentIntent: jest.fn(),
+      updatePaymentIntentMetadata: jest.fn(),
+      constructWebhookEvent: jest.fn(),
+      getWebhookSecret: jest.fn(),
     } as any;
 
     mockPaymentStatusService = {
@@ -61,50 +64,68 @@ describe('PaymentStatusJob', () => {
     (storage.listOrdersByStatus as jest.Mock) = jest.fn().mockResolvedValue([mockOrder]);
     (storage.getProduct as jest.Mock) = jest.fn().mockResolvedValue({ id: 'prod_123', name: 'Test Product' });
 
-    job = new PaymentStatusJob(mockStripeService, mockPaymentStatusService);
+    handle = newPaymentStatusJob(mockStripeService, mockPaymentStatusService).handle;
   });
 
   afterEach(() => {
-    if (job) {
-      job.stop();
-    }
     jest.restoreAllMocks();
   });
 
-  describe('Job Lifecycle', () => {
-    it('should not start when Stripe is unavailable', () => {
-      mockStripeService.isAvailable.mockReturnValue(false);
-      job.start();
-      expect(logger.info).toHaveBeenCalledWith(
-        expect.objectContaining({ message: expect.stringContaining('Payment status job skipped') }),
-      );
-    });
-
-    it('should run job on initial trigger', async () => {
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+  describe('handle()', () => {
+    it('lists pending orders on each run', async () => {
+      await handle();
       expect(storage.listOrdersByStatus).toHaveBeenCalled();
     });
 
-    it('should stop without throwing', () => {
-      job.start();
-      expect(() => job.stop()).not.toThrow();
+    it('retrieves payment intent for eligible orders', async () => {
+      await handle();
+      expect(mockStripeService.retrievePaymentIntent).toHaveBeenCalledWith(mockOrder.paymentIntentId);
     });
 
-    it('should handle stop when not running', () => {
-      expect(() => job.stop()).not.toThrow();
+    it('applies payment status update for completed payments', async () => {
+      await handle();
+      expect(mockPaymentStatusService.applyPaymentStatusUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'COMPLETED' })
+      );
+    });
+
+    it('skips orders without paymentIntentId', async () => {
+      (storage.listOrdersByStatus as jest.Mock).mockResolvedValue([{ ...mockOrder, paymentIntentId: null }]);
+      await handle();
+      expect(mockStripeService.retrievePaymentIntent).not.toHaveBeenCalled();
+    });
+
+    it('skips orders newer than cutoff threshold', async () => {
+      (storage.listOrdersByStatus as jest.Mock).mockResolvedValue([{
+        ...mockOrder,
+        paymentPendingAt: new Date().toISOString(),
+      }]);
+      await handle();
+      expect(mockStripeService.retrievePaymentIntent).not.toHaveBeenCalled();
+    });
+
+    it('does not apply status update in dry run mode', async () => {
+      jest.replaceProperty(AppConfig, 'PAYMENT_STATUS_JOB_DRY_RUN' as any, true);
+      await handle();
+      expect(mockPaymentStatusService.applyPaymentStatusUpdate).not.toHaveBeenCalled();
+    });
+
+    it('handles empty order list without error', async () => {
+      (storage.listOrdersByStatus as jest.Mock).mockResolvedValue([]);
+      await handle();
+      expect(mockStripeService.retrievePaymentIntent).not.toHaveBeenCalled();
+    });
+
+    it('logs error and continues when an order fails', async () => {
+      mockStripeService.retrievePaymentIntent.mockRejectedValue(new Error('Stripe error'));
+      await handle();
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 
   describe('Configuration', () => {
-    it('should use correct interval duration', () => {
+    it('uses correct interval duration from AppConfig', () => {
       expect(AppConfig.PAYMENT_STATUS_JOB_INTERVAL_MINUTES).toBe(5);
-    });
-
-    it('should check Stripe availability before starting', () => {
-      job.start();
-      expect(mockStripeService.isAvailable).toHaveBeenCalled();
     });
   });
 });

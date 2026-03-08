@@ -19,17 +19,17 @@ interface PaymentIntentResult {
 }
 
 async function findExistingIntent(orderId: number, stripeService: IStripeService): Promise<PaymentIntentResult | null> {
-  if (!stripeService.isAvailable()) {
-    return null;
-  }
-
   const order = await storage.getOrder(orderId);
   if (!order?.paymentIntentId) {
     return null;
   }
 
-  const intent = await stripeService.retrievePaymentIntent(order.paymentIntentId);
-  return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
+  try {
+    const intent = await stripeService.retrievePaymentIntent(order.paymentIntentId);
+    return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
+  } catch {
+    return null;
+  }
 }
 
 async function markOrderPaymentPending(orderId: number | undefined, paymentIntentId: string): Promise<void> {

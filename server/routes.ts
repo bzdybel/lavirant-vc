@@ -1,10 +1,10 @@
 import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
-import type { EmailService } from "./services/EmailService";
-import type { StripeService } from "./services/StripeService";
+import type { IEmailService } from "./services/EmailService";
+import type { IStripeService } from "./services/StripeService";
 import type { PaymentStatusService } from "./services/PaymentStatusService";
-import type { ShippingService } from "./services/ShippingService";
+import type { IShippingService } from "./services/ShippingService";
 
 import { PaymentWebhookHandler } from "./handlers/PaymentWebhookHandler";
 import { ListProductsHandler, GetProductHandler } from "./handlers/ProductHandlers";
@@ -16,10 +16,10 @@ import { GetInPostConfigHandler } from "./handlers/InPostHandlers";
 export async function registerRoutes(
   app: Express,
   services: {
-    emailService: EmailService;
-    stripeService: StripeService;
+    emailService: IEmailService;
+    stripeService: IStripeService;
     paymentStatusService: PaymentStatusService;
-    shippingService: ShippingService;
+    shippingService: IShippingService;
   }
 ): Promise<Server> {
 

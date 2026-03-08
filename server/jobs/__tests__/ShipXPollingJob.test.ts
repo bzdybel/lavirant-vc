@@ -26,7 +26,6 @@ jest.mock('../../constants/jobConfig', () => ({
     SHIPX_RETRY_ATTEMPTS: 3,
     SHIPX_RETRY_BASE_DELAY_MS: 100,
     SHIPX_CONSECUTIVE_FAILURE_ALERT_THRESHOLD: 3,
-    SHIPX_INITIAL_TRIGGER_RETRY_DELAY_MS: 50,
     SHIPX_ORDER_MAX_POLL_FAILURES: 5,
   },
 }));
@@ -105,45 +104,12 @@ describe('ShipXPollingJob', () => {
     job = new ShipXPollingJob();
   });
 
-  afterEach(() => {
-    if (job) job.stop();
-  });
-
-  describe('Job Lifecycle', () => {
-    it('should not start when ShipX API is not configured', () => {
-      (AppConfig as any).INPOST_API_SHIPX = '';
-      job.start();
-      expect(logger.info).toHaveBeenCalledWith(
-        expect.objectContaining({ message: expect.stringContaining('ShipX polling skipped') })
-      );
-    });
-
-    it('should start and process shipments on initial trigger', async () => {
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
-
-      expect(mockClient.request).toHaveBeenCalled();
-    });
-
-    it('should stop without throwing', () => {
-      job.start();
-      expect(() => job.stop()).not.toThrow();
-    });
-
-    it('should handle stop when not running', () => {
-      expect(() => job.stop()).not.toThrow();
-    });
-  });
-
   describe('Shipment Processing', () => {
     it('should skip orders without shipmentId', async () => {
       const orderWithoutShipment = { ...mockOrder, shipmentId: null };
       (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderWithoutShipment]);
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(mockClient.request).not.toHaveBeenCalled();
     });
@@ -152,9 +118,7 @@ describe('ShipXPollingJob', () => {
       const mockShipmentOrder = { ...mockOrder, shipmentId: 'MOCK-12345' };
       (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([mockShipmentOrder]);
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -168,9 +132,7 @@ describe('ShipXPollingJob', () => {
     it('should handle empty order list', async () => {
       (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([]);
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(mockClient.request).not.toHaveBeenCalled();
     });
@@ -178,9 +140,7 @@ describe('ShipXPollingJob', () => {
 
   describe('Shipment Status Updates', () => {
     it('should update shipment status from ShipX', async () => {
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(mockClient.request).toHaveBeenCalledWith('/v1/shipments/shipment-123', { method: 'GET' });
       expect(updateOrderShipmentState).toHaveBeenCalledWith(
@@ -193,9 +153,7 @@ describe('ShipXPollingJob', () => {
     });
 
     it('should update existing shipment record', async () => {
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(storage.updateShipment).toHaveBeenCalledWith(
         mockExistingShipment.id,
@@ -209,9 +167,7 @@ describe('ShipXPollingJob', () => {
     it('should handle shipment without existing record', async () => {
       (storage.getShipmentByOrderId as jest.Mock).mockResolvedValue(null);
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(updateOrderShipmentState).toHaveBeenCalled();
       expect(storage.updateShipment).not.toHaveBeenCalled();
@@ -226,9 +182,7 @@ describe('ShipXPollingJob', () => {
         trackingNumber: null,
       });
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(updateOrderShipmentState).toHaveBeenCalledWith(
         mockOrder,
@@ -243,9 +197,7 @@ describe('ShipXPollingJob', () => {
         trackingNumber: 'TRACK999',
       });
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(updateOrderShipmentState).toHaveBeenCalledWith(
         mockOrder,
@@ -260,9 +212,7 @@ describe('ShipXPollingJob', () => {
         trackingNumber: null,
       });
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(updateOrderShipmentState).toHaveBeenCalledWith(
         mockOrder,
@@ -273,9 +223,7 @@ describe('ShipXPollingJob', () => {
 
   describe('Label Generation', () => {
     it('should generate label for confirmed shipments', async () => {
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(mockClient.requestBinary).toHaveBeenCalledWith(
         '/v1/shipments/shipment-123/label?format=pdf',
@@ -294,9 +242,7 @@ describe('ShipXPollingJob', () => {
         labelGenerated: true,
       });
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(mockClient.requestBinary).not.toHaveBeenCalled();
     });
@@ -307,9 +253,7 @@ describe('ShipXPollingJob', () => {
         status: 'created',
       });
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(mockClient.requestBinary).not.toHaveBeenCalled();
     });
@@ -317,9 +261,7 @@ describe('ShipXPollingJob', () => {
     it('should handle label generation errors gracefully', async () => {
       mockClient.requestBinary.mockRejectedValue(new Error('Label generation failed'));
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -330,9 +272,7 @@ describe('ShipXPollingJob', () => {
     });
 
     it('should update shipment status to SHIPPED after label generation', async () => {
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(storage.updateShipment).toHaveBeenCalledWith(
         mockExistingShipment.id,
@@ -349,9 +289,7 @@ describe('ShipXPollingJob', () => {
         .mockRejectedValueOnce(error)
         .mockResolvedValueOnce(mockShipment);
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 500));
-      job.stop();
+      await job.handle();
 
       expect(mockClient.request).toHaveBeenCalledTimes(3);
       expect(updateOrderShipmentState).toHaveBeenCalled();
@@ -360,9 +298,7 @@ describe('ShipXPollingJob', () => {
     it('should not retry on 400 errors', async () => {
       mockClient.request.mockRejectedValue(new ShipXError('Bad request', 400, {}));
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(mockClient.request).toHaveBeenCalledTimes(1);
     });
@@ -374,9 +310,7 @@ describe('ShipXPollingJob', () => {
         .mockRejectedValueOnce(networkError)
         .mockResolvedValueOnce(mockShipment);
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 300));
-      job.stop();
+      await job.handle();
 
       expect(mockClient.request).toHaveBeenCalledTimes(2);
       expect(updateOrderShipmentState).toHaveBeenCalled();
@@ -385,9 +319,7 @@ describe('ShipXPollingJob', () => {
     it('should stop retrying after max attempts', async () => {
       mockClient.request.mockRejectedValue(new ShipXError('Server error', 503, {}));
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 800));
-      job.stop();
+      await job.handle();
 
       expect(mockClient.request).toHaveBeenCalledTimes(3);
     });
@@ -398,11 +330,8 @@ describe('ShipXPollingJob', () => {
       const error = new Error('Database error');
       (storage.listOrdersForShipmentPolling as jest.Mock).mockRejectedValue(error);
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
-      // runJob() rejects → cron callback .catch() fires → logs "ShipX polling failed"
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({ message: 'ShipX polling failed', error })
       );
@@ -416,9 +345,7 @@ describe('ShipXPollingJob', () => {
         .mockRejectedValueOnce(new Error('API error'))
         .mockResolvedValueOnce(mockShipment);
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(mockClient.request).toHaveBeenCalledTimes(2);
       expect(logger.error).toHaveBeenCalledWith(
@@ -432,9 +359,7 @@ describe('ShipXPollingJob', () => {
     it('should handle ShipX API errors', async () => {
       mockClient.request.mockRejectedValue(new ShipXError('Shipment not found', 404, {}));
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -449,9 +374,7 @@ describe('ShipXPollingJob', () => {
     it('should increment shipmentPollFailures in DB on poll failure', async () => {
       mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(storage.updateOrder).toHaveBeenCalledWith(mockOrder.id, { shipmentPollFailures: 1 });
     });
@@ -461,9 +384,7 @@ describe('ShipXPollingJob', () => {
       (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderWith2Failures]);
       mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(storage.updateOrder).toHaveBeenCalledWith(orderWith2Failures.id, { shipmentPollFailures: 3 });
     });
@@ -473,9 +394,7 @@ describe('ShipXPollingJob', () => {
       (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderAtMaxMinus1]);
       mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(updateOrderShipmentState).toHaveBeenCalledWith(
         orderAtMaxMinus1,
@@ -488,9 +407,7 @@ describe('ShipXPollingJob', () => {
       (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderAtMaxMinus1]);
       mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -507,9 +424,7 @@ describe('ShipXPollingJob', () => {
       (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderAtMaxMinus1]);
       mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(storage.updateOrder).not.toHaveBeenCalledWith(
         orderAtMaxMinus1.id,
@@ -521,18 +436,14 @@ describe('ShipXPollingJob', () => {
       const orderWithPriorFailures = { ...mockOrder, shipmentPollFailures: 3 };
       (storage.listOrdersForShipmentPolling as jest.Mock).mockResolvedValue([orderWithPriorFailures]);
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(storage.updateOrder).toHaveBeenCalledWith(orderWithPriorFailures.id, { shipmentPollFailures: 0 });
     });
 
     it('should not call updateOrder for reset when shipmentPollFailures is already 0', async () => {
       // mockOrder has shipmentPollFailures: 0 — no reset needed on success
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(storage.updateOrder).not.toHaveBeenCalledWith(
         mockOrder.id,
@@ -546,9 +457,7 @@ describe('ShipXPollingJob', () => {
       mockClient.request.mockRejectedValue(new ShipXError('Not found', 404, {}));
       (updateOrderShipmentState as jest.Mock).mockRejectedValue(new Error('DB write failed'));
 
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -561,9 +470,7 @@ describe('ShipXPollingJob', () => {
 
   describe('Configuration', () => {
     it('should log environment information when processing shipments', async () => {
-      job.start();
-      await new Promise(resolve => setTimeout(resolve, 50));
-      job.stop();
+      await job.handle();
 
       expect(logger.info).toHaveBeenCalledWith(
         expect.objectContaining({

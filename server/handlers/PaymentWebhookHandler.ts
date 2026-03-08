@@ -138,14 +138,6 @@ async function verifyWebhookSignature(
   const stripeWebhookSecret = AppConfig.STRIPE_WEBHOOK_SECRET;
 
   if (stripeSignature) {
-    if (!deps.stripeService.isAvailable()) {
-      try {
-        return JSON.parse(rawBody.toString("utf8"));
-      } catch {
-        return null;
-      }
-    }
-
     try {
       return deps.stripeService.constructWebhookEvent(rawBody, stripeSignature, stripeWebhookSecret!);
     } catch {

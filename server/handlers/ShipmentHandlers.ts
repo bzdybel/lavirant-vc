@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
-import type { EmailService } from "../services/EmailService";
-import type { ShippingService } from "../services/ShippingService";
+import type { IEmailService } from "../services/EmailService";
+import type { IShippingService } from "../services/ShippingService";
 import type { Order } from "@shared/types/order";
 import { storage } from "../storage";
 
 interface ShipmentDependencies {
-  emailService: EmailService;
-  shippingService: ShippingService;
+  emailService: IEmailService;
+  shippingService: IShippingService;
 }
 
 export function MarkOrderShippedHandler(deps: ShipmentDependencies) {

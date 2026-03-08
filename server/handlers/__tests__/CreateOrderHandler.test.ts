@@ -156,12 +156,11 @@ describe("CreateOrderHandler", () => {
     expect(res.status).toHaveBeenCalledWith(201);
   });
 
-  it("skips Stripe reconciliation when service is not available", async () => {
+  it("skips Stripe reconciliation when no paymentIntentId", async () => {
     mockedStorage.getProduct.mockResolvedValue(makeProduct({ price: 100 }));
-    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data, paymentIntentId: "pi_1" }));
-    stripeService.isAvailable.mockReturnValue(false);
+    mockedStorage.createOrder.mockImplementation(async (data: any) => ({ id: 1, ...data }));
 
-    const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_1" }) });
+    const req = makeRequest({ body: makeOrderBody() });
     const res = makeResponse();
 
     await handler(req as Request, res as Response);
@@ -180,7 +179,6 @@ describe("CreateOrderHandler", () => {
       status: "PAYMENT_PENDING",
     }));
 
-    stripeService.isAvailable.mockReturnValue(true);
     stripeService.updatePaymentIntentMetadata.mockResolvedValue({});
     stripeService.retrievePaymentIntent.mockResolvedValue({ id: PAYMENT_INTENT_ID, status: "succeeded" } as any);
 
@@ -230,7 +228,6 @@ describe("CreateOrderHandler", () => {
       paymentIntentId: "pi_stripe_fail",
     }));
 
-    stripeService.isAvailable.mockReturnValue(true);
     stripeService.updatePaymentIntentMetadata.mockRejectedValue(new Error("Stripe API error"));
 
     const req = makeRequest({ body: makeOrderBody({ paymentIntentId: "pi_stripe_fail" }) });
@@ -250,7 +247,6 @@ describe("CreateOrderHandler", () => {
       status: "PAYMENT_PENDING",
     }));
 
-    stripeService.isAvailable.mockReturnValue(true);
     stripeService.updatePaymentIntentMetadata.mockResolvedValue({});
     stripeService.retrievePaymentIntent.mockResolvedValue({ id: "pi_update_fail", status: "succeeded" } as any);
     paymentStatusService.applyPaymentStatusUpdate.mockRejectedValue(new Error("Update failed"));
@@ -288,7 +284,6 @@ describe("CreateOrderHandler", () => {
       status: "PAYMENT_PENDING",
     }));
 
-    stripeService.isAvailable.mockReturnValue(true);
     stripeService.updatePaymentIntentMetadata.mockResolvedValue({});
     stripeService.retrievePaymentIntent.mockResolvedValue({ id: "pi_processing", status: "processing" } as any);
 
@@ -346,7 +341,6 @@ describe("CreateOrderHandler", () => {
       status: "PAID",
     }));
 
-    stripeService.isAvailable.mockReturnValue(true);
     stripeService.updatePaymentIntentMetadata.mockResolvedValue({});
     stripeService.retrievePaymentIntent.mockResolvedValue({ id: "pi_paid", status: "succeeded" } as any);
 

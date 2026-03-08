@@ -66,9 +66,8 @@ describe("CreatePaymentIntentHandler", () => {
   });
 
   describe("Existing Payment Intent", () => {
-    it("returns existing payment intent when order has one and service is available", async () => {
+    it("returns existing payment intent when order has one", async () => {
       mockedStorage.getOrder.mockResolvedValue({ id: 1, paymentIntentId: "pi_existing" });
-      stripeService.isAvailable.mockReturnValue(true);
       stripeService.retrievePaymentIntent.mockResolvedValue({
         id: "pi_existing",
         client_secret: "secret_existing",
@@ -84,9 +83,9 @@ describe("CreatePaymentIntentHandler", () => {
       expect(stripeService.createPaymentIntent).not.toHaveBeenCalled();
     });
 
-    it("creates new payment intent when service is not available", async () => {
+    it("creates new payment intent when retrievePaymentIntent fails", async () => {
       mockedStorage.getOrder.mockResolvedValue({ id: 1, paymentIntentId: "pi_123" });
-      stripeService.isAvailable.mockReturnValue(false);
+      stripeService.retrievePaymentIntent.mockRejectedValue(new Error("service unavailable"));
       stripeService.createPaymentIntent.mockResolvedValue({ clientSecret: "mock_secret", paymentIntentId: "mock_pi_456" });
 
       const handler = CreatePaymentIntentHandler({ stripeService: stripeService as any });
@@ -94,14 +93,12 @@ describe("CreatePaymentIntentHandler", () => {
       const res = makeResponse();
       await handler(req, res);
 
-      expect(stripeService.retrievePaymentIntent).not.toHaveBeenCalled();
       expect(stripeService.createPaymentIntent).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({ clientSecret: "mock_secret", paymentIntentId: "mock_pi_456" });
     });
 
     it("creates new payment intent when order has no paymentIntentId", async () => {
       mockedStorage.getOrder.mockResolvedValue({ id: 1, paymentIntentId: null });
-      stripeService.isAvailable.mockReturnValue(true);
 
       const handler = CreatePaymentIntentHandler({ stripeService: stripeService as any });
       const req = { body: { amount: 100, orderId: 1 } } as Request;
@@ -126,7 +123,6 @@ describe("CreatePaymentIntentHandler", () => {
 
     it("returns existing intent with null client_secret", async () => {
       mockedStorage.getOrder.mockResolvedValue({ id: 1, paymentIntentId: "pi_null_secret" });
-      stripeService.isAvailable.mockReturnValue(true);
       stripeService.retrievePaymentIntent.mockResolvedValue({ id: "pi_null_secret", client_secret: null });
 
       const handler = CreatePaymentIntentHandler({ stripeService: stripeService as any });
@@ -198,16 +194,17 @@ describe("CreatePaymentIntentHandler", () => {
   });
 
   describe("Error Handling", () => {
-    it("propagates retrievePaymentIntent failure", async () => {
+    it("falls back to new intent when retrievePaymentIntent fails", async () => {
       mockedStorage.getOrder.mockResolvedValue({ id: 1, paymentIntentId: "pi_failed" });
-      stripeService.isAvailable.mockReturnValue(true);
       stripeService.retrievePaymentIntent.mockRejectedValue(new Error("Stripe retrieve error"));
+      stripeService.createPaymentIntent.mockResolvedValue({ clientSecret: "new_secret", paymentIntentId: "pi_new" });
 
       const handler = CreatePaymentIntentHandler({ stripeService: stripeService as any });
       const req = { body: { amount: 100, orderId: 1 } } as Request;
       const res = makeResponse();
 
-      await expect(handler(req, res)).rejects.toThrow("Stripe retrieve error");
+      await handler(req, res);
+      expect(stripeService.createPaymentIntent).toHaveBeenCalled();
     });
 
     it("propagates createPaymentIntent failure", async () => {

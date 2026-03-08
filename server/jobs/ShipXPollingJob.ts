@@ -1,4 +1,3 @@
-import { Cron } from "croner";
 import pRetry from "p-retry";
 import type { ShipXShipmentDetails } from "../../lib/inpost/types";
 import { getShipXClient, ShipXError } from "../../lib/inpost/shipxClient";
@@ -22,80 +21,27 @@ function shipxRetry<T>(action: () => Promise<T>): Promise<T> {
   });
 }
 
-/**
- * ShipX Polling Job
- *
- * Periodically polls ShipX for shipment status updates.
- * Single Responsibility: Synchronize shipment statuses with ShipX.
- */
 export class ShipXPollingJob {
-  private job: Cron | null = null;
   private consecutiveFailures = 0;
 
-  /**
-   * Starts the ShipX polling job
-   */
-  start(): void {
-    if (!AppConfig.INPOST_API_SHIPX) {
-      logger.info({ message: "ShipX polling skipped: INPOST_API_SHIPX not configured." });
-      return;
-    }
-
-    const intervalMinutes = JobConfig.SHIPX_POLL_INTERVAL_MINUTES;
-    const pattern = `*/${intervalMinutes} * * * *`;
-
-    this.job = new Cron(pattern, { protect: true }, () => {
-      this.runJob()
-        .then(() => {
-          this.consecutiveFailures = 0;
-        })
-        .catch((error) => {
-          this.consecutiveFailures++;
-          if (this.consecutiveFailures >= JobConfig.SHIPX_CONSECUTIVE_FAILURE_ALERT_THRESHOLD) {
-            logger.error({
-              message: `[CRITICAL] ShipX polling failed ${this.consecutiveFailures} times consecutively`,
-              consecutiveFailures: this.consecutiveFailures,
-              error,
-            });
-          } else {
-            logger.error({ message: "ShipX polling failed", error });
-          }
+  async handle(): Promise<void> {
+    try {
+      await this.runJob();
+      this.consecutiveFailures = 0;
+    } catch (error) {
+      this.consecutiveFailures++;
+      if (this.consecutiveFailures >= JobConfig.SHIPX_CONSECUTIVE_FAILURE_ALERT_THRESHOLD) {
+        logger.error({
+          message: `[CRITICAL] ShipX polling failed ${this.consecutiveFailures} times consecutively`,
+          consecutiveFailures: this.consecutiveFailures,
+          error,
         });
-    });
-
-    // Run immediately; on failure retry once after a short delay (e.g. DB not yet ready at boot)
-    this.job.trigger().catch((initialError) => {
-      logger.warn({
-        message: `ShipX polling initial run failed, retrying in ${JobConfig.SHIPX_INITIAL_TRIGGER_RETRY_DELAY_MS / 1000}s`,
-        error: initialError,
-      });
-      setTimeout(() => {
-        this.runJob()
-          .then(() => {
-            this.consecutiveFailures = 0;
-          })
-          .catch((retryError) => {
-            this.consecutiveFailures++;
-            logger.error({
-              message: `ShipX polling initial retry also failed. Next attempt in ${intervalMinutes}min`,
-              error: retryError,
-            });
-          });
-      }, JobConfig.SHIPX_INITIAL_TRIGGER_RETRY_DELAY_MS);
-    });
+      } else {
+        logger.error({ message: "ShipX polling failed", error });
+      }
+    }
   }
 
-  /**
-   * Stops the polling job
-   */
-  stop(): void {
-    this.job?.stop();
-    this.job = null;
-  }
-
-  /**
-   * Executes a single job run
-   */
   private async runJob(): Promise<void> {
     const orders = await storage.listOrdersForShipmentPolling();
 
@@ -252,4 +198,9 @@ export class ShipXPollingJob {
   private resolveTrackingNumber(shipment: ShipXShipmentDetails): string | null {
     return shipment.tracking_number || shipment.trackingNumber || null;
   }
+}
+
+export function newShipXPollingJob() {
+  const job = new ShipXPollingJob();
+  return { handle: () => job.handle() };
 }
