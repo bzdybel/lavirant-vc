@@ -4,7 +4,6 @@ import { newShipXPollingJob } from "./ShipXPollingJob";
 import type { IStripeService } from "../services/StripeService";
 import type { PaymentStatusService } from "../services/PaymentStatusService";
 import { AppConfig } from "../config/appConfig";
-import { JobConfig } from "../constants/jobConfig";
 import { logger } from "../utils/logger";
 
 export function initJobs(
@@ -17,7 +16,7 @@ export function initJobs(
   new Cron(paymentPattern, { protect: true }, newPaymentStatusJob(stripeService, paymentStatusService).handle);
 
   if (AppConfig.INPOST_API_SHIPX) {
-    const shipxIntervalMinutes = JobConfig.SHIPX_POLL_INTERVAL_MINUTES;
+    const shipxIntervalMinutes = AppConfig.SHIPX_POLLING_JOB_INTERVAL_MINUTES;
     const shipxPattern = `*/${shipxIntervalMinutes} * * * *`;
 
     new Cron(shipxPattern, { protect: true }, newShipXPollingJob().handle);

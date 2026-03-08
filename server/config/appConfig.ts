@@ -136,6 +136,10 @@ export class AppConfig {
     return this.env.PAYMENT_STATUS_JOB_DRY_RUN;
   }
 
+  static get SHIPX_POLLING_JOB_INTERVAL_MINUTES(): number {
+    return this.env.SHIPX_POLLING_JOB_INTERVAL_MINUTES;
+  }
+
   // Invoice Configuration
   static get INVOICE_STORAGE_DIR(): string | undefined {
     return this.env.INVOICE_STORAGE_DIR;
