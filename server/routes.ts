@@ -5,6 +5,7 @@ import type { IEmailService } from "./services/EmailService";
 import type { IStripeService } from "./services/StripeService";
 import type { PaymentStatusService } from "./services/PaymentStatusService";
 import type { IShippingService } from "./services/ShippingService";
+import type { HealthcheckService } from "./services/HealthcheckService";
 
 import { PaymentWebhookHandler } from "./handlers/PaymentWebhookHandler";
 import { ListProductsHandler, GetProductHandler } from "./handlers/ProductHandlers";
@@ -12,6 +13,7 @@ import { CreatePaymentIntentHandler } from "./handlers/CreatePaymentIntentHandle
 import { CreateOrderHandler } from "./handlers/CreateOrderHandler";
 import { MarkOrderShippedHandler } from "./handlers/ShipmentHandlers";
 import { GetInPostConfigHandler } from "./handlers/InPostHandlers";
+import { HealthcheckHandler } from "./handlers/HealthcheckHandler";
 
 export async function registerRoutes(
   app: Express,
@@ -20,10 +22,13 @@ export async function registerRoutes(
     stripeService: IStripeService;
     paymentStatusService: PaymentStatusService;
     shippingService: IShippingService;
+    healthcheckService: HealthcheckService;
   }
 ): Promise<Server> {
 
-   app.get(
+  app.get("/healthcheck", HealthcheckHandler(services.healthcheckService));
+
+  app.get(
     "/api/shipping/inpost-config",
     GetInPostConfigHandler()
   );

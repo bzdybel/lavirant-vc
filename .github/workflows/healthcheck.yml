@@ -1,0 +1,38 @@
+name: Healthcheck
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Call healthcheck endpoint
+        run: |
+          response=$(curl --silent --max-time 15 --write-out "\n%{http_code}" "${{ secrets.HEALTHCHECK_URL }}")
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | head -n -1)
+
+          echo "HTTP status: $http_code"
+          echo "Response body: $body"
+
+          if [ "$http_code" != "200" ]; then
+            echo "Healthcheck failed: HTTP $http_code"
+            exit 1
+          fi
+
+          status=$(echo "$body" | jq -r '.status')
+          echo "Application status: $status"
+
+          if [ "$status" != "ok" ] && [ "$status" != "degraded" ]; then
+            echo "Healthcheck failed: application status is '$status'"
+            exit 1
+          fi
+
+          if [ "$status" = "degraded" ]; then
+            echo "Warning: application is in degraded state"
+            echo "$body" | jq '.checks'
+          fi

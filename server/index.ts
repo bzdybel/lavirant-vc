@@ -6,7 +6,6 @@ import express from "express";
 import { serveStatic, setupVite, log } from "./vite";
 import { registerRoutes } from "./routes";
 import { setupSitemapRoute } from "./sitemap";
-import { PaymentStatusService } from "./services/PaymentStatusService";
 import { initJobs } from "./jobs/jobs";
 import { initializeDatabase } from "./db";
 import { AppConfig } from "./config/appConfig";
@@ -55,7 +54,8 @@ app.use(requestLogger);
   const emailService = services.EmailService;
   const stripeService = services.StripeService;
   const shippingService = services.ShippingService;
-  const paymentStatusService = new PaymentStatusService(emailService, shippingService);
+  const paymentStatusService = services.PaymentStatusService;
+  const healthcheckService = services.HealthcheckService;
 
   // Validate runtime configuration
   AppConfig.validateRuntimeConfig();
@@ -67,10 +67,11 @@ app.use(requestLogger);
     stripeService,
     paymentStatusService,
     shippingService,
+    healthcheckService,
   });
 
   // Initialize and start background jobs
-  initJobs(stripeService, paymentStatusService);
+  initJobs(stripeService, paymentStatusService, healthcheckService);
 
   // Setup SEO sitemap route
   setupSitemapRoute(app);

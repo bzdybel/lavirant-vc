@@ -48,6 +48,7 @@ export interface IEmailService {
   sendOrderConfirmation(data: OrderConfirmationData): Promise<boolean>;
   sendPaidInvoiceEmail(params: PaidInvoiceEmailParams): Promise<boolean>;
   sendShipmentEmail(params: ShipmentEmailParams): Promise<boolean>;
+  verify(): Promise<boolean>;
 }
 
 export class EmailServiceReal implements IEmailService {
@@ -134,6 +135,10 @@ export class EmailServiceReal implements IEmailService {
       return false;
     }
   }
+
+  async verify(): Promise<boolean> {
+    return this.transporter.verify();
+  }
 }
 
 export class EmailServiceNoop implements IEmailService {
@@ -149,6 +154,10 @@ export class EmailServiceNoop implements IEmailService {
 
   async sendShipmentEmail(params: ShipmentEmailParams): Promise<boolean> {
     logger.info({ message: `${LogPrefix.EMAIL} [Noop] Shipment email`, to: params.order.email, trackingNumber: params.trackingNumber });
+    return true;
+  }
+
+  async verify(): Promise<boolean> {
     return true;
   }
 }

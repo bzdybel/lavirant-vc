@@ -12,6 +12,7 @@ export interface IShippingService {
   onOrderPaid(order: Order): Promise<ShipmentOutput | null>;
   createShipment(order: Order): Promise<ShipmentOutput | null>;
   markShipped(orderId: number): Promise<{ shipmentId: number; trackingNumber: string; trackingUrl: string } | null>;
+  healthcheck(): Promise<boolean>;
 }
 
 export class ShippingServiceReal implements IShippingService {
@@ -221,6 +222,16 @@ export class ShippingServiceReal implements IShippingService {
 
     return { shipmentId: updated.id, trackingNumber: updated.trackingNumber, trackingUrl: updated.trackingUrl };
   }
+
+  async healthcheck(): Promise<boolean> {
+    try {
+      const client = getShipXClient();
+      await client.request<unknown>("/v1/organizations?per_page=1");
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
 
 export class ShippingServiceNoop implements IShippingService {
@@ -293,6 +304,10 @@ export class ShippingServiceNoop implements IShippingService {
     if (!updated) return null;
 
     return { shipmentId: updated.id, trackingNumber: updated.trackingNumber, trackingUrl: updated.trackingUrl };
+  }
+
+  async healthcheck(): Promise<boolean> {
+    return true;
   }
 }
 

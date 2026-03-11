@@ -27,6 +27,7 @@ export interface IStripeService {
   updatePaymentIntentMetadata(paymentIntentId: string, metadata: Record<string, string>): Promise<Stripe.PaymentIntent>;
   constructWebhookEvent(rawBody: Buffer, signature: string, webhookSecret: string): any;
   getWebhookSecret(): string;
+  healthcheck(): Promise<boolean>;
 }
 
 export function mapStripeStatus(status: string): PaymentWebhookStatusType {
@@ -120,6 +121,21 @@ export class StripeServiceReal implements IStripeService {
     return this.config.webhookSecret;
   }
 
+  async healthcheck(): Promise<boolean> {
+    let cleanup: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      cleanup = setTimeout(() => reject(new Error("Stripe healthcheck timeout")), 5000);
+    });
+    try {
+      await Promise.race([this.client.balance.retrieve(), timeout]);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      clearTimeout(cleanup);
+    }
+  }
+
   static mapStripeStatus(status: string): PaymentWebhookStatusType {
     return mapStripeStatus(status);
   }
@@ -170,6 +186,10 @@ export class StripeServiceNoop implements IStripeService {
 
   getWebhookSecret(): string {
     return "";
+  }
+
+  async healthcheck(): Promise<boolean> {
+    return true;
   }
 }
 

@@ -14,4 +14,5 @@ export const LogPrefix = {
   PAYMENT: '[Payment]',
   STRIPE: '💳',
   INVOICE: '[Invoice]',
+  HEALTHCHECK: '[Healthcheck]',
 } as const;

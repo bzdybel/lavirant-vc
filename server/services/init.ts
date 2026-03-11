@@ -1,6 +1,8 @@
 import { type IEmailService, EmailServiceReal, EmailServiceNoop } from "./EmailService";
 import { type IStripeService, StripeServiceReal, StripeServiceNoop } from "./StripeService";
 import { type IShippingService, ShippingServiceReal, ShippingServiceNoop } from "./ShippingService";
+import { PaymentStatusService } from "./PaymentStatusService";
+import { HealthcheckService } from "./HealthcheckService";
 import { AppConfig } from "../config/appConfig";
 
 type Env = "local" | "production";
@@ -9,10 +11,12 @@ type Services = {
   EmailService: IEmailService;
   StripeService: IStripeService;
   ShippingService: IShippingService;
+  PaymentStatusService: PaymentStatusService;
+  HealthcheckService: HealthcheckService;
 };
 
 export function init(env: Env): Services {
-  return {
+  const envServices: Pick<Services, "EmailService" | "StripeService" | "ShippingService"> = {
     local: {
       EmailService: new EmailServiceNoop(),
       StripeService: new StripeServiceNoop(),
@@ -40,4 +44,10 @@ export function init(env: Env): Services {
         : new ShippingServiceReal(),
     },
   }[env];
+
+  return {
+    ...envServices,
+    PaymentStatusService: new PaymentStatusService(envServices.EmailService, envServices.ShippingService),
+    HealthcheckService: new HealthcheckService(envServices.EmailService, envServices.StripeService, envServices.ShippingService),
+  };
 }
