@@ -13,8 +13,11 @@ jobs:
 
     steps:
       - name: Call healthcheck endpoint
+        if: ${{ secrets.HEALTHCHECK_URL != '' }}
+        env:
+          HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
         run: |
-          response=$(curl --silent --max-time 15 --write-out "\n%{http_code}" "${{ secrets.HEALTHCHECK_URL }}")
+          response=$(curl --silent --max-time 15 --write-out "\n%{http_code}" "$HEALTHCHECK_URL")
           http_code=$(echo "$response" | tail -1)
           body=$(echo "$response" | head -n -1)
 
