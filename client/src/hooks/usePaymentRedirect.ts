@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { useStripe } from '@stripe/react-stripe-js';
 import { useLocation } from 'wouter';
 import type { UseMutationResult } from '@tanstack/react-query';
+import type { Stripe } from '@stripe/stripe-js';
 import type { CreateOrderRequest } from '@/services/orderService';
 import {
   getPaymentIntentClientSecret,
@@ -26,17 +26,18 @@ interface PaymentStatus {
 }
 
 interface UsePaymentRedirectParams {
+  stripe: Stripe | null;
   orderMutation: UseMutationResult<any, Error, CreateOrderRequest, unknown>;
   showToast: (config: { title: string; description: string; variant?: 'destructive' }) => void;
   paymentStatus: PaymentStatus;
 }
 
 export function usePaymentRedirect({
+  stripe,
   orderMutation,
   showToast,
   paymentStatus
 }: UsePaymentRedirectParams) {
-  const stripe = useStripe();
   const [, navigate] = useLocation();
 
   useEffect(() => {

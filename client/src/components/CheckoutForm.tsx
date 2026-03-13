@@ -1,3 +1,4 @@
+/* eslint-disable react/no-multi-comp */
 import { useStripe, useElements } from '@stripe/react-stripe-js';
 import { useState, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
@@ -23,9 +24,29 @@ interface CheckoutFormProps {
   productId: number;
 }
 
-export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
+export default function CheckoutForm(props: CheckoutFormProps) {
+  if (STRIPE_CONFIG.isMockMode) {
+    return <MockCheckoutForm {...props} />;
+  }
+  return <StripeCheckoutForm {...props} />;
+}
+
+function MockCheckoutForm(props: CheckoutFormProps) {
+  return <CheckoutFormInner {...props} stripe={null} elements={null} />;
+}
+
+function StripeCheckoutForm(props: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
+  return <CheckoutFormInner {...props} stripe={stripe} elements={elements} />;
+}
+
+type CheckoutFormInnerProps = CheckoutFormProps & {
+  stripe: ReturnType<typeof useStripe>;
+  elements: ReturnType<typeof useElements>;
+};
+
+function CheckoutFormInner({ amount, productId, stripe, elements }: CheckoutFormInnerProps) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -75,6 +96,7 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
   }, [totalAmount, stripe, elements, productPrice, shippingCost, quantity]);
 
   usePaymentRedirect({
+    stripe,
     orderMutation,
     showToast: toast,
     paymentStatus: {
@@ -303,7 +325,7 @@ export default function CheckoutForm({ amount, productId }: CheckoutFormProps) {
 
       <Button
         type="submit"
-        disabled={(!stripe && !STRIPE_CONFIG.isMockMode) || isProcessing}
+        disabled={isProcessing}
         className="w-full bg-[#c9a24d] hover:bg-[#a67c4a] text-[#0f2433] font-bold py-7 text-xl rounded-full overflow-hidden relative shadow-lg hover:shadow-xl transition-all duration-200"
       >
         <span className="relative z-10">
