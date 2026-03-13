@@ -12,6 +12,8 @@ import { AppConfig } from "./config/appConfig";
 import { errorHandler } from "./middleware/errorHandler";
 import { requestLogger } from "./middleware/requestLogger";
 import { securityHeaders } from "./middleware/securityHeaders";
+import { CorrelationExpressMiddleware } from "./middleware/correlationExpressMiddleware";
+import { IdProviderUuidAdapter } from "./utils/idProviderUuidAdapter";
 import { getEnvironment } from "./config/environment";
 import { Prerequisites } from "./config/prerequisites";
 
@@ -37,6 +39,9 @@ app.use((req, res, next) => {
   }
   return express.urlencoded({ extended: false })(req, res, next);
 });
+
+// Attach correlationId to each request and propagate via AsyncLocalStorage
+app.use(new CorrelationExpressMiddleware({ IdProvider: new IdProviderUuidAdapter() }).handle());
 
 // Apply request logging middleware
 app.use(requestLogger);

@@ -5,6 +5,8 @@ import type { Product } from "@shared/types/product";
 import { storage } from "./storage";
 import { renderInvoiceBuffer } from "./invoice/InvoiceDocument";
 import { AppConfig } from "./config/appConfig";
+import { logger } from "./utils/logger";
+import { LogPrefix } from "./constants/logPrefixes";
 
 interface InvoiceGenerationResult {
   invoiceNumber: string;
@@ -70,6 +72,8 @@ export async function generateInvoiceForOrder(order: Order, product?: Product): 
 
   const buffer = await renderInvoiceBuffer(order, product, invoiceNumber, issuedAt);
   fs.writeFileSync(absolutePath, buffer);
+
+  logger.info({ message: `${LogPrefix.INVOICE} Invoice generated`, invoiceNumber, orderId: order.id });
 
   return {
     invoiceNumber,

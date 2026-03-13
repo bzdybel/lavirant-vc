@@ -9,6 +9,9 @@ import { logger } from "../utils/logger";
 export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();
   const requestPath = req.path;
+  // Capture synchronously while guaranteed inside the CorrelationStorage.run() context;
+  // req.correlationId is set by CorrelationExpressMiddleware before this middleware runs.
+  const correlationId = req.correlationId;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   // Intercept res.json to capture response
@@ -35,7 +38,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
         logLine = logLine.slice(0, 79) + "\u2026";
       }
 
-      logger.info({ message: logLine });
+      logger.info({ message: logLine, ...(correlationId !== undefined ? { correlationId } : {}) });
     }
   });
 

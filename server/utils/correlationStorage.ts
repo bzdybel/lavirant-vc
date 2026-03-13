@@ -1,0 +1,35 @@
+import { AsyncLocalStorage } from "node:async_hooks";
+import type { CorrelationIdType } from "./correlationIdVo";
+
+type CorrelationContext = { correlationId: CorrelationIdType };
+
+export const CorrelationStorageError = { Missing: "correlation.storage.missing" };
+
+export class CorrelationStorage {
+  static readonly GLOBAL_KEY = Symbol.for("bgord.CorrelationStorage");
+
+  // biome-ignore lint: lint/suspicious/noAssignInExpressions
+  private static readonly als: AsyncLocalStorage<CorrelationContext> = ((globalThis as any)[
+    this.GLOBAL_KEY
+  ] ??=
+    new AsyncLocalStorage<CorrelationContext>());
+
+  static run<T>(correlationId: CorrelationIdType, action: () => T | Promise<T>): T | Promise<T> {
+    return CorrelationStorage.als.run({ correlationId }, action);
+  }
+
+  static get(): CorrelationIdType {
+    const store = CorrelationStorage.als.getStore();
+
+    if (!store) throw new Error(CorrelationStorageError.Missing);
+    return store.correlationId;
+  }
+}
+
+export function getCorrelationIdSafe(): CorrelationIdType | undefined {
+  try {
+    return CorrelationStorage.get();
+  } catch {
+    return undefined;
+  }
+}
