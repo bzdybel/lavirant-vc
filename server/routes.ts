@@ -14,6 +14,9 @@ import { CreateOrderHandler } from "./handlers/CreateOrderHandler";
 import { MarkOrderShippedHandler } from "./handlers/ShipmentHandlers";
 import { GetInPostConfigHandler } from "./handlers/InPostHandlers";
 import { HealthcheckHandler } from "./handlers/HealthcheckHandler";
+import { HealthBasicAuthMiddleware } from "./middleware/healthBasicAuthMiddleware";
+import { HealthRateLimitMiddleware } from "./middleware/healthRateLimitMiddleware";
+import { HealthTimeoutMiddleware } from "./middleware/healthTimeoutMiddleware";
 
 export async function registerRoutes(
   app: Express,
@@ -26,7 +29,17 @@ export async function registerRoutes(
   }
 ): Promise<Server> {
 
-  app.get("/healthcheck", HealthcheckHandler(services.healthcheckService));
+  const healthBasicAuth = new HealthBasicAuthMiddleware();
+  const healthRateLimit = new HealthRateLimitMiddleware();
+  const healthTimeout = new HealthTimeoutMiddleware();
+
+  app.get(
+    "/healthcheck",
+    healthBasicAuth.handle(),
+    healthRateLimit.handle(),
+    healthTimeout.handle(),
+    HealthcheckHandler(services.healthcheckService)
+  );
 
   app.get(
     "/api/shipping/inpost-config",
