@@ -78,7 +78,7 @@ app.use(requestLogger);
   });
 
   // Initialize and start background jobs
-  initJobs(stripeService, paymentStatusService, healthcheckService);
+  initJobs(stripeService, paymentStatusService);
 
   // Setup SEO sitemap route
   setupSitemapRoute(app);

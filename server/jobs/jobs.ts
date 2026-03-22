@@ -1,10 +1,8 @@
 import { Cron } from "croner";
 import { newPaymentStatusJob } from "./PaymentStatusJob";
 import { newShipXPollingJob } from "./ShipXPollingJob";
-import { newHealthcheckJob } from "./HealthcheckJob";
 import type { IStripeService } from "../services/StripeService";
 import type { PaymentStatusService } from "../services/PaymentStatusService";
-import type { HealthcheckService } from "../services/HealthcheckService";
 import { AppConfig } from "../config/appConfig";
 import { logger } from "../utils/logger";
 import { JobHandlerWithLoggerStrategy } from "../utils/jobHandlerWithLoggerStrategy";
@@ -13,8 +11,7 @@ import { ClockDateAdapter } from "../utils/clockDateAdapter";
 
 export function initJobs(
   stripeService: IStripeService,
-  paymentStatusService: PaymentStatusService,
-  healthcheckService: HealthcheckService
+  paymentStatusService: PaymentStatusService
 ): void {
   const jobStrategy = new JobHandlerWithLoggerStrategy({
     Logger: logger,
@@ -23,7 +20,6 @@ export function initJobs(
   });
 
   const paymentJob = newPaymentStatusJob(stripeService, paymentStatusService);
-  const healthcheckJob = newHealthcheckJob(healthcheckService);
 
   const paymentIntervalMinutes = AppConfig.PAYMENT_STATUS_JOB_INTERVAL_MINUTES;
   const paymentPattern = `*/${paymentIntervalMinutes} * * * *`;
@@ -43,9 +39,4 @@ export function initJobs(
   } else {
     logger.info({ message: "ShipX polling skipped: INPOST_API_SHIPX not configured." });
   }
-
-  new Cron("*/30 * * * *", { protect: true }, () =>
-    jobStrategy.handle({ label: "healthcheck_job", process: healthcheckJob.handle })()
-  );
-  logger.info({ message: "[Healthcheck] Scheduled job registered (every 30 minutes)" });
 }
