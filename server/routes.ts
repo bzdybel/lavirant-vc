@@ -6,6 +6,7 @@ import type { IStripeService } from "./services/StripeService";
 import type { PaymentStatusService } from "./services/PaymentStatusService";
 import type { IShippingService } from "./services/ShippingService";
 import type { HealthcheckService } from "./services/HealthcheckService";
+import type { CaptchaPort } from "./captcha/captcha.port";
 
 import { PaymentWebhookHandler } from "./handlers/PaymentWebhookHandler";
 import { ListProductsHandler, GetProductHandler } from "./handlers/ProductHandlers";
@@ -14,6 +15,7 @@ import { CreateOrderHandler } from "./handlers/CreateOrderHandler";
 import { MarkOrderShippedHandler } from "./handlers/ShipmentHandlers";
 import { GetInPostConfigHandler } from "./handlers/InPostHandlers";
 import { HealthcheckHandler } from "./handlers/HealthcheckHandler";
+import { CaptchaMiddleware } from "./middleware/captcha.middleware";
 import { HealthBasicAuthMiddleware } from "./middleware/healthBasicAuthMiddleware";
 import { HealthRateLimitMiddleware } from "./middleware/healthRateLimitMiddleware";
 import { HealthTimeoutMiddleware } from "./middleware/healthTimeoutMiddleware";
@@ -25,13 +27,15 @@ export async function registerRoutes(
     stripeService: IStripeService;
     paymentStatusService: PaymentStatusService;
     shippingService: IShippingService;
+    captchaService: CaptchaPort;
     healthcheckService: HealthcheckService;
   }
 ): Promise<Server> {
-
   const healthBasicAuth = new HealthBasicAuthMiddleware();
   const healthRateLimit = new HealthRateLimitMiddleware();
   const healthTimeout = new HealthTimeoutMiddleware();
+  const captchaMiddleware = new CaptchaMiddleware({ captchaService: services.captchaService });
+  const captchaGuard = captchaMiddleware.handle();
 
   app.get(
     "/healthcheck",
@@ -46,7 +50,7 @@ export async function registerRoutes(
     GetInPostConfigHandler()
   );
 
-   app.post(
+  app.post(
     "/api/payments/webhook",
     express.raw({ type: "*/*" }),
     PaymentWebhookHandler({
@@ -58,16 +62,18 @@ export async function registerRoutes(
 
   app.post(
     "/api/create-payment-intent",
+    captchaGuard,
     CreatePaymentIntentHandler({
       stripeService: services.stripeService,
     })
   );
 
-   app.get("/api/products", ListProductsHandler());
+  app.get("/api/products", ListProductsHandler());
   app.get("/api/products/:id", GetProductHandler());
 
-   app.post(
+  app.post(
     "/api/orders",
+    captchaGuard,
     CreateOrderHandler({
       emailService: services.emailService,
       stripeService: services.stripeService,
@@ -75,7 +81,7 @@ export async function registerRoutes(
     })
   );
 
-   app.post(
+  app.post(
     "/api/admin/shipments/:orderId/ship",
     MarkOrderShippedHandler({
       emailService: services.emailService,

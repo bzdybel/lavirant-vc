@@ -59,6 +59,7 @@ app.use(requestLogger);
   const emailService = services.EmailService;
   const stripeService = services.StripeService;
   const shippingService = services.ShippingService;
+  const captchaService = services.CaptchaService;
   const paymentStatusService = services.PaymentStatusService;
   const healthcheckService = services.HealthcheckService;
 
@@ -72,6 +73,7 @@ app.use(requestLogger);
     stripeService,
     paymentStatusService,
     shippingService,
+    captchaService,
     healthcheckService,
   });
 

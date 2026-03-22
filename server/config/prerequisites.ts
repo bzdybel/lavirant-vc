@@ -1,4 +1,3 @@
-import { AppConfig } from "./appConfig";
 import type { Environment } from "./environment";
 import { logger } from "../utils/logger";
 
@@ -77,6 +76,15 @@ export class Prerequisites {
     } else if (env.MOCK_INPOST) {
       this.warnings.push("⚠️  Running in MOCK INPOST mode - shipping is simulated");
     }
+
+      // CAPTCHA configuration (required only in production where real adapter is used)
+      if (env.NODE_ENV === "production") {
+        this.checkRequired(
+          "CAPTCHA_SECRET",
+          process.env.CAPTCHA_SECRET,
+          "Captcha secret is required in production"
+        );
+      }
 
     // Invoice Seller Information (required for invoice generation)
     const invoiceFields = [

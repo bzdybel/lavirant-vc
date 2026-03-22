@@ -150,7 +150,7 @@ export class StripeServiceNoop implements IStripeService {
     const finalAmount = finalItemsTotal + finalShippingCost || amount;
     const normalizedFinalAmount = Math.round(finalAmount * 100) / 100;
 
-    const mockId = `pi_mock_${Date.now()}`;
+    const mockId = `mock_pi_${Date.now()}`;
     const mockClientSecret = `${mockId}_secret_${Math.random().toString(36).substring(7)}`;
 
     logger.info({
