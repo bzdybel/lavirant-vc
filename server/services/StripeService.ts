@@ -122,17 +122,11 @@ export class StripeServiceReal implements IStripeService {
   }
 
   async healthcheck(): Promise<boolean> {
-    let cleanup: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<never>((_, reject) => {
-      cleanup = setTimeout(() => reject(new Error("Stripe healthcheck timeout")), 5000);
-    });
     try {
-      await Promise.race([this.client.balance.retrieve(), timeout]);
+      await this.client.balance.retrieve();
       return true;
     } catch {
       return false;
-    } finally {
-      clearTimeout(cleanup);
     }
   }
 

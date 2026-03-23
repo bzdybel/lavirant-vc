@@ -16,6 +16,7 @@ import { MarkOrderShippedHandler } from "./handlers/ShipmentHandlers";
 import { GetInPostConfigHandler } from "./handlers/InPostHandlers";
 import { HealthcheckHandler } from "./handlers/HealthcheckHandler";
 import { CaptchaMiddleware } from "./middleware/captcha.middleware";
+import { asyncHandler } from "./middleware/errorHandler";
 import { HealthBasicAuthMiddleware } from "./middleware/healthBasicAuthMiddleware";
 import { HealthRateLimitMiddleware } from "./middleware/healthRateLimitMiddleware";
 import { HealthTimeoutMiddleware } from "./middleware/healthTimeoutMiddleware";
@@ -42,7 +43,7 @@ export async function registerRoutes(
     healthBasicAuth.handle(),
     healthRateLimit.handle(),
     healthTimeout.handle(),
-    HealthcheckHandler(services.healthcheckService)
+    asyncHandler(HealthcheckHandler(services.healthcheckService))
   );
 
   app.get(

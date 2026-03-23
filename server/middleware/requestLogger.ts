@@ -27,18 +27,15 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 
     // Only log API requests
     if (requestPath.startsWith("/api")) {
-      let logLine = `${req.method} ${requestPath} ${res.statusCode} in ${duration}ms`;
-
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      // Truncate long log lines
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "\u2026";
-      }
-
-      logger.info({ message: logLine, ...(correlationId !== undefined ? { correlationId } : {}) });
+      logger.info({
+        message: "API Request",
+        method: req.method,
+        path: requestPath,
+        statusCode: res.statusCode,
+        durationMs: duration,
+        ...(capturedJsonResponse !== undefined ? { responseBody: capturedJsonResponse } : {}),
+        ...(correlationId !== undefined ? { correlationId } : {}),
+      });
     }
   });
 

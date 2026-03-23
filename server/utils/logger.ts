@@ -1,31 +1,62 @@
 import winston from "winston";
+import type { CorrelationIdType } from "./correlationIdVo";
 import { getCorrelationIdSafe } from "./correlationStorage";
 
-function injectCorrelation(data: object): Record<string, unknown> {
-  const record = data as Record<string, unknown>;
-  if ("correlationId" in record) return record;
-  const correlationId = getCorrelationIdSafe();
-  if (correlationId === undefined) return record;
-  return { correlationId, ...record };
+export type LogCoreType = {
+  timestamp: string;
+  message: string;
+  correlationId?: CorrelationIdType;
+  metadata?: Record<string, any>;
+};
+
+type LogInputType = Record<string, unknown>;
+
+function normalizeLog(data: LogInputType): LogCoreType {
+  const {
+    message,
+    timestamp,
+    correlationId,
+    metadata,
+    ...rest
+  } = data;
+
+  const normalizedMessage = typeof message === "string" ? message : String(message ?? "");
+  const normalizedTimestamp = typeof timestamp === "string" ? timestamp : new Date().toISOString();
+  const normalizedCorrelationId =
+    typeof correlationId === "string" ? (correlationId as CorrelationIdType) : getCorrelationIdSafe();
+
+  const explicitMetadata =
+    metadata && typeof metadata === "object" && !Array.isArray(metadata)
+      ? (metadata as Record<string, any>)
+      : undefined;
+
+  const mergedMetadata: Record<string, any> = {
+    ...rest,
+    ...(explicitMetadata ?? {}),
+  };
+
+  return {
+    timestamp: normalizedTimestamp,
+    message: normalizedMessage,
+    ...(normalizedCorrelationId !== undefined ? { correlationId: normalizedCorrelationId } : {}),
+    ...(Object.keys(mergedMetadata).length > 0 ? { metadata: mergedMetadata } : {}),
+  };
 }
 
 const winstonLogger = winston.createLogger({
   level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
+  format: winston.format.json(),
   transports: [new winston.transports.Console()],
 });
 
 export const logger = {
-  info(data: object): void {
-    winstonLogger.info(injectCorrelation(data));
+  info(data: LogInputType): void {
+    winstonLogger.info(normalizeLog(data));
   },
-  warn(data: object): void {
-    winstonLogger.warn(injectCorrelation(data));
+  warn(data: LogInputType): void {
+    winstonLogger.warn(normalizeLog(data));
   },
-  error(data: object): void {
-    winstonLogger.error(injectCorrelation(data));
+  error(data: LogInputType): void {
+    winstonLogger.error(normalizeLog(data));
   },
 };
