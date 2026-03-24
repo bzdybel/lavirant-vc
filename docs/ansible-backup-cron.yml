@@ -1,0 +1,28 @@
+- name: Install Lavirant production backup script
+  become: yes
+  copy:
+    src: production-server-backup.sh
+    dest: /var/www/lavirant/production-server-backup.sh
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+
+- name: Add Lavirant backup cron job
+  become: yes
+  cron:
+    name: "lavirant-production-backup"
+    user: "{{ admin_user }}"
+    weekday: "*"
+    hour: "2"
+    minute: "0"
+    job: "bash /var/www/lavirant/production-server-backup.sh lavirant"
+
+- name: Add rclone backup sync cron job
+  become: yes
+  cron:
+    name: "lavirant-backups-sync"
+    user: "{{ admin_user }}"
+    weekday: "*"
+    hour: "3"
+    minute: "0"
+    job: "rclone sync -v /backup/lavirant backups:/lavirant"
