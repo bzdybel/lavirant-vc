@@ -21,12 +21,6 @@ export class CaptchaMiddleware implements MiddlewareExpressPort {
 
       const token = this.getToken(req);
 
-      if (!token) {
-        logger.warn({ message: "Captcha token missing", path: req.path, method: req.method });
-        res.status(400).json({ error: "Captcha token is required" });
-        return;
-      }
-
       const ip = this.getClientIp(req);
 
       try {

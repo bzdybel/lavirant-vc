@@ -21,7 +21,12 @@ export class CaptchaRecaptchaAdapter implements CaptchaPort {
     this.verifyUrl = deps.verifyUrl ?? CaptchaRecaptchaAdapter.VERIFY_URL;
   }
 
-  async verify(token: string, ip?: string): Promise<boolean> {
+  async verify(token?: string, ip?: string): Promise<boolean> {
+    if (!token?.trim()) {
+      logger.warn({ message: "Captcha token missing" });
+      return false;
+    }
+
     try {
       const params = new URLSearchParams();
       params.append("secret", this.secret);
