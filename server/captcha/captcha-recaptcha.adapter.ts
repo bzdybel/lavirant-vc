@@ -1,5 +1,5 @@
 import type { CaptchaPort } from "./captcha.port";
-import { requireEnv } from "../utils/env";
+import { getEnv } from "../config/environment";
 import { logger } from "../utils/logger";
 
 type RecaptchaVerifyResponse = {
@@ -17,7 +17,7 @@ export class CaptchaRecaptchaAdapter implements CaptchaPort {
   private readonly verifyUrl: string;
 
   constructor(deps: Dependencies = {}) {
-    this.secret = deps.secret ?? requireEnv("CAPTCHA_SECRET");
+    this.secret = deps.secret ?? (getEnv("CAPTCHA_SECRET") ?? "");
     this.verifyUrl = deps.verifyUrl ?? CaptchaRecaptchaAdapter.VERIFY_URL;
   }
 

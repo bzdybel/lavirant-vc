@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { errorHandler, asyncHandler } from "../errorHandler";
+import { errorHandler } from "../errorHandler";
 import { ValidationError, NotFoundError, UnauthorizedError } from "../../errors/AppError";
 import { HttpStatus } from "../../constants/httpStatus";
 import * as AppConfigModule from "../../config/appConfig";
@@ -317,124 +317,6 @@ describe("errorHandler Middleware", () => {
   });
 });
 
-describe("asyncHandler Wrapper", () => {
-  it("should catch promise rejection and forward to next", async () => {
-    const testError = new ValidationError("Async error");
-    const handler = jest.fn().mockRejectedValueOnce(testError);
-    const wrappedHandler = asyncHandler(handler);
-
-    const req = createMockRequest() as Request;
-    const res = createMockResponse() as Response;
-    const next = createMockNext();
-
-    wrappedHandler(req, res, next);
-
-    // Wait for promise resolution in next tick
-    await new Promise((resolve) => setImmediate(resolve));
-
-    expect(next).toHaveBeenCalledWith(testError);
-  });
-
-  it("should allow successful promise resolution without calling next", async () => {
-    const handler = jest
-      .fn()
-      .mockResolvedValueOnce({ success: true });
-    const wrappedHandler = asyncHandler(handler);
-
-    const req = createMockRequest() as Request;
-    const res = createMockResponse() as Response;
-    const next = createMockNext();
-
-    wrappedHandler(req, res, next);
-
-    // Wait for promise resolution
-    await new Promise((resolve) => setImmediate(resolve));
-
-    expect(next).not.toHaveBeenCalled();
-  });
-
-  it("should handle sync exceptions and forward to next", async () => {
-    const testError = new Error("Sync error");
-    const handler = jest.fn().mockImplementationOnce(() => {
-      throw testError;
-    });
-    const wrappedHandler = asyncHandler(handler);
-
-    const req = createMockRequest() as Request;
-    const res = createMockResponse() as Response;
-    const next = createMockNext();
-
-    wrappedHandler(req, res, next);
-
-    // Wait for promise resolution
-    await new Promise((resolve) => setImmediate(resolve));
-
-    expect(next).toHaveBeenCalledWith(testError);
-  });
-
-  it("should pass req, res, next to handler function", async () => {
-    const handler = jest.fn().mockResolvedValueOnce(undefined);
-    const wrappedHandler = asyncHandler(handler);
-
-    const req = createMockRequest() as Request;
-    const res = createMockResponse() as Response;
-    const next = createMockNext();
-
-    wrappedHandler(req, res, next);
-
-    // Wait for promise resolution
-    await new Promise((resolve) => setImmediate(resolve));
-
-    expect(handler).toHaveBeenCalledWith(req, res, next);
-  });
-
-  it("should handle multiple errors sequentially", async () => {
-    const errors = [
-      new ValidationError("Error 1"),
-      new NotFoundError("Resource"),
-      new Error("Unexpected"),
-    ];
-
-    for (const error of errors) {
-      const handler = jest.fn().mockRejectedValueOnce(error);
-      const wrappedHandler = asyncHandler(handler);
-
-      const req = createMockRequest() as Request;
-      const res = createMockResponse() as Response;
-      const next = createMockNext();
-
-      wrappedHandler(req, res, next);
-
-      // Wait for promise resolution
-      await new Promise((resolve) => setImmediate(resolve));
-
-      expect(next).toHaveBeenCalledWith(error);
-    }
-  });
-
-  it("should preserve handler context", async () => {
-    const _contextValue = { value: "test" };
-    const handler = jest
-      .fn()
-      .mockImplementationOnce(function (this: typeof _contextValue) {
-        return Promise.resolve();
-      });
-
-    const wrappedHandler = asyncHandler(handler);
-
-    const req = createMockRequest() as Request;
-    const res = createMockResponse() as Response;
-    const next = createMockNext();
-
-    wrappedHandler(req, res, next);
-
-    // Wait for promise resolution
-    await new Promise((resolve) => setImmediate(resolve));
-
-    expect(handler).toHaveBeenCalled();
-  });
-});
-
 describe("Edge Cases", () => {
   let consoleSpy: jest.SpyInstance;
 
@@ -528,27 +410,13 @@ describe("Error Handler Integration", () => {
     setIsDevelopment(false);
   });
 
-  it("should work with asyncHandler for complete error flow", async () => {
-    const handler = jest
-      .fn()
-      .mockRejectedValueOnce(new ValidationError("Handler error"));
-    const wrappedHandler = asyncHandler(handler);
-
+  it("should handle ValidationError correctly", () => {
     const req = createMockRequest() as Request;
     const res = createMockResponse() as Response;
     const next = createMockNext();
 
-    // Call wrapped handler which will call next with error
-    wrappedHandler(req, res, next);
+    errorHandler(new ValidationError("Handler error"), req, res, next);
 
-    // Wait for promise
-    await new Promise((resolve) => setImmediate(resolve));
-
-    // Now simulate error handler receiving that error
-    const error = (next as jest.Mock).mock.calls[0][0];
-    errorHandler(error, req, res, next);
-
-    // Verify error handling
     expect(res.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
   });
 
@@ -566,26 +434,14 @@ describe("Error Handler Integration", () => {
     expect(responseData).not.toHaveProperty("stack");
   });
 
-  it("should handle wrapped handler error chain correctly", async () => {
+  it("should handle NotFoundError with stack in development", () => {
     setIsDevelopment(true);
-
-    const handler = jest
-      .fn()
-      .mockRejectedValueOnce(new NotFoundError("Order", 999));
-    const wrappedHandler = asyncHandler(handler);
 
     const req = createMockRequest() as Request;
     const res = createMockResponse() as Response;
     const errorNext = jest.fn();
 
-    wrappedHandler(req, res, errorNext);
-
-    // Wait for promise
-    await new Promise((resolve) => setImmediate(resolve));
-
-    // Get error and handle it
-    const error = errorNext.mock.calls[0][0];
-    errorHandler(error, req, res, errorNext);
+    errorHandler(new NotFoundError("Order", 999), req, res, errorNext);
 
     expect(res.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
   });

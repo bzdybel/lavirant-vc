@@ -1,12 +1,12 @@
 import type { RequestHandler } from "express";
 import type { MiddlewareExpressPort } from "../utils/middlewareExpressPort";
-import { resolveEnv } from "../utils/env";
+import { getEnv } from "../config/environment";
 
 export class HealthTimeoutMiddleware implements MiddlewareExpressPort {
   private readonly timeoutMs: number;
 
   constructor() {
-    this.timeoutMs = parseInt(resolveEnv("HEALTH_TIMEOUT_MS", "2000"), 10);
+    this.timeoutMs = getEnv("HEALTH_TIMEOUT_MS");
   }
 
   handle(): RequestHandler {

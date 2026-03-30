@@ -14,21 +14,30 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
   const correlationId = req.correlationId;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  // Intercept res.json to capture response
+  // Log incoming request
+  if (requestPath.startsWith("/api")) {
+    logger.info({
+      message: "API Request",
+      method: req.method,
+      path: requestPath,
+      ...(correlationId !== undefined ? { correlationId } : {}),
+    });
+  }
+
+  // Intercept res.json to capture response body
   const originalResJson = res.json.bind(res);
   res.json = function (bodyJson: any) {
     capturedJsonResponse = bodyJson;
     return originalResJson(bodyJson);
   };
 
-  // Log after response finishes
+  // Log response after it finishes
   res.on("finish", () => {
     const duration = Date.now() - start;
 
-    // Only log API requests
     if (requestPath.startsWith("/api")) {
       logger.info({
-        message: "API Request",
+        message: "API Response",
         method: req.method,
         path: requestPath,
         statusCode: res.statusCode,

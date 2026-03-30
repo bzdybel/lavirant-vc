@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
 import type { MiddlewareExpressPort } from "../utils/middlewareExpressPort";
-import { resolveEnv } from "../utils/env";
+import { getEnv } from "../config/environment";
 
 export class HealthBasicAuthMiddleware implements MiddlewareExpressPort {
   handle(): RequestHandler {
@@ -36,8 +36,8 @@ export class HealthBasicAuthMiddleware implements MiddlewareExpressPort {
       const username = credentials.slice(0, colonIndex);
       const password = credentials.slice(colonIndex + 1);
 
-      const expectedUsername = resolveEnv("HEALTH_USERNAME");
-      const expectedPassword = resolveEnv("HEALTH_PASSWORD");
+      const expectedUsername = getEnv("HEALTH_USERNAME");
+      const expectedPassword = getEnv("HEALTH_PASSWORD");
 
       if (!expectedUsername || !expectedPassword) {
         unauthorized();

@@ -92,18 +92,3 @@ export function errorHandler(
     ...(includeStack && errorResponse.stack && { stack: errorResponse.stack })
   });
 }
-
-/**
- * Async handler wrapper
- *
- * Wraps async route handlers to automatically catch and forward errors to error handler.
- */
-export function asyncHandler<T extends Request = Request>(
-  fn: (req: T, res: Response, next: NextFunction) => Promise<void | Response>
-) {
-  return (req: T, res: Response, next: NextFunction): void => {
-    Promise.resolve()
-      .then(() => fn(req, res, next))
-      .catch(next);
-  };
-}

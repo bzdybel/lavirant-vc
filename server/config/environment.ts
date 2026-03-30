@@ -60,6 +60,12 @@ export const EnvironmentSchema = z
     INVOICE_SELLER_POST_CODE: z.string().optional(),
     INVOICE_SELLER_ADDRESS: z.string().optional(),
     INVOICE_SELLER_NIP: z.string().optional(),
+    HEALTH_USERNAME: z.string().optional(),
+    HEALTH_PASSWORD: z.string().optional(),
+    RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
+    RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60000),
+    HEALTH_TIMEOUT_MS: z.coerce.number().int().positive().default(2000),
+    CAPTCHA_SECRET: z.string().optional(),
   })
   .strip();
 

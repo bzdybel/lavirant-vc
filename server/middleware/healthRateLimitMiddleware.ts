@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
 import type { MiddlewareExpressPort } from "../utils/middlewareExpressPort";
-import { resolveEnv } from "../utils/env";
+import { getEnv } from "../config/environment";
 
 type IpRecord = { count: number; windowStart: number };
 
@@ -10,8 +10,8 @@ export class HealthRateLimitMiddleware implements MiddlewareExpressPort {
   private readonly windowMs: number;
 
   constructor() {
-    this.max = parseInt(resolveEnv("RATE_LIMIT_MAX", "10"), 10);
-    this.windowMs = parseInt(resolveEnv("RATE_LIMIT_WINDOW_MS", "60000"), 10);
+    this.max = getEnv("RATE_LIMIT_MAX");
+    this.windowMs = getEnv("RATE_LIMIT_WINDOW_MS");
   }
 
   handle(): RequestHandler {

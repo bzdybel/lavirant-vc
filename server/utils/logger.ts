@@ -3,45 +3,12 @@ import type { CorrelationIdType } from "./correlationIdVo";
 import { getCorrelationIdSafe } from "./correlationStorage";
 
 export type LogCoreType = {
-  timestamp: string;
   message: string;
+  timestamp?: string;
   correlationId?: CorrelationIdType;
   metadata?: Record<string, any>;
+  [key: string]: unknown;
 };
-
-type LogInputType = Record<string, unknown>;
-
-function normalizeLog(data: LogInputType): LogCoreType {
-  const {
-    message,
-    timestamp,
-    correlationId,
-    metadata,
-    ...rest
-  } = data;
-
-  const normalizedMessage = typeof message === "string" ? message : String(message ?? "");
-  const normalizedTimestamp = typeof timestamp === "string" ? timestamp : new Date().toISOString();
-  const normalizedCorrelationId =
-    typeof correlationId === "string" ? (correlationId as CorrelationIdType) : getCorrelationIdSafe();
-
-  const explicitMetadata =
-    metadata && typeof metadata === "object" && !Array.isArray(metadata)
-      ? (metadata as Record<string, any>)
-      : undefined;
-
-  const mergedMetadata: Record<string, any> = {
-    ...rest,
-    ...(explicitMetadata ?? {}),
-  };
-
-  return {
-    timestamp: normalizedTimestamp,
-    message: normalizedMessage,
-    ...(normalizedCorrelationId !== undefined ? { correlationId: normalizedCorrelationId } : {}),
-    ...(Object.keys(mergedMetadata).length > 0 ? { metadata: mergedMetadata } : {}),
-  };
-}
 
 const winstonLogger = winston.createLogger({
   level: "info",
@@ -50,13 +17,28 @@ const winstonLogger = winston.createLogger({
 });
 
 export const logger = {
-  info(data: LogInputType): void {
-    winstonLogger.info(normalizeLog(data));
+  info(data: LogCoreType): void {
+    const { timestamp, correlationId, ...rest } = data;
+    winstonLogger.info({
+      timestamp: timestamp ?? new Date().toISOString(),
+      correlationId: correlationId ?? getCorrelationIdSafe(),
+      ...rest,
+    });
   },
-  warn(data: LogInputType): void {
-    winstonLogger.warn(normalizeLog(data));
+  warn(data: LogCoreType): void {
+    const { timestamp, correlationId, ...rest } = data;
+    winstonLogger.warn({
+      timestamp: timestamp ?? new Date().toISOString(),
+      correlationId: correlationId ?? getCorrelationIdSafe(),
+      ...rest,
+    });
   },
-  error(data: LogInputType): void {
-    winstonLogger.error(normalizeLog(data));
+  error(data: LogCoreType): void {
+    const { timestamp, correlationId, ...rest } = data;
+    winstonLogger.error({
+      timestamp: timestamp ?? new Date().toISOString(),
+      correlationId: correlationId ?? getCorrelationIdSafe(),
+      ...rest,
+    });
   },
 };
