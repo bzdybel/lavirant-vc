@@ -77,7 +77,7 @@ export class Prerequisites {
       this.warnings.push("⚠️  Running in MOCK INPOST mode - shipping is simulated");
     }
 
-      // CAPTCHA configuration (required only in production where real adapter is used)
+      // CAPTCHA configuration (required in production where real adapter is used)
       if (env.NODE_ENV === "production") {
         this.checkRequired(
           "CAPTCHA_SECRET",

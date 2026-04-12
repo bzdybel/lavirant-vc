@@ -13,6 +13,7 @@ type Dependencies = {
 
 export class CaptchaRecaptchaAdapter implements CaptchaPort {
   private static readonly VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify";
+
   private readonly secret: string;
   private readonly verifyUrl: string;
 
@@ -21,8 +22,8 @@ export class CaptchaRecaptchaAdapter implements CaptchaPort {
     this.verifyUrl = deps.verifyUrl ?? CaptchaRecaptchaAdapter.VERIFY_URL;
   }
 
-  async verify(token?: string, ip?: string): Promise<boolean> {
-    if (!token?.trim()) {
+  async verify(token: string | undefined, ip?: string): Promise<boolean> {
+    if (!token) {
       logger.warn({ message: "Captcha token missing" });
       return false;
     }

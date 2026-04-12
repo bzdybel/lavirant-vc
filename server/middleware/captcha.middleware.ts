@@ -20,7 +20,6 @@ export class CaptchaMiddleware implements MiddlewareExpressPort {
       }
 
       const token = this.getToken(req);
-
       const ip = this.getClientIp(req);
 
       try {

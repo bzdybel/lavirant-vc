@@ -43,6 +43,10 @@ export class AppConfig {
     return this.env.NODE_ENV === "development";
   }
 
+  static get IS_STAGING(): boolean {
+    return this.env.NODE_ENV === "staging";
+  }
+
   static get BASE_URL(): string | undefined {
     return this.env.BASE_URL;
   }

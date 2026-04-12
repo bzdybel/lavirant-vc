@@ -136,15 +136,6 @@ export class StripeServiceReal implements IStripeService {
 }
 
 export class StripeServiceNoop implements IStripeService {
-  private readonly stripeClient: Stripe | null;
-
-  constructor() {
-    const secretKey = process.env.STRIPE_SECRET_KEY;
-    this.stripeClient = secretKey
-      ? new Stripe(secretKey, { apiVersion: "2025-08-27.basil" })
-      : null;
-  }
-
   async createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntentResponse> {
     const { amount, orderId, itemsTotal, shippingCost } = params;
 
@@ -152,30 +143,6 @@ export class StripeServiceNoop implements IStripeService {
     const finalShippingCost = Number.isFinite(shippingCost) ? shippingCost! : 0;
     const finalAmount = finalItemsTotal + finalShippingCost || amount;
     const normalizedFinalAmount = Math.round(finalAmount * 100) / 100;
-
-    if (this.stripeClient) {
-      const amountInCents = Math.round(normalizedFinalAmount * 100);
-      const paymentIntent = await this.stripeClient.paymentIntents.create({
-        amount: amountInCents,
-        currency: "pln",
-        automatic_payment_methods: { enabled: true, allow_redirects: "always" },
-        metadata: {
-          ...(orderId ? { orderId: String(orderId) } : {}),
-          itemsTotal: String(finalItemsTotal),
-          shippingCost: String(finalShippingCost),
-          finalAmount: String(normalizedFinalAmount),
-        },
-        description: orderId ? `Order #${orderId}` : undefined,
-      });
-
-      logger.info({
-        message: "Noop: real Stripe payment intent created (test keys)",
-        paymentIntentId: paymentIntent.id,
-        amountInCents,
-      });
-
-      return { clientSecret: paymentIntent.client_secret!, paymentIntentId: paymentIntent.id };
-    }
 
     const mockId = `pi_mock_${Date.now()}`;
     const mockClientSecret = `${mockId}_secret_${Math.random().toString(36).substring(7)}`;

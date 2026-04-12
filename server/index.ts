@@ -20,7 +20,7 @@ import { Prerequisites } from "./config/prerequisites";
 const app = express();
 
 // Apply security headers in production only.
-// In development, Vite's HMR preamble is an inline <script type="module"> that
+// In development/staging, Vite's HMR preamble is an inline <script type="module"> that
 // would be blocked by CSP, breaking React Fast Refresh.
 if (process.env.NODE_ENV === "production") {
   app.use(securityHeaders);
@@ -54,7 +54,7 @@ app.use(requestLogger);
   // Initialize services after environment is validated
   const { init } = await import("./services/init");
 
-  const Env = AppConfig.IS_PRODUCTION ? "production" : "local";
+  const Env = AppConfig.IS_PRODUCTION ? "production" : AppConfig.IS_STAGING ? "staging" : "local";
   const services = init(Env);
   const emailService = services.EmailService;
   const stripeService = services.StripeService;
@@ -86,10 +86,10 @@ app.use(requestLogger);
   // Apply error handling middleware (must be last)
   app.use(errorHandler);
 
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
+  if (AppConfig.IS_PRODUCTION) {
     serveStatic(app);
+  } else {
+    await setupVite(app, server);
   }
 
   const port = AppConfig.PORT;

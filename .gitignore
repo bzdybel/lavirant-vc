@@ -3,6 +3,7 @@ dist
 .DS_Store
 .env
 .env-dev
+.env-staging
 server/public
 vite.config.ts.*
 *.tar.gz

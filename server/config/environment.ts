@@ -47,7 +47,7 @@ export const EnvironmentSchema = z
     PAYMENT_STATUS_JOB_INTERVAL_MINUTES: z.coerce.number().int().positive().default(5),
     PAYMENT_PENDING_THRESHOLD_MINUTES: z.coerce.number().int().positive().default(30),
     PAYMENT_STATUS_JOB_DRY_RUN: BooleanString.default("false"),
-    SHIPX_POLLING_JOB_INTERVAL_MINUTES: z.coerce.number().int().positive().default(15),
+    SHIPX_POLLING_JOB_INTERVAL_MINUTES: z.coerce.number().int().positive().default(1),
     INVOICE_STORAGE_DIR: z.string().optional(),
     INVOICE_SELLER_NAME: z.string().optional(),
     INVOICE_SELLER_FIRST_NAME: z.string().optional(),
@@ -60,12 +60,6 @@ export const EnvironmentSchema = z
     INVOICE_SELLER_POST_CODE: z.string().optional(),
     INVOICE_SELLER_ADDRESS: z.string().optional(),
     INVOICE_SELLER_NIP: z.string().optional(),
-    HEALTH_USERNAME: z.string().optional(),
-    HEALTH_PASSWORD: z.string().optional(),
-    RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
-    RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60000),
-    HEALTH_TIMEOUT_MS: z.coerce.number().int().positive().default(2000),
-    CAPTCHA_SECRET: z.string().optional(),
   })
   .strip();
 

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx server/index.ts",
     "dev:env-dev": "cross-env NODE_ENV=development DOTENV_CONFIG_PATH=.env-dev tsx server/index.ts",
+    "dev:staging": "cross-env NODE_ENV=staging DOTENV_CONFIG_PATH=.env-staging tsx server/index.ts",
     "dev:ngrok": "ngrok http 5173",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "build-prd": "vite build --mode production && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",

@@ -1,3 +1,3 @@
 export interface CaptchaPort {
-  verify(token?: string, ip?: string): Promise<boolean>;
+  verify(token: string | undefined, ip?: string): Promise<boolean>;
 }
