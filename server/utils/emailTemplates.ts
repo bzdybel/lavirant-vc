@@ -114,8 +114,16 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData): Ema
                         <td style="padding-top: 12px; border-top: 1px solid #e5e5e5;">
                           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                             <tr>
-                              <td style="font-size: 15px; color: #1a1a1a; font-weight: 600; padding-top: 4px;">Razem</td>
-                              <td style="font-size: 20px; color: #1a1a1a; font-weight: 600; text-align: right;">${formatPrice(data.total)}</td>
+                              <td style="font-size: 14px; color: #525252; padding-top: 4px;">Produkty</td>
+                              <td style="font-size: 14px; color: #525252; text-align: right;">${formatPrice(data.total - data.shippingCost)}</td>
+                            </tr>
+                            <tr>
+                              <td style="font-size: 14px; color: #525252; padding-top: 4px;">Dostawa</td>
+                              <td style="font-size: 14px; color: #525252; text-align: right;">${data.shippingCost > 0 ? formatPrice(data.shippingCost) : 'Gratis'}</td>
+                            </tr>
+                            <tr>
+                              <td style="font-size: 15px; color: #1a1a1a; font-weight: 600; padding-top: 12px;">Razem</td>
+                              <td style="font-size: 20px; color: #1a1a1a; font-weight: 600; text-align: right; padding-top: 8px;">${formatPrice(data.total)}</td>
                             </tr>
                           </table>
                         </td>
@@ -178,6 +186,8 @@ Produkt: ${data.productName}
 Ilość: ${data.quantity}
 Cena jednostkowa: ${formatPrice(data.total / data.quantity)}
 
+Produkty: ${formatPrice(data.total - data.shippingCost)}
+Dostawa: ${data.shippingCost > 0 ? formatPrice(data.shippingCost) : 'Gratis'}
 SUMA DO ZAPŁATY: ${formatPrice(data.total)}
 
 ADRES DOSTAWY
@@ -239,6 +249,10 @@ export function generateInvoiceEmail(
                     <div style="font-size: 15px; color: #1a1a1a; font-weight: 600;">#${order.id}</div>
                     <div style="font-size: 13px; color: #737373; padding: 16px 0 6px 0;">Produkt</div>
                     <div style="font-size: 15px; color: #1a1a1a;">${productName} × ${order.quantity}</div>
+                    <div style="font-size: 13px; color: #737373; padding: 16px 0 6px 0;">Produkty</div>
+                    <div style="font-size: 15px; color: #1a1a1a;">${formatPrice(order.total - (order.deliveryCost ?? 0))}</div>
+                    <div style="font-size: 13px; color: #737373; padding: 16px 0 6px 0;">Dostawa</div>
+                    <div style="font-size: 15px; color: #1a1a1a;">${(order.deliveryCost ?? 0) > 0 ? formatPrice(order.deliveryCost!) : 'Gratis'}</div>
                     <div style="font-size: 13px; color: #737373; padding: 16px 0 6px 0;">Łącznie</div>
                     <div style="font-size: 15px; color: #1a1a1a; font-weight: 600;">${formatPrice(order.total)}</div>
                   </td>
@@ -276,6 +290,8 @@ Płatność została potwierdzona. Faktura VAT ${invoiceNumber} jest w załączn
 Zamówienie #${order.id}
 Produkt: ${productName}
 Ilość: ${order.quantity}
+Produkty: ${formatPrice(order.total - (order.deliveryCost ?? 0))}
+Dostawa: ${(order.deliveryCost ?? 0) > 0 ? formatPrice(order.deliveryCost!) : 'Gratis'}
 Kwota: ${formatPrice(order.total)}
 
 W razie pytań napisz do nas: zamowienia@lavirant.pl

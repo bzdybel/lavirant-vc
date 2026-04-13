@@ -14,6 +14,7 @@ export interface OrderConfirmationData {
   productName: string;
   quantity: number;
   total: number;
+  shippingCost: number;
   address: string;
   city: string;
   postalCode: string;

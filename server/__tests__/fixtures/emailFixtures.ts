@@ -15,6 +15,7 @@ export function makeOrderConfirmationData(
     productName: "Test Product",
     quantity: 1,
     total: 100,
+    shippingCost: 0,
     address: "123 Main St",
     city: "City",
     postalCode: "12-345",

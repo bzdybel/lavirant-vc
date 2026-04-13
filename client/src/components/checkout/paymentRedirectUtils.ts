@@ -5,6 +5,7 @@ const STORAGE_KEY = 'checkout_form_data';
 interface SavedFormData {
   productId: number;
   quantity: number;
+  deliveryCost?: number;
   deliveryMethod?: "INPOST_PACZKOMAT" | "INPOST_KURIER";
   deliveryPoint?: {
     id: string;
@@ -50,6 +51,7 @@ export function createOrderFromSavedData(
     productId: savedData.productId,
     quantity: savedData.quantity,
     paymentIntentId,
+    deliveryCost: savedData.deliveryCost,
     deliveryMethod: savedData.deliveryMethod,
     deliveryPoint: savedData.deliveryPoint,
     firstName: savedData.firstName,

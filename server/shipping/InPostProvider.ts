@@ -109,6 +109,11 @@ export class InPostProvider implements ShippingProvider {
       body: JSON.stringify(shipmentPayload),
     });
 
+    logger.info({
+      message: "ShipX API response",
+      metadata: { orderId: order.id, response: responseJson },
+    });
+
     const shipmentId = String(responseJson.id);
     if (!shipmentId || shipmentId === "undefined") {
       throw new Error("InPost ShipX response missing shipment id");

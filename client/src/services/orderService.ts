@@ -5,6 +5,7 @@ export interface CreateOrderRequest {
   productId: number;
   quantity: number;
   paymentIntentId: string;
+  deliveryCost?: number;
   deliveryMethod?: InpostDeliveryMethod;
   deliveryPoint?: InpostDeliveryPoint;
   firstName: string;

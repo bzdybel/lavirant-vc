@@ -98,6 +98,7 @@ function sendOrderConfirmationEmail(order: any, product: any, emailService: IEma
     productName: product.name,
     quantity: order.quantity,
     total: order.total,
+    shippingCost: order.deliveryCost ?? 0,
     address: order.address,
     city: order.city,
     postalCode: order.postalCode,
