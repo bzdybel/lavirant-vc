@@ -82,7 +82,7 @@ class ProcessEnvironmentLoader implements EnvironmentLoader {
       if (error instanceof z.ZodError) {
         logger.error({
           message: "Environment validation failed",
-          issues: error.errors.map((err) => ({ path: err.path.join("."), message: err.message })),
+          metadata: { issues: error.errors.map((err) => ({ path: err.path.join("."), message: err.message })) },
         });
       }
       throw new Error("Failed to load environment configuration");

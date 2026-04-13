@@ -3,7 +3,6 @@ import type { Transporter } from 'nodemailer';
 import path from 'path';
 import type { Order } from "@shared/types/order";
 import type { Product } from "@shared/types/product";
-import { LogPrefix } from "../constants/logPrefixes";
 import * as EmailTemplates from "../utils/emailTemplates";
 import { logger } from "../utils/logger";
 
@@ -81,10 +80,10 @@ export class EmailServiceReal implements IEmailService {
         html,
       });
 
-      logger.info({ message: "Order confirmation email sent", to: data.email, messageId: info.messageId, orderId: data.orderId });
+      logger.info({ message: "Order confirmation email sent", metadata: { to: data.email, messageId: info.messageId, orderId: data.orderId } });
       return true;
     } catch (error) {
-      logger.error({ message: "Failed to send order confirmation email", to: data.email, error });
+      logger.error({ message: "Failed to send order confirmation email", metadata: { to: data.email }, error });
       return false;
     }
   }
@@ -106,10 +105,10 @@ export class EmailServiceReal implements IEmailService {
         attachments: [{ filename: path.basename(attachmentPath), path: attachmentPath }],
       });
 
-      logger.info({ message: "Invoice email sent", to: order.email, messageId: info.messageId, orderId: order.id, invoiceNumber });
+      logger.info({ message: "Invoice email sent", metadata: { to: order.email, messageId: info.messageId, orderId: order.id, invoiceNumber } });
       return true;
     } catch (error) {
-      logger.error({ message: "Failed to send invoice email", to: order.email, orderId: order.id, error });
+      logger.error({ message: "Failed to send invoice email", metadata: { to: order.email, orderId: order.id }, error });
       return false;
     }
   }
@@ -128,10 +127,10 @@ export class EmailServiceReal implements IEmailService {
         html,
       });
 
-      logger.info({ message: "Shipment email sent", to: order.email, messageId: info.messageId, orderId: order.id });
+      logger.info({ message: "Shipment email sent", metadata: { to: order.email, messageId: info.messageId, orderId: order.id } });
       return true;
     } catch (error) {
-      logger.error({ message: "Failed to send shipment email", to: order.email, orderId: order.id, error });
+      logger.error({ message: "Failed to send shipment email", metadata: { to: order.email, orderId: order.id }, error });
       return false;
     }
   }
@@ -143,17 +142,17 @@ export class EmailServiceReal implements IEmailService {
 
 export class EmailServiceNoop implements IEmailService {
   async sendOrderConfirmation(data: OrderConfirmationData): Promise<boolean> {
-    logger.info({ message: `${LogPrefix.EMAIL} [Noop] Order confirmation`, to: data.email, orderId: data.orderId });
+    logger.info({ message: "Order confirmation email sent (noop)", metadata: { to: data.email, orderId: data.orderId } });
     return true;
   }
 
   async sendPaidInvoiceEmail(params: PaidInvoiceEmailParams): Promise<boolean> {
-    logger.info({ message: `${LogPrefix.EMAIL} [Noop] Invoice email`, to: params.order.email, orderId: params.order.id, invoiceNumber: params.invoiceNumber });
+    logger.info({ message: "Invoice email sent (noop)", metadata: { to: params.order.email, orderId: params.order.id, invoiceNumber: params.invoiceNumber } });
     return true;
   }
 
   async sendShipmentEmail(params: ShipmentEmailParams): Promise<boolean> {
-    logger.info({ message: `${LogPrefix.EMAIL} [Noop] Shipment email`, to: params.order.email, trackingNumber: params.trackingNumber });
+    logger.info({ message: "Shipment email sent (noop)", metadata: { to: params.order.email, orderId: params.order.id, trackingNumber: params.trackingNumber } });
     return true;
   }
 

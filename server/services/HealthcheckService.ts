@@ -1,7 +1,6 @@
 import type { IEmailService } from "./EmailService";
 import type { IStripeService } from "./StripeService";
 import type { IShippingService } from "./ShippingService";
-import { LogPrefix } from "../constants/logPrefixes";
 import { logger } from "../utils/logger";
 
 const MB = 1024 * 1024;
@@ -62,14 +61,16 @@ export class HealthcheckService {
   logResult(result: HealthcheckResult): void {
     const level = result.status === "ok" ? "info" : result.status === "degraded" ? "warn" : "error";
     logger[level]({
-      message: `${LogPrefix.HEALTHCHECK} Result`,
-      status: result.status,
-      mailer: result.checks.mailer,
-      stripe: result.checks.stripe,
-      inpost: result.checks.inpost,
-      memoryUsedMB: result.checks.memory.used,
-      memoryTotalMB: result.checks.memory.total,
-      memoryHealthy: result.checks.memory.healthy,
+      message: "Healthcheck result",
+      metadata: {
+        status: result.status,
+        mailer: result.checks.mailer,
+        stripe: result.checks.stripe,
+        inpost: result.checks.inpost,
+        memoryUsedMB: result.checks.memory.used,
+        memoryTotalMB: result.checks.memory.total,
+        memoryHealthy: result.checks.memory.healthy,
+      },
     });
   }
 

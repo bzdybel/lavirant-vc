@@ -1,5 +1,4 @@
 import { getEnvironment, type Environment } from "./environment";
-import { JobConfig } from "../constants/jobConfig";
 
 /**
  * Application Configuration

@@ -16,6 +16,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
+    "seed:products": "tsx scripts/seed-products.ts",
+    "seed:products:dev": "cross-env DOTENV_CONFIG_PATH=.env-dev tsx scripts/seed-products.ts",
     "lint": "eslint \"client/src/**/*.{ts,tsx}\"",
     "lint:fix": "eslint \"client/src/**/*.{ts,tsx}\" --fix",
     "test": "jest"

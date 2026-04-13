@@ -10,6 +10,7 @@ export const products = sqliteTable("products", {
   price: integer("price").notNull(), // Price in cents
   image: text("image").notNull(),
   category: text("category").notNull(),
+  availableQuantity: integer("available_quantity").notNull().default(0),
 });
 
 export const orders = sqliteTable("orders", {

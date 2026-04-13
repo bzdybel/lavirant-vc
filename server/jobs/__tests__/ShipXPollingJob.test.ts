@@ -122,8 +122,8 @@ describe('ShipXPollingJob', () => {
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('Skipping mock shipment id'),
-          shipmentId: 'MOCK-12345',
+          message: 'ShipX polling skipped mock shipment',
+          metadata: expect.objectContaining({ providerShipmentId: 'MOCK-12345' }),
         })
       );
       expect(mockClient.request).not.toHaveBeenCalled();
@@ -265,8 +265,8 @@ describe('ShipXPollingJob', () => {
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('Failed to generate label'),
-          orderId: mockOrder.id,
+          message: 'Failed to generate label',
+          metadata: expect.objectContaining({ orderId: mockOrder.id }),
         })
       );
     });
@@ -351,7 +351,7 @@ describe('ShipXPollingJob', () => {
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'ShipX polling failed for shipment',
-          orderId: 1,
+          metadata: expect.objectContaining({ orderId: 1 }),
         })
       );
     });
@@ -364,7 +364,9 @@ describe('ShipXPollingJob', () => {
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'ShipX polling failed for shipment',
-          shipmentId: mockOrder.shipmentId,
+          metadata: expect.objectContaining({
+            providerShipmentId: mockOrder.shipmentId,
+          }),
         })
       );
     });
@@ -411,10 +413,12 @@ describe('ShipXPollingJob', () => {
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('[CRITICAL]'),
-          orderId: orderAtMaxMinus1.id,
-          failures: 5,
-          maxFailures: 5,
+          message: 'ShipX polling max failures exceeded',
+          metadata: expect.objectContaining({
+            orderId: orderAtMaxMinus1.id,
+            failures: 5,
+            maxFailures: 5,
+          }),
         })
       );
     });
@@ -461,8 +465,8 @@ describe('ShipXPollingJob', () => {
 
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: 'Failed to mark order as polling_failed',
-          orderId: orderAtMaxMinus1.id,
+          message: 'Failed to mark order as polling failed',
+          metadata: expect.objectContaining({ orderId: orderAtMaxMinus1.id }),
         })
       );
     });
@@ -474,8 +478,8 @@ describe('ShipXPollingJob', () => {
 
       expect(logger.info).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('Fetching shipment from sandbox'),
-          environment: 'sandbox',
+          message: 'ShipX polling fetching shipment',
+          metadata: expect.objectContaining({ environment: 'sandbox' }),
         })
       );
     });

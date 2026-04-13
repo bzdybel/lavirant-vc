@@ -8,6 +8,7 @@ interface Product {
   description?: string;
   price: number;
   image: string;
+  availableQuantity: number;
 }
 
 interface ProductResponse {
@@ -16,6 +17,7 @@ interface ProductResponse {
   description?: string;
   price: number;
   image: string;
+  availableQuantity: number;
 }
 
 interface PaymentIntentResponse {
@@ -29,7 +31,8 @@ const fetchProduct = async (productId: string): Promise<Product> => {
     id: data.id,
     name: data.name,
     price: data.price / 100, // Convert from cents
-    image: data.image
+    image: data.image,
+    availableQuantity: data.availableQuantity,
   };
 };
 

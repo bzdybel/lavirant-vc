@@ -37,6 +37,11 @@ export const PaymentSection = () => {
             type: "tabs",
             defaultCollapsed: false,
           },
+          fields: {
+            billingDetails: {
+              email: "never",
+            },
+          },
         }}
       />
     </div>

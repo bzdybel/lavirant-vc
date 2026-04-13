@@ -9,3 +9,8 @@ vite.config.ts.*
 *.tar.gz
 coverage
 storage/invoices/
+data.db
+data-staging.db
+lint-out.txt
+lint-output.txt
+staging-logs.txt

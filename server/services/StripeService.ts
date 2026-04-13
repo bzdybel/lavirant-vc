@@ -1,5 +1,4 @@
 import Stripe from "stripe";
-import { LogPrefix } from "../constants/logPrefixes";
 import { ServiceUnavailableError } from "../errors/AppError";
 import { StripePaymentIntentStatus, PaymentWebhookStatus, type PaymentWebhookStatusType } from "../constants/paymentStatus";
 import { logger } from "../utils/logger";
@@ -23,6 +22,7 @@ export interface StripeConfig {
 
 export interface IStripeService {
   createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntentResponse>;
+  updatePaymentIntentAmount(paymentIntentId: string, amount: number, metadata?: Record<string, string>): Promise<void>;
   retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent>;
   updatePaymentIntentMetadata(paymentIntentId: string, metadata: Record<string, string>): Promise<Stripe.PaymentIntent>;
   constructWebhookEvent(rawBody: Buffer, signature: string, webhookSecret: string): any;
@@ -65,12 +65,8 @@ export class StripeServiceReal implements IStripeService {
     const amountInCents = Math.round(normalizedFinalAmount * 100);
 
     logger.info({
-      message: `${LogPrefix.STRIPE} Payment Intent Creation`,
-      itemsTotal: finalItemsTotal,
-      shippingCost: finalShippingCost,
-      finalAmount: normalizedFinalAmount,
-      amountFromFrontend: amount,
-      orderId,
+      message: "Payment intent creation started",
+      metadata: { itemsTotal: finalItemsTotal, shippingCost: finalShippingCost, finalAmount: normalizedFinalAmount, amountFromFrontend: amount, orderId },
     });
 
     const paymentIntent = await this.client.paymentIntents.create({
@@ -90,16 +86,28 @@ export class StripeServiceReal implements IStripeService {
     });
 
     logger.info({
-      message: "Stripe payment intent created",
-      paymentIntentId: paymentIntent.id,
-      amountInCents,
-      amountInPLN: normalizedFinalAmount,
+      message: "Payment intent created",
+      metadata: { paymentIntentId: paymentIntent.id, amountInCents, amountInPLN: normalizedFinalAmount },
     });
 
     return {
       clientSecret: paymentIntent.client_secret!,
       paymentIntentId: paymentIntent.id,
     };
+  }
+
+  async updatePaymentIntentAmount(paymentIntentId: string, amount: number, metadata?: Record<string, string>): Promise<void> {
+    const amountInCents = Math.round(Math.round(amount * 100) / 100 * 100);
+
+    logger.info({
+      message: "Payment intent amount update",
+      metadata: { paymentIntentId, amountInPLN: amount, amountInCents, ...metadata },
+    });
+
+    await this.client.paymentIntents.update(paymentIntentId, {
+      amount: amountInCents,
+      ...(metadata ? { metadata } : {}),
+    });
   }
 
   async retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
@@ -149,14 +157,17 @@ export class StripeServiceNoop implements IStripeService {
 
     logger.info({
       message: "Mock payment intent created",
-      mockId,
-      amount: normalizedFinalAmount,
-      itemsTotal: finalItemsTotal,
-      shippingCost: finalShippingCost,
-      orderId,
+      metadata: { paymentIntentId: mockId, amountInPLN: normalizedFinalAmount, itemsTotal: finalItemsTotal, shippingCost: finalShippingCost, orderId },
     });
 
     return { clientSecret: mockClientSecret, paymentIntentId: mockId };
+  }
+
+  async updatePaymentIntentAmount(_paymentIntentId: string, amount: number, _metadata?: Record<string, string>): Promise<void> {
+    logger.info({
+      message: "Mock payment intent amount update (noop)",
+      metadata: { paymentIntentId: _paymentIntentId, amountInPLN: amount },
+    });
   }
 
   async retrievePaymentIntent(_paymentIntentId: string): Promise<Stripe.PaymentIntent> {

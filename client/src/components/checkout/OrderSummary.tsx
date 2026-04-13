@@ -11,6 +11,7 @@ interface OrderSummaryProps {
   totalAmount: number;
   unitPrice: number;
   quantity: number;
+  maxQuantity: number;
   onQuantityChange: (_value: number) => void;
 }
 
@@ -21,6 +22,7 @@ export const OrderSummary = ({
   totalAmount,
   unitPrice,
   quantity,
+  maxQuantity,
   onQuantityChange,
 }: OrderSummaryProps) => {
   const handleDecrease = () => {
@@ -30,7 +32,7 @@ export const OrderSummary = ({
   };
 
   const handleIncrease = () => {
-    if (quantity < 10) {
+    if (quantity < maxQuantity) {
       onQuantityChange(quantity + 1);
     }
   };
@@ -48,7 +50,10 @@ export const OrderSummary = ({
         </div>
 
         <div className="flex justify-between items-center text-white/80">
-          <span>Ilość</span>
+          <div className="flex flex-col">
+            <span>Ilość</span>
+            <span className="text-xs text-white/50">Dostępne: {maxQuantity}</span>
+          </div>
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -67,7 +72,7 @@ export const OrderSummary = ({
               size="icon"
               className="h-8 w-8 bg-[#0f2433] border-white/20 text-white hover:bg-[#1a3244] hover:text-white"
               onClick={handleIncrease}
-              disabled={quantity >= 10}
+              disabled={quantity >= maxQuantity}
             >
               <Plus className="h-4 w-4" />
             </Button>

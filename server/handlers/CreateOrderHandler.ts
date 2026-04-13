@@ -4,6 +4,7 @@ import type { IStripeService } from "../services/StripeService";
 import type { PaymentStatusService } from "../services/PaymentStatusService";
 import type { Order } from "@shared/types/order";
 import { storage } from "../storage";
+import { StockService } from "../services/StockService";
 import { logger } from "../utils/logger";
 
 interface CreateOrderDependencies {
@@ -141,10 +142,12 @@ export function CreateOrderHandler(deps: CreateOrderDependencies) {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    await StockService.validateStock(request.productId, request.quantity);
+
     const total = calculateOrderTotal(product, request.quantity, request.deliveryCost);
     const order = await createOrderRecord(request, product, total);
 
-    logger.info({ message: "Order created", orderId: order.id });
+    logger.info({ message: "Order created", metadata: { orderId: order.id } });
 
     await sendOrderConfirmationEmail(order, product, deps.emailService).catch(() => {});
     await reconcileStripePayment(order, product, deps).catch(() => {});

@@ -131,6 +131,7 @@ export default function Checkout() {
                  <CheckoutForm
                   amount={product.price}
                   productId={product.id}
+                  availableQuantity={product.availableQuantity}
                 />
              )}
 
@@ -190,6 +191,8 @@ export default function Checkout() {
                 <CheckoutForm
                   amount={product.price}
                   productId={product.id}
+                  availableQuantity={product.availableQuantity}
+                  clientSecret={clientSecret}
                 />
               </Elements>
             )}

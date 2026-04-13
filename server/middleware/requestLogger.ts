@@ -17,9 +17,8 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
   // Log incoming request
   if (requestPath.startsWith("/api")) {
     logger.info({
-      message: "API Request",
-      method: req.method,
-      path: requestPath,
+      message: "API request",
+      metadata: { method: req.method, path: requestPath },
       ...(correlationId !== undefined ? { correlationId } : {}),
     });
   }
@@ -37,12 +36,14 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 
     if (requestPath.startsWith("/api")) {
       logger.info({
-        message: "API Response",
-        method: req.method,
-        path: requestPath,
-        statusCode: res.statusCode,
-        durationMs: duration,
-        ...(capturedJsonResponse !== undefined ? { responseBody: capturedJsonResponse } : {}),
+        message: "API response",
+        metadata: {
+          method: req.method,
+          path: requestPath,
+          statusCode: res.statusCode,
+          durationMs: duration,
+          ...(capturedJsonResponse !== undefined ? { responseBody: capturedJsonResponse } : {}),
+        },
         ...(correlationId !== undefined ? { correlationId } : {}),
       });
     }

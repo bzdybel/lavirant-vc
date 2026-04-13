@@ -2,7 +2,6 @@ import { storage } from "../storage";
 import { type IStripeService, mapStripeStatus } from "../services/StripeService";
 import type { PaymentStatusService } from "../services/PaymentStatusService";
 import { AppConfig } from "../config/appConfig";
-import { LogPrefix } from "../constants/logPrefixes";
 import { logger } from "../utils/logger";
 
 export function newPaymentStatusJob(
@@ -17,18 +16,15 @@ export function newPaymentStatusJob(
       const dryRun = AppConfig.PAYMENT_STATUS_JOB_DRY_RUN;
 
       logger.info({
-        message: "Payment status job run",
-        startedAt,
-        dryRun,
-        pendingOrders: pendingOrders.length,
-        pendingThresholdMinutes: AppConfig.PAYMENT_PENDING_THRESHOLD_MINUTES,
+        message: "Payment status job started",
+        metadata: { startedAt, dryRun, pendingOrders: pendingOrders.length, pendingThresholdMinutes: AppConfig.PAYMENT_PENDING_THRESHOLD_MINUTES },
       });
 
       for (const order of pendingOrders) {
         await processOrder(order, cutoffTime, dryRun);
       }
     } catch (error) {
-      logger.error({ message: "Payment status job run failed", error });
+      logger.error({ message: "Payment status job failed", error });
     }
   }
 
@@ -41,12 +37,8 @@ export function newPaymentStatusJob(
     const isEligible = createdAt <= cutoffTime && Boolean(order.paymentIntentId);
 
     logger.info({
-      message: "Checking order",
-      orderId: order.id,
-      paymentIntentId: order.paymentIntentId,
-      paymentPendingAt: order.paymentPendingAt,
-      createdAt: order.createdAt,
-      eligible: isEligible,
+      message: "Payment status order check",
+      metadata: { orderId: order.id, paymentIntentId: order.paymentIntentId, paymentPendingAt: order.paymentPendingAt, createdAt: order.createdAt, eligible: isEligible },
     });
 
     if (!isEligible) {
@@ -58,12 +50,8 @@ export function newPaymentStatusJob(
       const mappedStatus = mapStripeStatus(paymentIntent.status);
 
       logger.info({
-        message: `${LogPrefix.PAYMENT} Payment intent retrieved`,
-        orderId: order.id,
-        paymentIntentId: paymentIntent.id,
-        stripeStatus: paymentIntent.status,
-        mappedStatus,
-        dryRun,
+        message: "Payment intent retrieved",
+        metadata: { orderId: order.id, paymentIntentId: paymentIntent.id, stripeStatus: paymentIntent.status, mappedStatus, dryRun },
       });
 
       if (dryRun) {
@@ -80,7 +68,7 @@ export function newPaymentStatusJob(
         product,
       });
     } catch (error) {
-      logger.error({ message: `Payment status job failed for order ${order.id}`, orderId: order.id, error });
+      logger.error({ message: "Payment status job failed for order", metadata: { orderId: order.id }, error });
     }
   }
 

@@ -22,6 +22,8 @@ import content from "@/lib/content.json";
 interface CheckoutFormProps {
   amount: number;
   productId: number;
+  availableQuantity: number;
+  clientSecret?: string;
 }
 
 export default function CheckoutForm(props: CheckoutFormProps) {
@@ -46,7 +48,8 @@ type CheckoutFormInnerProps = CheckoutFormProps & {
   elements: ReturnType<typeof useElements>;
 };
 
-function CheckoutFormInner({ amount, productId, stripe, elements }: CheckoutFormInnerProps) {
+function CheckoutFormInner({ amount, productId, availableQuantity, clientSecret, stripe, elements }: CheckoutFormInnerProps) {
+
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -74,16 +77,16 @@ function CheckoutFormInner({ amount, productId, stripe, elements }: CheckoutForm
   });
 
    useEffect(() => {
-    if (!STRIPE_CONFIG.isMockMode && stripe && elements) {
+    if (!STRIPE_CONFIG.isMockMode && stripe && elements && clientSecret) {
       const updatePaymentIntent = async () => {
         try {
-          const itemsTotal = productPrice;
-          const shipping = shippingCost;
+          const paymentIntentId = clientSecret.split('_secret_')[0];
 
-          await apiRequest("POST", "/api/create-payment-intent", {
+          await apiRequest("PATCH", "/api/update-payment-intent", {
+            paymentIntentId,
             amount: totalAmount,
-            itemsTotal,
-            shippingCost: shipping,
+            itemsTotal: productPrice,
+            shippingCost,
           });
 
         } catch (error) {
@@ -93,7 +96,7 @@ function CheckoutFormInner({ amount, productId, stripe, elements }: CheckoutForm
 
       updatePaymentIntent();
     }
-  }, [totalAmount, stripe, elements, productPrice, shippingCost, quantity]);
+  }, [totalAmount, stripe, elements, productPrice, shippingCost, quantity, clientSecret]);
 
   usePaymentRedirect({
     stripe,
@@ -200,7 +203,14 @@ function CheckoutFormInner({ amount, productId, stripe, elements }: CheckoutForm
 
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
-      confirmParams: { return_url: `${window.location.origin}/checkout?productId=${productId}` },
+      confirmParams: {
+        return_url: `${window.location.origin}/checkout?productId=${productId}`,
+        payment_method_data: {
+          billing_details: {
+            email: customerData?.email,
+          },
+        },
+      },
       redirect: 'if_required',
     });
 
@@ -320,16 +330,19 @@ function CheckoutFormInner({ amount, productId, stripe, elements }: CheckoutForm
         totalAmount={totalAmount}
         unitPrice={amount}
         quantity={quantity}
+        maxQuantity={availableQuantity}
         onQuantityChange={setQuantity}
       />
 
       <Button
         type="submit"
-        disabled={isProcessing}
+        disabled={isProcessing || availableQuantity <= 0}
         className="w-full bg-[#c9a24d] hover:bg-[#a67c4a] text-[#0f2433] font-bold py-7 text-xl rounded-full overflow-hidden relative shadow-lg hover:shadow-xl transition-all duration-200"
       >
         <span className="relative z-10">
-          {isProcessing ? buttons.processing : `${buttons.pay} ${totalAmount.toFixed(2)} zł`}
+          {availableQuantity <= 0
+            ? "Produkt niedostępny"
+            : isProcessing ? buttons.processing : `${buttons.pay} ${totalAmount.toFixed(2)} zł`}
         </span>
         <span className="absolute inset-0 w-full h-full bg-white/20 transform -translate-x-full skew-x-12 transition-transform duration-700 ease-out group-hover:translate-x-0"></span>
       </Button>

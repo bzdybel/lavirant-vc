@@ -12,6 +12,12 @@ jest.mock("../../storage", () => ({
   },
 }));
 
+jest.mock("../../services/StockService", () => ({
+  StockService: {
+    validateStock: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 type MockedStorage = {
   getProduct: jest.Mock;
   createOrder: jest.Mock;

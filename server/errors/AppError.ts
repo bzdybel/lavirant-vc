@@ -102,3 +102,22 @@ export class ShippingError extends AppError {
     super(message, statusCode);
   }
 }
+
+/**
+ * Insufficient Stock Error - when requested quantity exceeds available stock
+ */
+export class InsufficientStockError extends AppError {
+  public readonly productId: number;
+  public readonly requested: number;
+  public readonly available: number;
+
+  constructor(productId: number, requested: number, available: number) {
+    super(
+      `Insufficient stock for product ${productId}: requested ${requested}, available ${available}`,
+      HttpStatus.CONFLICT,
+    );
+    this.productId = productId;
+    this.requested = requested;
+    this.available = available;
+  }
+}

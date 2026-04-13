@@ -36,7 +36,7 @@ describe("StripeServiceReal", () => {
 
   describe("Initialization", () => {
     it("initializes Stripe client with provided config", () => {
-      const service = new StripeServiceReal(TEST_CONFIG);
+      const _service = new StripeServiceReal(TEST_CONFIG);
 
       expect(mockedStripe).toHaveBeenCalledWith("sk_test_123", { apiVersion: "2025-08-27.basil" });
     });

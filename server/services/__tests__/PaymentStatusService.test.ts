@@ -14,6 +14,12 @@ jest.mock("../../invoiceService", () => ({
   generateInvoiceForOrder: jest.fn(),
 }));
 
+jest.mock("../StockService", () => ({
+  StockService: {
+    decrementStock: jest.fn().mockResolvedValue(true),
+  },
+}));
+
 type MockedStorage = {
   updateOrder: jest.Mock;
 };
@@ -594,15 +600,14 @@ describe("PaymentStatusService", () => {
 
       shippingService.onOrderPaid.mockRejectedValue(new Error("Shipping failed"));
 
-      await expect(
-        service.applyPaymentStatusUpdate({
-          order,
-          status: PaymentWebhookStatus.COMPLETED,
-        })
-      ).rejects.toThrow("Shipping failed");
+      const result = await service.applyPaymentStatusUpdate({
+        order,
+        status: PaymentWebhookStatus.COMPLETED,
+      });
 
+      expect(result).toBeDefined();
       expect(shippingService.onOrderPaid).toHaveBeenCalled();
-      expect(mockedInvoiceService).not.toHaveBeenCalled();
+      expect(mockedInvoiceService).toHaveBeenCalled();
     });
 
     it("continues workflow even if invoice generation fails", async () => {
@@ -616,13 +621,12 @@ describe("PaymentStatusService", () => {
 
       mockedInvoiceService.mockRejectedValue(new Error("Invoice generation failed"));
 
-      await expect(
-        service.applyPaymentStatusUpdate({
-          order,
-          status: PaymentWebhookStatus.COMPLETED,
-        })
-      ).rejects.toThrow("Invoice generation failed");
+      const result = await service.applyPaymentStatusUpdate({
+        order,
+        status: PaymentWebhookStatus.COMPLETED,
+      });
 
+      expect(result).toBeDefined();
       expect(shippingService.onOrderPaid).toHaveBeenCalled();
       expect(mockedInvoiceService).toHaveBeenCalled();
       expect(emailService.sendPaidInvoiceEmail).not.toHaveBeenCalled();

@@ -123,11 +123,11 @@ export class Prerequisites {
    */
   static logResults(result: PrerequisiteCheckResult): void {
     if (result.warnings.length > 0) {
-      logger.warn({ message: "Configuration warnings", warnings: result.warnings });
+      logger.warn({ message: "Configuration warnings", metadata: { warnings: result.warnings } });
     }
 
     if (result.errors.length > 0) {
-      logger.error({ message: "Configuration errors", errors: result.errors });
+      logger.error({ message: "Configuration errors", metadata: { errors: result.errors } });
       logger.error({ message: "Server cannot start with missing required configuration. Please check your .env file or environment variables." });
     } else if (result.warnings.length === 0) {
       logger.info({ message: "All prerequisites checked successfully" });

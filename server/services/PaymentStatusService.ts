@@ -3,10 +3,10 @@ import type { Product } from "@shared/types/product";
 import { storage, type OrderStatus } from "../storage";
 import { generateInvoiceForOrder } from "../invoiceService";
 import { PaymentWebhookStatus, type PaymentWebhookStatusType } from "../constants/paymentStatus";
-import { LogPrefix } from "../constants/logPrefixes";
 import { logger } from "../utils/logger";
 import type { IEmailService } from "./EmailService";
 import type { IShippingService } from "./ShippingService";
+import { StockService } from "./StockService";
 /**
  * Payment Update Parameters
  */
@@ -110,36 +110,58 @@ export class PaymentStatusService {
    * Executes post-payment workflow (shipping, invoice, email)
    */
   private async executePostPaymentWorkflow(order: Order, product?: Product): Promise<Order> {
+    // Decrement stock
+    if (order.productId) {
+      try {
+        const success = await StockService.decrementStock(order.productId, order.quantity);
+        if (!success) {
+          logger.error({
+            message: "Stock decrement failed after payment",
+            metadata: { orderId: order.id, productId: order.productId, quantity: order.quantity },
+          });
+        }
+      } catch (error) {
+        logger.error({ message: "Post-payment stock decrement error", metadata: { orderId: order.id }, error });
+      }
+    }
+
     // Create shipment
-    await this.shippingService.onOrderPaid(order);
+    try {
+      await this.shippingService.onOrderPaid(order);
+    } catch (error) {
+      logger.error({ message: "Post-payment shipping failed", metadata: { orderId: order.id }, error });
+    }
 
     // Generate invoice
-    const invoiceResult = await generateInvoiceForOrder(order, product);
-    const invoicedOrder = (await storage.updateOrder(order.id, {
-      invoiceNumber: invoiceResult.invoiceNumber,
-      invoicePdfPath: invoiceResult.invoicePdfPath,
-      invoiceIssuedAt: invoiceResult.invoiceIssuedAt,
-    }) ?? order) as Order;
+    let invoicedOrder = order;
+    try {
+      const invoiceResult = await generateInvoiceForOrder(order, product);
+      invoicedOrder = (await storage.updateOrder(order.id, {
+        invoiceNumber: invoiceResult.invoiceNumber,
+        invoicePdfPath: invoiceResult.invoicePdfPath,
+        invoiceIssuedAt: invoiceResult.invoiceIssuedAt,
+      }) ?? order) as Order;
 
-    // Send email if not already sent
-    if (invoicedOrder.emailSentAt) {
-      return invoicedOrder;
+      // Send email if not already sent
+      if (!invoicedOrder.emailSentAt) {
+        const emailSent = await this.emailService.sendPaidInvoiceEmail({
+          order: invoicedOrder,
+          product,
+          invoiceNumber: invoiceResult.invoiceNumber,
+          invoicePdfPath: invoiceResult.invoicePdfAbsolutePath,
+        });
+
+        if (emailSent) {
+          invoicedOrder = (await storage.updateOrder(invoicedOrder.id, {
+            emailSentAt: new Date().toISOString(),
+          }) ?? invoicedOrder) as Order;
+        }
+      }
+    } catch (error) {
+      logger.error({ message: "Post-payment invoice/email failed", metadata: { orderId: order.id }, error });
     }
 
-    const emailSent = await this.emailService.sendPaidInvoiceEmail({
-      order: invoicedOrder,
-      product,
-      invoiceNumber: invoiceResult.invoiceNumber,
-      invoicePdfPath: invoiceResult.invoicePdfAbsolutePath,
-    });
-
-    if (!emailSent) {
-      return invoicedOrder;
-    }
-
-    return (await storage.updateOrder(invoicedOrder.id, {
-      emailSentAt: new Date().toISOString(),
-    }) ?? invoicedOrder) as Order;
+    return invoicedOrder;
   }
 
   /**
@@ -158,9 +180,8 @@ export class PaymentStatusService {
 
     if (updated) {
       logger.info({
-        message: `${LogPrefix.DATABASE} Payment updated`,
-        orderId: updated.id,
-        status,
+        message: "Payment status updated",
+        metadata: { orderId: updated.id, status },
       });
     }
 

@@ -26,15 +26,15 @@ export class CaptchaMiddleware implements MiddlewareExpressPort {
         const verified = await this.deps.captchaService.verify(token, ip);
 
         if (!verified) {
-          logger.warn({ message: "Captcha verification failed", path: req.path, method: req.method, ...(ip ? { ip } : {}) });
+          logger.warn({ message: "Captcha verification failed", metadata: { path: req.path, method: req.method, ...(ip ? { ip } : {}) } });
           res.status(403).json({ error: "Captcha verification failed" });
           return;
         }
 
-        logger.info({ message: "Captcha verification passed", path: req.path, method: req.method });
+        logger.info({ message: "Captcha verification passed", metadata: { path: req.path, method: req.method } });
         next();
       } catch (error) {
-        logger.error({ message: "Captcha middleware error", path: req.path, method: req.method, error });
+        logger.error({ message: "Captcha middleware error", metadata: { path: req.path, method: req.method }, error });
         res.status(403).json({ error: "Captcha verification failed" });
       }
     };

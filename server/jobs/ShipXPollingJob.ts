@@ -5,7 +5,6 @@ import { storage } from "../storage";
 import { updateOrderShipmentState } from "../inpost/shipxOrderUpdater";
 import { AppConfig } from "../config/appConfig";
 import { JobConfig } from "../constants/jobConfig";
-import { LogPrefix } from "../constants/logPrefixes";
 import { logger } from "../utils/logger";
 
 function shipxRetry<T>(action: () => Promise<T>): Promise<T> {
@@ -32,8 +31,8 @@ export class ShipXPollingJob {
       this.consecutiveFailures++;
       if (this.consecutiveFailures >= JobConfig.SHIPX_CONSECUTIVE_FAILURE_ALERT_THRESHOLD) {
         logger.error({
-          message: `[CRITICAL] ShipX polling failed ${this.consecutiveFailures} times consecutively`,
-          consecutiveFailures: this.consecutiveFailures,
+          message: "ShipX polling critical failure",
+          metadata: { consecutiveFailures: this.consecutiveFailures },
           error,
         });
       } else {
@@ -71,18 +70,15 @@ export class ShipXPollingJob {
 
     if (order.shipmentId.startsWith("MOCK-")) {
       logger.warn({
-        message: `${LogPrefix.SHIPX_POLLING} Skipping mock shipment id`,
-        orderId: order.id,
-        shipmentId: order.shipmentId,
+        message: "ShipX polling skipped mock shipment",
+        metadata: { orderId: order.id, providerShipmentId: order.shipmentId },
       });
       return;
     }
 
     logger.info({
-      message: `${LogPrefix.SHIPX_POLLING} Fetching shipment from sandbox`,
-      orderId: order.id,
-      providerShipmentId: order.shipmentId,
-      environment,
+      message: "ShipX polling fetching shipment",
+      metadata: { orderId: order.id, providerShipmentId: order.shipmentId, environment },
     });
 
     try {
@@ -102,23 +98,17 @@ export class ShipXPollingJob {
 
       if (failures >= JobConfig.SHIPX_ORDER_MAX_POLL_FAILURES) {
         logger.error({
-          message: `[CRITICAL] ShipX polling for order ${order.id} exceeded max failures, marking as polling_failed`,
-          orderId: order.id,
-          shipmentId: order.shipmentId,
-          failures,
-          maxFailures: JobConfig.SHIPX_ORDER_MAX_POLL_FAILURES,
+          message: "ShipX polling max failures exceeded",
+          metadata: { orderId: order.id, providerShipmentId: order.shipmentId, failures, maxFailures: JobConfig.SHIPX_ORDER_MAX_POLL_FAILURES },
           error,
         });
         await updateOrderShipmentState(order, { shipmentStatus: "polling_failed" }).catch((markError) => {
-          logger.error({ message: "Failed to mark order as polling_failed", orderId: order.id, error: markError });
+          logger.error({ message: "Failed to mark order as polling failed", metadata: { orderId: order.id }, error: markError });
         });
       } else {
         logger.error({
           message: "ShipX polling failed for shipment",
-          orderId: order.id,
-          shipmentId: order.shipmentId,
-          attempt: failures,
-          maxAttempts: JobConfig.SHIPX_ORDER_MAX_POLL_FAILURES,
+          metadata: { orderId: order.id, providerShipmentId: order.shipmentId, attempt: failures, maxAttempts: JobConfig.SHIPX_ORDER_MAX_POLL_FAILURES },
           error,
         });
         await storage.updateOrder(order.id, { shipmentPollFailures: failures }).catch(() => {});
@@ -184,9 +174,8 @@ export class ShipXPollingJob {
       }
     } catch (error) {
       logger.error({
-        message: "Failed to generate label for shipment",
-        orderId: order.id,
-        shipmentId: order.shipmentId,
+        message: "Failed to generate label",
+        metadata: { orderId: order.id, providerShipmentId: order.shipmentId },
         error,
       });
     }

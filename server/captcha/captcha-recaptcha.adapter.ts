@@ -43,14 +43,14 @@ export class CaptchaRecaptchaAdapter implements CaptchaPort {
       });
 
       if (!response.ok) {
-        logger.warn({ message: "Captcha provider response was not OK", status: response.status });
+        logger.warn({ message: "Captcha provider response not OK", metadata: { status: response.status } });
         return false;
       }
 
       const payload = (await response.json()) as RecaptchaVerifyResponse;
       return payload.success === true;
     } catch (error) {
-      logger.error({ message: "Captcha verification request failed", error });
+      logger.error({ message: "Captcha verification failed", error });
       return false;
     }
   }

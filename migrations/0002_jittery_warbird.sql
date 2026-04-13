@@ -1,0 +1,1 @@
+ALTER TABLE `products` ADD `available_quantity` integer DEFAULT 0 NOT NULL;

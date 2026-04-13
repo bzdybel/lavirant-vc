@@ -99,9 +99,8 @@ export class InPostProvider implements ShippingProvider {
 
     assertValidPayload(shipmentPayload as Record<string, unknown>);
     logger.info({
-      message: "[ShipX] Creating shipment with validated sender",
-      orderId: order.id,
-      service: shipmentPayload.service,
+      message: "Creating shipment with validated sender",
+      metadata: { orderId: order.id, service: shipmentPayload.service },
     });
 
     const client = getShipXClient();
@@ -110,8 +109,8 @@ export class InPostProvider implements ShippingProvider {
       body: JSON.stringify(shipmentPayload),
     });
 
-    const shipmentId = responseJson.id;
-    if (!shipmentId) {
+    const shipmentId = String(responseJson.id);
+    if (!shipmentId || shipmentId === "undefined") {
       throw new Error("InPost ShipX response missing shipment id");
     }
 
@@ -120,7 +119,7 @@ export class InPostProvider implements ShippingProvider {
       throw new Error("InPost ShipX response missing tracking number");
     }
 
-    logger.info({ message: "[ShipX] Shipment created", providerShipmentId: shipmentId });
+    logger.info({ message: "Shipment created", metadata: { providerShipmentId: shipmentId } });
 
     return {
       provider: "INPOST",
@@ -129,7 +128,7 @@ export class InPostProvider implements ShippingProvider {
       status: (responseJson.status as "CREATED" | "SHIPPED") || "CREATED",
       shipmentId,
       shipxStatus: responseJson.status ?? null,
-      selectedOfferId: responseJson.selected_offer?.id ?? null,
+      selectedOfferId: responseJson.selected_offer?.id != null ? String(responseJson.selected_offer.id) : null,
     };
   }
 

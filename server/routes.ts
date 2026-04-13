@@ -11,6 +11,7 @@ import type { CaptchaPort } from "./captcha/captcha.port";
 import { PaymentWebhookHandler } from "./handlers/PaymentWebhookHandler";
 import { ListProductsHandler, GetProductHandler } from "./handlers/ProductHandlers";
 import { CreatePaymentIntentHandler } from "./handlers/CreatePaymentIntentHandler";
+import { UpdatePaymentIntentHandler } from "./handlers/UpdatePaymentIntentHandler";
 import { CreateOrderHandler } from "./handlers/CreateOrderHandler";
 import { MarkOrderShippedHandler } from "./handlers/ShipmentHandlers";
 import { GetInPostConfigHandler } from "./handlers/InPostHandlers";
@@ -64,6 +65,14 @@ export async function registerRoutes(
     "/api/create-payment-intent",
     captchaGuard,
     CreatePaymentIntentHandler({
+      stripeService: services.stripeService,
+    })
+  );
+
+  app.patch(
+    "/api/update-payment-intent",
+    captchaGuard,
+    UpdatePaymentIntentHandler({
       stripeService: services.stripeService,
     })
   );

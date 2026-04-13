@@ -224,7 +224,7 @@ describe('EmailServiceNoop', () => {
 
     expect(result).toBe(true);
     expect(logger.info).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('[Noop]') }),
+      expect.objectContaining({ message: expect.stringContaining('(noop)') }),
     );
   });
 
@@ -238,7 +238,7 @@ describe('EmailServiceNoop', () => {
 
     expect(result).toBe(true);
     expect(logger.info).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('[Noop]') }),
+      expect.objectContaining({ message: expect.stringContaining('(noop)') }),
     );
   });
 
@@ -252,7 +252,7 @@ describe('EmailServiceNoop', () => {
 
     expect(result).toBe(true);
     expect(logger.info).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining('[Noop]') }),
+      expect.objectContaining({ message: expect.stringContaining('(noop)') }),
     );
   });
 });
