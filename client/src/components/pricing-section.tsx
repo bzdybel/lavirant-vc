@@ -1,5 +1,4 @@
 import { SectionBackground, SectionHeader } from "@/components/shared";
-import PaymentMethods from "./pricing-section/PaymentMethods";
 import ProductShowcase from "./pricing-section/ProductShowcase";
 import content from "@/lib/content.json";
 
@@ -30,9 +29,6 @@ export default function PricingSection() {
             priceSubtext={pricing.priceSubtext}
             valueStatement={pricing.valueStatement}
           />
-
-          {/* Payment Methods & Trust Section */}
-          <PaymentMethods note={pricing.note} payments={pricing.payments} />
         </div>
       </SectionBackground>
     </section>
