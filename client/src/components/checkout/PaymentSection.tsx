@@ -39,6 +39,7 @@ export const PaymentSection = () => {
           },
           fields: {
             billingDetails: {
+              name: "never",
               email: "never",
             },
           },

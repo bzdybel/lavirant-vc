@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 import { STRIPE_CONFIG } from "@/config/checkout.config";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -24,6 +24,13 @@ interface PaymentIntentResponse {
   clientSecret: string;
 }
 
+interface PaymentIntentRequest {
+  amount: number;
+  productId: number;
+  quantity: number;
+  deliveryMethod: "inpost" | "inpost-courier";
+}
+
 const fetchProduct = async (productId: string): Promise<Product> => {
   const res = await apiRequest("GET", `/api/products/${productId}`);
   const data: ProductResponse = await res.json();
@@ -36,13 +43,17 @@ const fetchProduct = async (productId: string): Promise<Product> => {
   };
 };
 
-const createPaymentIntent = async (price: number): Promise<string> => {
-   const baseShipping = 15;
-
+const createPaymentIntent = async ({
+  amount,
+  productId,
+  quantity,
+  deliveryMethod,
+}: PaymentIntentRequest): Promise<string> => {
   const res = await apiRequest("POST", "/api/create-payment-intent", {
-    amount: price + baseShipping,
-    itemsTotal: price,
-    shippingCost: baseShipping,
+    amount,
+    productId,
+    quantity,
+    deliveryMethod,
   });
   const data: PaymentIntentResponse = await res.json();
   return data.clientSecret;
@@ -50,15 +61,15 @@ const createPaymentIntent = async (price: number): Promise<string> => {
 
 export const useProduct = (productId: string) => {
   return useQuery({
-    queryKey: ['product', productId],
+    queryKey: ["product", productId],
     queryFn: () => fetchProduct(productId),
   });
 };
 
-export const usePaymentIntent = (price: number | null) => {
+export const usePaymentIntent = (params: PaymentIntentRequest | null) => {
   return useQuery({
-    queryKey: ['paymentIntent', price],
-    queryFn: () => createPaymentIntent(price!),
-    enabled: price !== null && !STRIPE_CONFIG.isMockMode,
+    queryKey: ["paymentIntent", params?.productId, params?.quantity, params?.deliveryMethod],
+    queryFn: () => createPaymentIntent(params!),
+    enabled: params !== null && !STRIPE_CONFIG.isMockMode,
   });
 };

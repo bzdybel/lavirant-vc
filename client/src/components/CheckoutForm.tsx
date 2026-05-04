@@ -1,7 +1,7 @@
 /* eslint-disable react/no-multi-comp */
-import { useStripe, useElements } from '@stripe/react-stripe-js';
-import { useState, useRef, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useStripe, useElements } from "@stripe/react-stripe-js";
+import { useState, useRef } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -14,9 +14,12 @@ import { OrderSummary } from "@/components/checkout/OrderSummary";
 import { DeliveryMethodSelector } from "@/components/checkout/DeliveryMethodSelector";
 import { extractFormData } from "@/components/checkout/formUtils";
 import { validateCustomerData } from "@/components/checkout/validation";
-import { saveFormDataForRedirect, clearSavedFormData } from "@/components/checkout/paymentRedirectUtils";
+import {
+  saveFormDataForRedirect,
+  clearSavedFormData,
+} from "@/components/checkout/paymentRedirectUtils";
 import { usePaymentRedirect } from "@/hooks/usePaymentRedirect";
-import { apiRequest } from "@/lib/queryClient";
+import { syncCheckoutPaymentIntent } from "@/services/paymentService";
 import content from "@/lib/content.json";
 
 interface CheckoutFormProps {
@@ -48,8 +51,14 @@ type CheckoutFormInnerProps = CheckoutFormProps & {
   elements: ReturnType<typeof useElements>;
 };
 
-function CheckoutFormInner({ amount, productId, availableQuantity, clientSecret, stripe, elements }: CheckoutFormInnerProps) {
-
+function CheckoutFormInner({
+  amount,
+  productId,
+  availableQuantity,
+  clientSecret,
+  stripe,
+  elements,
+}: CheckoutFormInnerProps) {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -60,43 +69,22 @@ function CheckoutFormInner({ amount, productId, availableQuantity, clientSecret,
 
   const { pricing, buttons, security, toast: toastContent, delivery, errors } = content.checkout;
 
-  const deliveryCost = delivery.options.find(opt => opt.id === deliveryMethod)?.price || 0;
+  const deliveryCost = delivery.options.find((opt) => opt.id === deliveryMethod)?.price || 0;
   const shippingCost = pricing.shippingCost + deliveryCost;
   const productPrice = amount * quantity;
   const totalAmount = productPrice + shippingCost;
+  const isCartEmpty = availableQuantity <= 0 || quantity <= 0;
 
   const orderMutation = useMutation({
     mutationFn: createOrder,
     onSuccess: () => {
-      setTimeout(() => navigate('/order-success'), PAYMENT_CONFIG.redirectDelay);
+      setTimeout(() => navigate("/order-success"), PAYMENT_CONFIG.redirectDelay);
     },
     onError: (error) => {
       console.error("Failed to create order:", error);
       setIsProcessing(false);
     },
   });
-
-   useEffect(() => {
-    if (!STRIPE_CONFIG.isMockMode && stripe && elements && clientSecret) {
-      const updatePaymentIntent = async () => {
-        try {
-          const paymentIntentId = clientSecret.split('_secret_')[0];
-
-          await apiRequest("PATCH", "/api/update-payment-intent", {
-            paymentIntentId,
-            amount: totalAmount,
-            itemsTotal: productPrice,
-            shippingCost,
-          });
-
-        } catch (error) {
-          console.error("Failed to update payment intent:", error);
-        }
-      };
-
-      updatePaymentIntent();
-    }
-  }, [totalAmount, stripe, elements, productPrice, shippingCost, quantity, clientSecret]);
 
   usePaymentRedirect({
     stripe,
@@ -186,44 +174,106 @@ function CheckoutFormInner({ amount, productId, availableQuantity, clientSecret,
       return;
     }
 
+    if (!clientSecret) {
+      setIsProcessing(false);
+      toast({
+        title: toastContent.paymentFailed.title,
+        description: "Brak konfiguracji płatności. Odśwież stronę i spróbuj ponownie.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!validateForm()) {
       setIsProcessing(false);
       return;
     }
 
     const customerData = extractFormData(formRef.current!);
-    if (customerData) {
-      saveFormDataForRedirect({
-        ...customerData,
-        productId,
-        quantity,
-        deliveryCost: Math.round(shippingCost * 100),
-        deliveryMethod: deliveryMethod === "inpost" ? "INPOST_PACZKOMAT" : "INPOST_KURIER",
-        deliveryPoint: deliveryMethod === "inpost" ? { id: deliveryPointId.trim() } : undefined,
+    if (!customerData) {
+      setIsProcessing(false);
+      toast({
+        title: errors.configTitle,
+        description: errors.configDescription,
+        variant: "destructive",
       });
+      return;
     }
 
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/checkout?productId=${productId}`,
-        payment_method_data: {
-          billing_details: {
-            email: customerData?.email,
-          },
-        },
-      },
-      redirect: 'if_required',
+    try {
+      await syncCheckoutPaymentIntent({
+        clientSecret,
+        productId,
+        quantity,
+        deliveryMethod: deliveryMethod === "inpost" ? "inpost" : "inpost-courier",
+        amount: totalAmount,
+        itemsTotal: productPrice,
+        shippingCost,
+      });
+    } catch (syncError) {
+      setIsProcessing(false);
+      toast({
+        title: toastContent.paymentFailed.title,
+        description:
+          syncError instanceof Error
+            ? syncError.message
+            : "Nie udało się przygotować płatności. Spróbuj ponownie.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    saveFormDataForRedirect({
+      ...customerData,
+      productId,
+      quantity,
+      deliveryCost: Math.round(shippingCost * 100),
+      deliveryMethod: deliveryMethod === "inpost" ? "INPOST_PACZKOMAT" : "INPOST_KURIER",
+      deliveryPoint: deliveryMethod === "inpost" ? { id: deliveryPointId.trim() } : undefined,
     });
 
-     if (error) {
+    const fullName = `${customerData.firstName} ${customerData.lastName}`.trim();
+
+    let error;
+    let paymentIntent;
+    try {
+      ({ error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/checkout?productId=${productId}`,
+          payment_method_data: {
+            billing_details: {
+              name: fullName,
+              email: customerData.email,
+            },
+          },
+        },
+        redirect: "if_required",
+      }));
+    } catch (confirmError) {
+      setIsProcessing(false);
+      clearSavedFormData();
+      toast({
+        title: toastContent.paymentFailed.title,
+        description:
+          confirmError instanceof Error
+            ? confirmError.message
+            : "Wystąpił błąd podczas płatności. Spróbuj ponownie.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (error) {
       setIsProcessing(false);
       clearSavedFormData();
 
-       const errorMessage =
-        error.code === 'incomplete_payment_method' ? "Metoda płatności niekompletna. Spróbuj ponownie." :
-        error.code === 'payment_intent_authentication_failure' ? "Uwierzytelnienie płatności nie powiodło się. Spróbuj ponownie." :
-        error.message;
+      const errorMessage =
+        error.code === "incomplete_payment_method"
+          ? "Metoda płatności niekompletna. Spróbuj ponownie."
+          : error.code === "payment_intent_authentication_failure"
+            ? "Uwierzytelnienie płatności nie powiodło się. Spróbuj ponownie."
+            : error.message;
 
       toast({
         title: toastContent.paymentFailed.title,
@@ -233,7 +283,7 @@ function CheckoutFormInner({ amount, productId, availableQuantity, clientSecret,
       return;
     }
 
-     if (!paymentIntent) {
+    if (!paymentIntent) {
       setIsProcessing(false);
       toast({
         title: toastContent.paymentFailed.title,
@@ -244,7 +294,7 @@ function CheckoutFormInner({ amount, productId, availableQuantity, clientSecret,
     }
 
     switch (paymentIntent.status) {
-      case 'succeeded': {
+      case "succeeded": {
         clearSavedFormData();
         toast({
           title: toastContent.paymentSuccess.title,
@@ -255,36 +305,35 @@ function CheckoutFormInner({ amount, productId, availableQuantity, clientSecret,
         break;
       }
 
-      case 'requires_payment_method':
-      case 'canceled':
-         setIsProcessing(false);
+      case "requires_payment_method":
+      case "canceled":
+        setIsProcessing(false);
         clearSavedFormData();
         toast({
           title: "Płatność anulowana",
-          description: "Płatność została anulowana. Spróbuj ponownie lub wybierz inny sposób zapłaty.",
+          description:
+            "Płatność została anulowana. Spróbuj ponownie lub wybierz inny sposób zapłaty.",
           variant: "destructive",
         });
         break;
 
-      case 'requires_action':
-         setIsProcessing(false);
+      case "requires_action":
+        setIsProcessing(false);
         break;
 
-      case 'processing':
-         setTimeout(() => {
-          if (isProcessing) {
-            setIsProcessing(false);
-            toast({
-              title: "Oczekiwanie na potwierdzenie",
-              description: "Przetwarzanie płatności trwa dłużej niż zwykle. Sprawdź status później.",
-              variant: "destructive",
-            });
-          }
+      case "processing":
+        setTimeout(() => {
+          setIsProcessing(false);
+          toast({
+            title: "Oczekiwanie na potwierdzenie",
+            description: "Przetwarzanie płatności trwa dłużej niż zwykle. Sprawdź status później.",
+            variant: "destructive",
+          });
         }, 8000);
         break;
 
       default:
-         setIsProcessing(false);
+        setIsProcessing(false);
         clearSavedFormData();
         toast({
           title: toastContent.paymentFailed.title,
@@ -338,13 +387,15 @@ function CheckoutFormInner({ amount, productId, availableQuantity, clientSecret,
 
       <Button
         type="submit"
-        disabled={isProcessing || availableQuantity <= 0}
+        disabled={isProcessing || isCartEmpty}
         className="w-full bg-[#c9a24d] hover:bg-[#a67c4a] text-[#0f2433] font-bold py-7 text-xl rounded-full overflow-hidden relative shadow-lg hover:shadow-xl transition-all duration-200"
       >
         <span className="relative z-10">
-          {availableQuantity <= 0
+          {isCartEmpty
             ? "Produkt niedostępny"
-            : isProcessing ? buttons.processing : `${buttons.pay} ${totalAmount.toFixed(2)} zł`}
+            : isProcessing
+              ? buttons.processing
+              : `${buttons.pay} ${totalAmount.toFixed(2)} zł`}
         </span>
         <span className="absolute inset-0 w-full h-full bg-white/20 transform -translate-x-full skew-x-12 transition-transform duration-700 ease-out group-hover:translate-x-0"></span>
       </Button>

@@ -14,7 +14,6 @@ interface ShipXShipmentResponse {
   };
 }
 
-
 function buildTrackingUrl(trackingNumber: string): string {
   return `https://tracking.inpost.pl/?number=${encodeURIComponent(trackingNumber)}`;
 }
@@ -27,7 +26,10 @@ function normalizeCountryCode(value: string | null | undefined): string {
   return normalized.length === 2 ? normalized : "PL";
 }
 
-function splitAddress(input: string | null | undefined): { street: string; buildingNumber: string } {
+function splitAddress(input: string | null | undefined): {
+  street: string;
+  buildingNumber: string;
+} {
   let trimmed = (input || "").trim();
   if (!trimmed) {
     return { street: "", buildingNumber: "1" };
@@ -62,11 +64,7 @@ function assertValidPayload(payload: Record<string, unknown>) {
 
 function normalizeTrackingNumber(payload: ShipXShipmentResponse): string {
   return (
-    payload.tracking_number ||
-    payload.trackingNumber ||
-    payload.tracking_id ||
-    payload.id ||
-    ""
+    payload.tracking_number || payload.trackingNumber || payload.tracking_id || payload.id || ""
   );
 }
 
@@ -84,8 +82,8 @@ export class InPostProvider implements ShippingProvider {
   }
 
   async createShipment({ order }: ShipmentInput): Promise<ShipmentOutput> {
-    const deliveryMethod = order.deliveryMethod
-      || (order.deliveryPointId ? "INPOST_PACZKOMAT" : "INPOST_KURIER");
+    const deliveryMethod =
+      order.deliveryMethod || (order.deliveryPointId ? "INPOST_PACZKOMAT" : "INPOST_KURIER");
     const isLocker = deliveryMethod === "INPOST_PACZKOMAT";
 
     const receiverAddress = splitAddress(order.address);
@@ -104,10 +102,13 @@ export class InPostProvider implements ShippingProvider {
     });
 
     const client = getShipXClient();
-    const responseJson = await client.request<ShipXShipmentResponse>(`/v1/organizations/${this.organizationId}/shipments`, {
-      method: "POST",
-      body: JSON.stringify(shipmentPayload),
-    });
+    const responseJson = await client.request<ShipXShipmentResponse>(
+      `/v1/organizations/${this.organizationId}/shipments`,
+      {
+        method: "POST",
+        body: JSON.stringify(shipmentPayload),
+      }
+    );
 
     logger.info({
       message: "ShipX API response",
@@ -124,7 +125,10 @@ export class InPostProvider implements ShippingProvider {
       throw new Error("InPost ShipX response missing tracking number");
     }
 
-    logger.info({ message: "Shipment created", metadata: { providerShipmentId: shipmentId } });
+    logger.info({
+      message: "Inpost Shipment created",
+      metadata: { providerShipmentId: shipmentId },
+    });
 
     return {
       provider: "INPOST",
@@ -133,11 +137,15 @@ export class InPostProvider implements ShippingProvider {
       status: (responseJson.status as "CREATED" | "SHIPPED") || "CREATED",
       shipmentId,
       shipxStatus: responseJson.status ?? null,
-      selectedOfferId: responseJson.selected_offer?.id != null ? String(responseJson.selected_offer.id) : null,
+      selectedOfferId:
+        responseJson.selected_offer?.id != null ? String(responseJson.selected_offer.id) : null,
     };
   }
 
-  private buildReceiver(order: ShipmentInput["order"], address: { street: string; buildingNumber: string }) {
+  private buildReceiver(
+    order: ShipmentInput["order"],
+    address: { street: string; buildingNumber: string }
+  ) {
     return {
       first_name: order.firstName,
       last_name: order.lastName,
@@ -174,7 +182,7 @@ export class InPostProvider implements ShippingProvider {
     order: ShipmentInput["order"],
     sender: ReturnType<InPostProvider["buildSender"]>,
     receiver: ReturnType<InPostProvider["buildReceiver"]>,
-    isLocker: boolean,
+    isLocker: boolean
   ) {
     const additionalServices = isLocker ? [] : ["email", "sms"];
     return {

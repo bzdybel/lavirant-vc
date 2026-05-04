@@ -1,22 +1,38 @@
 import React from "react";
-import { Document, Page, View, Text, StyleSheet, renderToBuffer } from "@react-pdf/renderer";
+import path from "path";
+import { Document, Page, View, Text, StyleSheet, renderToBuffer, Font } from "@react-pdf/renderer";
 import type { Order } from "@shared/types/order";
 import type { Product } from "@shared/types/product";
 import { AppConfig } from "../config/appConfig";
 
+Font.register({
+  family: "Roboto",
+  fonts: [
+    { src: path.join(process.cwd(), "server/fonts/Roboto-Regular.ttf"), fontWeight: "normal" },
+    { src: path.join(process.cwd(), "server/fonts/Roboto-Bold.ttf"), fontWeight: "bold" },
+  ],
+});
+
 const styles = StyleSheet.create({
-  page: { padding: 32, fontSize: 11, color: "#111" },
+  page: { padding: 32, fontSize: 11, color: "#111", fontFamily: "Roboto" },
   title: { fontSize: 20, marginBottom: 6 },
   meta: { fontSize: 11, color: "#555", marginBottom: 20 },
   row: { flexDirection: "row", gap: 16, marginBottom: 20 },
   box: { flex: 1, border: "1pt solid #e5e5e5", padding: 10 },
   boxLabel: { fontWeight: "bold", marginBottom: 4 },
-  tableHeader: { flexDirection: "row", backgroundColor: "#f7f7f7", borderBottom: "1pt solid #e5e5e5", padding: "6 8" },
+  tableHeader: {
+    flexDirection: "row",
+    backgroundColor: "#f7f7f7",
+    borderBottom: "1pt solid #e5e5e5",
+    padding: "6 8",
+  },
   tableRow: { flexDirection: "row", borderBottom: "1pt solid #e5e5e5", padding: "6 8" },
   col1: { flex: 3 },
   col2: { flex: 1, textAlign: "right" },
   col3: { flex: 2, textAlign: "right" },
-  col4: { flex: 2, textAlign: "right" },
+  col4: { flex: 1, textAlign: "right" },
+  col5: { flex: 2, textAlign: "right" },
+  col6: { flex: 2, textAlign: "right" },
   totalRow: { flexDirection: "row", justifyContent: "flex-end", marginTop: 10 },
   totalText: { fontWeight: "bold", fontSize: 12 },
 });
@@ -49,16 +65,24 @@ function InvoiceDocument({ order, product, invoiceNumber, issuedAt }: Props) {
   const buyerName = `${order.firstName} ${order.lastName}`;
   const buyerAddress = `${order.address}, ${order.postalCode} ${order.city}, ${order.country}`;
 
+  const VAT_RATE = 0.23;
+
   const itemName = product?.name || "Lavirant";
   const deliveryCost = order.deliveryCost ?? 0;
   const productSubtotal = product
     ? product.price * order.quantity
     : Math.max(order.total - deliveryCost, 0);
-  const unitPrice = order.quantity > 0
-    ? Math.round(productSubtotal / order.quantity)
-    : productSubtotal;
+  const unitPrice =
+    order.quantity > 0 ? Math.round(productSubtotal / order.quantity) : productSubtotal;
   const productTotal = productSubtotal;
   const totalWithDelivery = productTotal + deliveryCost;
+
+  // Net = gross / (1 + VAT_RATE), VAT = gross - net
+  const unitPriceNet = Math.round(unitPrice / (1 + VAT_RATE));
+  const unitVat = unitPrice - unitPriceNet;
+
+  const deliveryNet = Math.round(deliveryCost / (1 + VAT_RATE));
+  const deliveryVat = deliveryCost - deliveryNet;
 
   return (
     <Document>
@@ -88,26 +112,34 @@ function InvoiceDocument({ order, product, invoiceNumber, issuedAt }: Props) {
         <View>
           <View style={styles.tableHeader}>
             <Text style={styles.col1}>Produkt</Text>
-            <Text style={styles.col2}>Ilosc</Text>
-            <Text style={styles.col3}>Cena jedn.</Text>
-            <Text style={styles.col4}>Razem</Text>
+            <Text style={styles.col2}>Ilość</Text>
+            <Text style={styles.col3}>Cena netto</Text>
+            <Text style={styles.col4}>VAT</Text>
+            <Text style={styles.col5}>Kwota VAT</Text>
+            <Text style={styles.col6}>Razem brutto</Text>
           </View>
           <View style={styles.tableRow}>
             <Text style={styles.col1}>{itemName}</Text>
             <Text style={styles.col2}>{order.quantity}</Text>
-            <Text style={styles.col3}>{formatPrice(unitPrice)}</Text>
-            <Text style={styles.col4}>{formatPrice(productTotal)}</Text>
+            <Text style={styles.col3}>{formatPrice(unitPriceNet)}</Text>
+            <Text style={styles.col4}>23%</Text>
+            <Text style={styles.col5}>{formatPrice(unitVat * order.quantity)}</Text>
+            <Text style={styles.col6}>{formatPrice(productTotal)}</Text>
           </View>
           <View style={styles.tableRow}>
             <Text style={styles.col1}>Dostawa</Text>
             <Text style={styles.col2}>1</Text>
-            <Text style={styles.col3}>{formatPrice(deliveryCost)}</Text>
-            <Text style={styles.col4}>{formatPrice(deliveryCost)}</Text>
+            <Text style={styles.col3}>{formatPrice(deliveryNet)}</Text>
+            <Text style={styles.col4}>23%</Text>
+            <Text style={styles.col5}>{formatPrice(deliveryVat)}</Text>
+            <Text style={styles.col6}>{formatPrice(deliveryCost)}</Text>
           </View>
         </View>
 
         <View style={styles.totalRow}>
-          <Text style={styles.totalText}>{"Suma do zaplaty: " + formatPrice(totalWithDelivery)}</Text>
+          <Text style={styles.totalText}>
+            {"Suma do zapłaty: " + formatPrice(totalWithDelivery)}
+          </Text>
         </View>
       </Page>
     </Document>
@@ -121,6 +153,11 @@ export async function renderInvoiceBuffer(
   issuedAt: Date
 ): Promise<Buffer> {
   return renderToBuffer(
-    <InvoiceDocument order={order} product={product} invoiceNumber={invoiceNumber} issuedAt={issuedAt} />
+    <InvoiceDocument
+      order={order}
+      product={product}
+      invoiceNumber={invoiceNumber}
+      issuedAt={issuedAt}
+    />
   );
 }

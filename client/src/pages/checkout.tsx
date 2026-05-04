@@ -1,12 +1,7 @@
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { Button } from "@/components/ui/button";
-import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { useEffect, useMemo } from "react";
 import { ChevronLeft } from "lucide-react";
@@ -21,13 +16,9 @@ import {
   ProductSummary,
 } from "@/components/checkout";
 import { SEOHead } from "@/components/SEOHead";
-import {
-  createProductSchema,
-  createBreadcrumbSchema,
-} from "@/lib/seo-schemas";
+import { createProductSchema, createBreadcrumbSchema } from "@/lib/seo-schemas";
 import content from "@/lib/content.json";
 import { ensurePrivateAccess } from "@/lib/ensurePrivateAccess";
-
 
 const getProductId = (): string => {
   const params = new URLSearchParams(window.location.search);
@@ -40,8 +31,16 @@ export default function Checkout() {
   const productId = getProductId();
 
   const { data: product, isLoading } = useProduct(productId);
-  const { data: clientSecret } = usePaymentIntent(product?.price ?? null);
-
+  const { data: clientSecret } = usePaymentIntent(
+    product
+      ? {
+          amount: product.price + 15,
+          productId: product.id,
+          quantity: 1,
+          deliveryMethod: "inpost",
+        }
+      : null
+  );
 
   const stripePromise = useMemo(() => {
     if (STRIPE_CONFIG.isMockMode) {
@@ -60,7 +59,6 @@ export default function Checkout() {
     window.scrollTo(0, 0);
   }, []);
 
-
   if (!STRIPE_CONFIG.isMockMode && !stripePromise) {
     return <ErrorState onNavigateHome={() => navigate("/")} />;
   }
@@ -71,9 +69,7 @@ export default function Checkout() {
 
   const productSchema = createProductSchema({
     name: product.name,
-    description:
-      product.description ||
-      `${product.name} – Strategiczna gra planszowa towarzyska`,
+    description: product.description || `${product.name} – Strategiczna gra planszowa towarzyska`,
     image: `${window.location.origin}${product.image}`,
     price: product.price / 100,
     availability: "InStock",
@@ -120,22 +116,18 @@ export default function Checkout() {
           </CardHeader>
 
           <CardContent>
-            <ProductSummary
-              name={product.name}
-              price={product.price}
-              image={product.image}
-            />
+            <ProductSummary name={product.name} price={product.price} image={product.image} />
 
             {/* 🧪 MOCK MODE – bez Stripe */}
             {STRIPE_CONFIG.isMockMode && (
-                 <CheckoutForm
-                  amount={product.price}
-                  productId={product.id}
-                  availableQuantity={product.availableQuantity}
-                />
-             )}
+              <CheckoutForm
+                amount={product.price}
+                productId={product.id}
+                availableQuantity={product.availableQuantity}
+              />
+            )}
 
-             {!STRIPE_CONFIG.isMockMode && clientSecret && stripePromise && (
+            {!STRIPE_CONFIG.isMockMode && clientSecret && stripePromise && (
               <Elements
                 stripe={stripePromise}
                 options={{
@@ -148,8 +140,7 @@ export default function Checkout() {
                       colorBackground: "#1a3244",
                       colorText: "#ffffff",
                       colorDanger: "#ef4444",
-                      fontFamily:
-                        "system-ui, -apple-system, sans-serif",
+                      fontFamily: "system-ui, -apple-system, sans-serif",
                       spacingUnit: "4px",
                       borderRadius: "8px",
                       colorTextSecondary: "#e5e7eb",
@@ -158,8 +149,7 @@ export default function Checkout() {
                     rules: {
                       ".Tab": {
                         backgroundColor: "#0f2433",
-                        border:
-                          "1px solid rgba(255, 255, 255, 0.1)",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
                         boxShadow: "none",
                         color: "#ffffff",
                       },
@@ -169,14 +159,13 @@ export default function Checkout() {
                         boxShadow: "0 0 0 1px #c9a24d",
                         color: "#c9a24d",
                       },
-                      ".Tab--selected:hover":{
+                      ".Tab--selected:hover": {
                         color: "#c9a24d",
                       },
-                      ".TabIcon--selected":{fill:"#e5e7eb"},
+                      ".TabIcon--selected": { fill: "#e5e7eb" },
                       ".Input": {
                         backgroundColor: "#0f2433",
-                        border:
-                          "1px solid rgba(255, 255, 255, 0.1)",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
                         color: "#ffffff",
                       },
                       ".Input:focus": {
@@ -197,12 +186,10 @@ export default function Checkout() {
               </Elements>
             )}
 
-             {!STRIPE_CONFIG.isMockMode && !clientSecret && (
+            {!STRIPE_CONFIG.isMockMode && !clientSecret && (
               <div className="flex items-center justify-center py-10">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-secondary-600 border-t-transparent" />
-                <span className="ml-3 text-white">
-                  {content.checkout.preparing}
-                </span>
+                <span className="ml-3 text-white">{content.checkout.preparing}</span>
               </div>
             )}
           </CardContent>
